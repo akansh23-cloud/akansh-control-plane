@@ -14,22 +14,24 @@ jobs:
       - name: Checkout bootstrap repository
         uses: actions/checkout@v4
 
-      - name: Validate embedded production archive
+      - name: Download final production package
         run: |
           set -euo pipefail
-          test -s payload/control-plane.tar.gz
-          gzip -t payload/control-plane.tar.gz
-          tar -tzf payload/control-plane.tar.gz >/dev/null
+          python -m pip install --quiet gdown
+          gdown 'https://drive.google.com/uc?id=1CpqVyqd9CKgJuMGfwR1J3oOyF1UCASXp' -O /tmp/control-plane.zip
+          test -s /tmp/control-plane.zip
+          file /tmp/control-plane.zip
+          unzip -t /tmp/control-plane.zip >/dev/null
 
       - name: Expand final production source
         run: |
           set -euo pipefail
           rm -rf /tmp/control-plane-src
           mkdir -p /tmp/control-plane-src
-          tar -xzf payload/control-plane.tar.gz -C /tmp/control-plane-src
-          PACKAGE_JSON="$(find /tmp/control-plane-src -mindepth 1 -maxdepth 4 -type f -name package.json -print -quit)"
+          unzip -q /tmp/control-plane.zip -d /tmp/control-plane-src
+          PACKAGE_JSON="$(find /tmp/control-plane-src -mindepth 1 -maxdepth 5 -type f -name package.json -print -quit)"
           if [ -z "$PACKAGE_JSON" ]; then
-            echo 'No package.json found in embedded archive' >&2
+            echo 'No package.json found in production package' >&2
             exit 1
           fi
           SOURCE_DIR="$(dirname "$PACKAGE_JSON")"
@@ -55,20 +57,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      - name: Generate lock file
-        run: npm install --package-lock-only --ignore-scripts
-
-      - name: Commit expanded production source
-        run: |
-          set -euo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
-          if ! git diff --cached --quiet; then
-            git commit -m 'Expand final production source'
-            git push
-          fi
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
@@ -81,3 +70,15 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+      - name: Commit expanded production source
+        if: success()
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m 'Expand final production source'
+            git push
+          fi
