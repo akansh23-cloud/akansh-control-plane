@@ -14,26 +14,28 @@ jobs:
       - name: Checkout bootstrap repository
         uses: actions/checkout@v4
 
-      - name: Download final production package
+      - name: Reconstruct embedded production archive
         run: |
           set -euo pipefail
-          curl -L --fail --retry 3 --retry-delay 2 \
-            'https://drive.google.com/uc?export=download&id=1CpqVyqd9CKgJuMGfwR1J3oOyF1UCASXp' \
-            -o /tmp/control-plane.zip
-          test -s /tmp/control-plane.zip
-          unzip -t /tmp/control-plane.zip >/dev/null
+          test -d source-parts
+          find source-parts -maxdepth 1 -type f -name 'part*' -print | sort | xargs cat > /tmp/control-plane.b64
+          base64 --decode /tmp/control-plane.b64 > /tmp/control-plane.tar.gz
+          test -s /tmp/control-plane.tar.gz
+          gzip -t /tmp/control-plane.tar.gz
+          tar -tzf /tmp/control-plane.tar.gz >/dev/null
 
       - name: Expand final production source
         run: |
           set -euo pipefail
           rm -rf /tmp/control-plane-src
           mkdir -p /tmp/control-plane-src
-          unzip -q /tmp/control-plane.zip -d /tmp/control-plane-src
-          SOURCE_DIR="$(find /tmp/control-plane-src -mindepth 1 -maxdepth 1 -type d | head -n 1)"
-          if [ -z "$SOURCE_DIR" ]; then
-            echo 'No source directory found in archive' >&2
+          tar -xzf /tmp/control-plane.tar.gz -C /tmp/control-plane-src
+          PACKAGE_JSON="$(find /tmp/control-plane-src -mindepth 1 -maxdepth 4 -type f -name package.json -print -quit)"
+          if [ -z "$PACKAGE_JSON" ]; then
+            echo 'No package.json found in embedded archive' >&2
             exit 1
           fi
+          SOURCE_DIR="$(dirname "$PACKAGE_JSON")"
           rsync -a --delete --exclude='.git' "$SOURCE_DIR"/ ./
           test -f package.json
           test -f app/page.tsx
@@ -42,6 +44,15 @@ jobs:
             echo 'Placeholder resume detected' >&2
             exit 1
           fi
+
+      - name: Force Vercel Next.js preset from source
+        run: |
+          cat > vercel.json <<'JSON'
+          {
+            "$schema": "https://openapi.vercel.sh/vercel.json",
+            "framework": "nextjs"
+          }
+          JSON
 
       - name: Commit expanded production source
         run: |
