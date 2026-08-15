@@ -14,22 +14,19 @@ jobs:
       - name: Checkout bootstrap repository
         uses: actions/checkout@v4
 
-      - name: Reconstruct embedded production archive
+      - name: Validate embedded production archive
         run: |
           set -euo pipefail
-          test -d source-parts
-          find source-parts -maxdepth 1 -type f -name 'part*' -print | sort | xargs cat > /tmp/control-plane.b64
-          base64 --decode /tmp/control-plane.b64 > /tmp/control-plane.tar.gz
-          test -s /tmp/control-plane.tar.gz
-          gzip -t /tmp/control-plane.tar.gz
-          tar -tzf /tmp/control-plane.tar.gz >/dev/null
+          test -s payload/control-plane.tar.gz
+          gzip -t payload/control-plane.tar.gz
+          tar -tzf payload/control-plane.tar.gz >/dev/null
 
       - name: Expand final production source
         run: |
           set -euo pipefail
           rm -rf /tmp/control-plane-src
           mkdir -p /tmp/control-plane-src
-          tar -xzf /tmp/control-plane.tar.gz -C /tmp/control-plane-src
+          tar -xzf payload/control-plane.tar.gz -C /tmp/control-plane-src
           PACKAGE_JSON="$(find /tmp/control-plane-src -mindepth 1 -maxdepth 4 -type f -name package.json -print -quit)"
           if [ -z "$PACKAGE_JSON" ]; then
             echo 'No package.json found in embedded archive' >&2
@@ -54,6 +51,14 @@ jobs:
           }
           JSON
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Generate lock file
+        run: npm install --package-lock-only --ignore-scripts
+
       - name: Commit expanded production source
         run: |
           set -euo pipefail
@@ -64,12 +69,6 @@ jobs:
             git commit -m 'Expand final production source'
             git push
           fi
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
 
       - name: Install dependencies
         run: npm ci
