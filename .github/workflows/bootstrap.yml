@@ -15,12 +15,21 @@ jobs:
       - name: Checkout bootstrap repository
         uses: actions/checkout@v4
 
-      - name: Reassemble embedded production archive
+      - name: Reassemble validated production archive
         run: |
           set -euo pipefail
-          test -d source-parts
-          test -f source-parts/part00
-          cat source-parts/part* | tr -d '\r\n' | base64 --decode > /tmp/control-plane.tar.gz
+          BASE="https://raw.githubusercontent.com/akansh23-cloud/akansh-control-plane/payload-build/payload-new"
+          : > /tmp/archive.b64
+          for i in 00 01 02 03 04 05; do
+            curl --retry 3 --retry-delay 2 -fsSL "$BASE/part$i" >> /tmp/archive.b64
+          done
+          for i in $(seq -w 0 15); do
+            curl --retry 3 --retry-delay 2 -fsSL "$BASE/part06x$i" >> /tmp/archive.b64
+          done
+          for i in 07 08; do
+            curl --retry 3 --retry-delay 2 -fsSL "$BASE/part$i" >> /tmp/archive.b64
+          done
+          tr -d '\r\n' < /tmp/archive.b64 | base64 --decode > /tmp/control-plane.tar.gz
           test -s /tmp/control-plane.tar.gz
           gzip -t /tmp/control-plane.tar.gz
           tar -tzf /tmp/control-plane.tar.gz >/dev/null
@@ -33,7 +42,7 @@ jobs:
           tar -xzf /tmp/control-plane.tar.gz -C /tmp/control-plane-src
           PACKAGE_JSON="$(find /tmp/control-plane-src -mindepth 1 -maxdepth 5 -type f -name package.json -print -quit)"
           if [ -z "$PACKAGE_JSON" ]; then
-            echo 'No package.json found in production package' >&2
+            echo 'No package.json found in production archive' >&2
             exit 1
           fi
           SOURCE_DIR="$(dirname "$PACKAGE_JSON")"
@@ -54,17 +63,15 @@ jobs:
             "framework": "nextjs"
           }
           JSON
-          node -e "const p=require('./package.json'); if(!p.dependencies?.next && !p.devDependencies?.next){process.exit(1)}; console.log('Next.js',p.dependencies?.next||p.devDependencies?.next)"
+          node -e "const p=require('./package.json'); const v=p.dependencies?.next||p.devDependencies?.next; if(!v) process.exit(1); console.log('Next.js dependency:',v)"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
 
       - name: Install dependencies
-        run: |
-          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+        run: npm install
 
       - name: Typecheck
         run: npm run typecheck
