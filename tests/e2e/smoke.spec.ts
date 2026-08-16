@@ -1,4 +1,18 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page, type TestInfo } from '@playwright/test';
+
+async function switchMode(page: Page, mode: 'recruiter' | 'engineer', testInfo: TestInfo) {
+  if (testInfo.project.name === 'mobile-safari') {
+    await page.getByRole('button', { name: 'Open menu' }).click();
+    await page.getByRole('button', { name: `${mode} mode`, exact: true }).click();
+    return;
+  }
+  await page.getByRole('button', { name: mode, exact: true }).first().click();
+}
+
+async function openCommandPalette(page: Page) {
+  await page.locator('button[aria-label="Open command palette"]:visible').click();
+  await expect(page.getByLabel('Command input')).toBeVisible();
+}
 
 test.describe('control plane', () => {
   test('home page renders identity and forbidden certification claims are absent', async ({ page }) => {
@@ -30,17 +44,17 @@ test.describe('control plane', () => {
     await expect(page.getByText('AWS Cloud Practitioner')).toBeVisible();
   });
 
-  test('recruiter mode switches the information experience', async ({ page }) => {
+  test('recruiter mode switches the information experience', async ({ page }, testInfo) => {
     await page.goto('/');
-    await page.getByRole('button', { name: 'recruiter', exact: true }).first().click();
+    await switchMode(page, 'recruiter', testInfo);
     await expect(page.getByText('Microservices supported')).toBeVisible();
     await expect(page.getByRole('button', { name: /view technical architecture/i }).first()).toBeVisible();
   });
 
-  test('engineer mode restores immersive sections', async ({ page }) => {
+  test('engineer mode restores immersive sections', async ({ page }, testInfo) => {
     await page.goto('/');
-    await page.getByRole('button', { name: 'recruiter', exact: true }).first().click();
-    await page.getByRole('button', { name: 'engineer', exact: true }).first().click();
+    await switchMode(page, 'recruiter', testInfo);
+    await switchMode(page, 'engineer', testInfo);
     await expect(page.getByRole('heading', { name: /ship an artifact/i })).toBeVisible();
   });
 
@@ -52,9 +66,8 @@ test.describe('control plane', () => {
 
   test('command palette opens and answers whoami', async ({ page }) => {
     await page.goto('/');
-    await page.keyboard.press('Control+k');
+    await openCommandPalette(page);
     const input = page.getByLabel('Command input');
-    await expect(input).toBeVisible();
     await input.fill('whoami');
     await input.press('Enter');
     await expect(page.getByText('DevOps / Platform / Cloud Engineer').first()).toBeVisible();
