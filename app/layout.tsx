@@ -9,7 +9,7 @@ import Cursor from '@/components/chrome/Cursor';
 import ScrollPacket from '@/components/chrome/ScrollPacket';
 import Footer from '@/components/chrome/Footer';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://akansh-control-plane-cloud14.vercel.app';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://akansh-control-plane.vercel.app';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

@@ -1,5 +1,17 @@
-import status from '@/data/build-status.json';
-import { cx } from '@/lib/utils';
-type Check={id:string;label:string;status:string};
-const TONE:Record<string,string>={pass:'text-pulse border-pulse/50',fail:'text-fail border-fail/50','not run':'text-mist border-line'};
-export default function BuildStatus(){const recordedChecks=status.checks as Check[];const deploymentCommit=process.env.VERCEL_GIT_COMMIT_SHA?.slice(0,7)??process.env.GITHUB_SHA?.slice(0,7)??null;const statusMatchesDeployment=!deploymentCommit||status.commit===deploymentCommit;const checks=statusMatchesDeployment?recordedChecks:recordedChecks.map(check=>({...check,status:'not run'}));const generated=status.generatedAt?new Date(status.generatedAt).toISOString().slice(0,10):null;return <section className="border-t border-line py-12"><div className="shell flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between"><div><p className="label text-ion">Control plane // build</p><p className="mono-sm mt-2 text-mist">This site&apos;s own checks, recorded by its verification run. {statusMatchesDeployment?(<>{generated?` Last recorded ${generated}.`:' Not yet recorded.'}{status.commit?` Commit ${status.commit}.`:''}</>):' The recorded verification belongs to a different commit, so this deployment is not shown as passing.'}</p></div><ul className="flex flex-wrap gap-2">{checks.map(check=><li key={check.id} className={cx('flex items-center gap-2 border px-3 py-1.5 font-mono text-[0.625rem] uppercase tracking-[0.14em]',TONE[check.status]??TONE['not run'])}>{check.label}<span aria-hidden="true">{check.status==='pass'?'✓':check.status==='fail'?'✕':'–'}</span><span className="sr-only">{check.status}</span></li>)}</ul></div></section>}
+const checks = ['npm ci', 'TypeScript', 'Lint', 'Production build', 'Playwright E2E'];
+
+export default function BuildStatus() {
+  return (
+    <section className="border-t border-line py-12">
+      <div className="shell flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <p className="label text-ion">Control plane // quality gates</p>
+          <p className="mono-sm mt-2 max-w-2xl text-mist">Quality gates run in GitHub Actions on every main push. Their live result stays in CI rather than being copied into this static page, so the portfolio never presents stale build state.</p>
+        </div>
+        <ul className="flex flex-wrap gap-2">
+          {checks.map((check) => <li key={check} className="border border-line px-3 py-1.5 font-mono text-[0.625rem] uppercase tracking-[0.14em] text-mist">{check}</li>)}
+        </ul>
+      </div>
+    </section>
+  );
+}

@@ -7,6 +7,7 @@ import { projects } from '@/data/projects';
 export const metadata: Metadata = {
   title: 'Resume',
   description: 'Resume of Akansh Mowar — DevOps Engineer in Pune working across OpenShift, GitLab CI/CD, Helm, AWS and Terraform.',
+  alternates: { canonical: '/resume' },
 };
 
 export default function ResumePage() {
