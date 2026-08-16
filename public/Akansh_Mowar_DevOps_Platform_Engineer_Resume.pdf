@@ -1,0 +1,304 @@
+%PDF-1.3
+%ABCD ReportLab Generated PDF document (opensource)
+1 0 obj
+<<
+/F1 2 0 R /F2 3 0 R /F3 4 0 R
+>>
+endobj
+2 0 obj
+<<
+/BaseFont /Helvetica /Encoding /WinAnsiEncoding /Name /F1 /Subtype /Type1 /Type /Font
+>>
+endobj
+3 0 obj
+<<
+/BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding /Name /F2 /Subtype /Type1 /Type /Font
+>>
+endobj
+4 0 obj
+<<
+/BaseFont /Helvetica-Oblique /Encoding /WinAnsiEncoding /Name /F3 /Subtype /Type1 /Type /Font
+>>
+endobj
+5 0 obj
+<<
+/Contents 9 0 R /MediaBox [ 0 0 595.2756 841.8898 ] /Parent 8 0 R /Resources <<
+/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>> /Rotate 0 /Trans <<
+
+>> 
+  /Type /Page
+>>
+endobj
+6 0 obj
+<<
+/PageMode /UseNone /Pages 8 0 R /Type /Catalog
+>>
+endobj
+7 0 obj
+<<
+/Author (anonymous) /CreationDate (D:20260815235343+00'00') /Creator (anonymous) /Keywords () /ModDate (D:20260815235343+00'00') /Producer (ReportLab PDF Library - \(opensource\)) 
+  /Subject (unspecified) /Title (untitled) /Trapped /False
+>>
+endobj
+8 0 obj
+<<
+/Count 1 /Kids [ 5 0 R ] /Type /Pages
+>>
+endobj
+9 0 obj
+<<
+/Length 10118
+>>
+stream
+1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
+.121569 .219608 .392157 rg
+BT /F2 17 Tf 20.4 TL ET
+BT 1 0 0 1 219.6378 804.8898 Tm (AKANSH MOWAR) Tj T* ET
+.333333 .33333 .333333 rg
+BT /F1 7.4 Tf 8.88 TL ET
+BT 1 0 0 1 36 788.8898 Tm (Pune, India | mowar23akansh@gmail.com | linkedin.com/in/akansh-mowar-5a83261a0 | github.com/akansh23-cloud) Tj T* ET
+.121569 .219608 .392157 rg
+BT /F2 10.8 Tf 12.96 TL ET
+BT 1 0 0 1 36 769.8898 Tm (PROFESSIONAL SUMMARY) Tj T* ET
+.72 .74 .77 RG
+.5 w
+n 36 766.8898 m 559.2756 766.8898 l S
+.137255 .137255 .137255 rg
+BT /F1 8.1 Tf 9.72 TL ET
+BT 1 0 0 1 36 754.8898 Tm (DevOps Engineer with 3+ years of experience building and operating CI/CD and container platforms in regulated BFSI environments. Currently) Tj T* ET
+.137255 .137255 .137255 rg
+BT /F1 8.1 Tf 9.72 TL ET
+BT 1 0 0 1 36 745.1898 Tm (supporting release delivery for an enterprise banking platform comprising 50+ independently deployable microservices on Red Hat OpenShift 4.x.) Tj T* ET
+.121569 .219608 .392157 rg
+BT /F2 10.8 Tf 12.96 TL ET
+BT 1 0 0 1 36 732.4898 Tm (TECHNICAL SKILLS) Tj T* ET
+.72 .74 .77 RG
+.5 w
+n 36 729.4898 m 559.2756 729.4898 l S
+.121569 .219608 .392157 rg
+BT /F2 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 36 717.4898 Tm (Cloud Platforms:) Tj T* ET
+.137255 .137255 .137255 rg
+BT /F1 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 103.2396 717.4898 Tm (Red Hat OpenShift, AWS, Microsoft Azure) Tj T* ET
+.121569 .219608 .392157 rg
+BT /F2 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 36 708.0898 Tm (Containers & Orchestration:) Tj T* ET
+.137255 .137255 .137255 rg
+BT /F1 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 145.1193 708.0898 Tm (Docker, Kubernetes, Helm, Amazon EKS, Nginx) Tj T* ET
+.121569 .219608 .392157 rg
+BT /F2 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 36 698.6898 Tm (CI/CD & Version Control:) Tj T* ET
+.137255 .137255 .137255 rg
+BT /F1 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 132.8969 698.6898 Tm (GitLab CI/CD, Argo CD, Jenkins, GitHub Actions, Bitbucket, Git) Tj T* ET
+.121569 .219608 .392157 rg
+BT /F2 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 36 689.2898 Tm (IaC & Scripting:) Tj T* ET
+.137255 .137255 .137255 rg
+BT /F1 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 98.88285 689.2898 Tm (Terraform, Ansible, Bash, Python) Tj T* ET
+.121569 .219608 .392157 rg
+BT /F2 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 36 679.8898 Tm (DevSecOps & Security:) Tj T* ET
+.137255 .137255 .137255 rg
+BT /F1 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 127.2527 679.8898 Tm (HashiCorp Vault, Veracode SAST, Trivy, SonarQube, Secrets Management) Tj T* ET
+.121569 .219608 .392157 rg
+BT /F2 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 36 670.4898 Tm (Monitoring & Observability:) Tj T* ET
+.137255 .137255 .137255 rg
+BT /F1 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 142.937 670.4898 Tm (Prometheus, Grafana, ELK, AppDynamics, Netcool, Observe) Tj T* ET
+.121569 .219608 .392157 rg
+BT /F2 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 36 661.0898 Tm (Build, Artifacts & Data:) Tj T* ET
+.137255 .137255 .137255 rg
+BT /F1 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 125.4865 661.0898 Tm (Gradle, Maven, Nexus, PostgreSQL, Kafka, IBM MQ) Tj T* ET
+.121569 .219608 .392157 rg
+BT /F2 10.8 Tf 12.96 TL ET
+BT 1 0 0 1 36 649.6898 Tm (PROFESSIONAL EXPERIENCE) Tj T* ET
+.72 .74 .77 RG
+.5 w
+n 36 646.6898 m 559.2756 646.6898 l S
+.137255 .137255 .137255 rg
+BT /F2 9.2 Tf 11.04 TL ET
+BT 1 0 0 1 36 634.6898 Tm (Barclays) Tj T* ET
+.333333 .333333 .333333 rg
+BT /F1 8.2 Tf 9.84 TL ET
+BT 1 0 0 1 517.7918 634.6898 Tm (Pune, India) Tj T* ET
+.333333 .33333 .333333 rg
+BT /F3 8.2 Tf 9.84 TL ET
+BT 1 0 0 1 36 624.6898 Tm (DevOps Engineer)` Tj T* ET
+.333333 .33333 .333333 rg
+BT /F3 8.2 Tf 9.84 TL ET
+BT 1 0 0 1 492.7326 624.6898 Tm (Jul 2023 - Present) Tj T* ET
+.121569 .219608 .392157 rg
+BT /F2 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 36 613.6898 Tm (-) Tj T* ET
+.137255 .137255 .137255 rg
+BT /F1 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 48 613.6898 Tm (Manage CI/CD and deployment operations for 50+ independently deployable microservices across six business domains on Red Hat OpenShift) Tj T* ET
+.137255 .137255 .137255 rg
+BT /F1 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 48 604.4898 Tm (4.x, supporting development, SIT, NFT, OAT and production releases.) Tj T* ET
+.121569 .219608 .392157 rg
+BT /F2 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 36 594.2898 Tm (-) Tj T* ET
+.137255 .137255 .137255 rg
+BT /F1 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 48 594.2898 Tm (Maintain and enhance a 20+ stage GitLab CI/CD release workflow spanning Nexus artifact retrieval, vulnerability scanning, Docker image builds,) Tj T* ET
+.137255 .137255 .137255 rg
+BT /F1 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 48 585.0898 Tm (certificate/JKS updates, PostgreSQL schema and incremental migrations, Helm deployment and controlled image promotion.) Tj T* ET
+.121569 .219608 .392157 rg
+BT /F2 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 36 574.8898 Tm (-) Tj T* ET
+.137255 .137255 .137255 rg
+BT /F1 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 48 574.8898 Tm (Migrated raw OpenShift manifests toward Helm-based deployment with parameterized environment values and standardized Deployments,) Tj T* ET
+.137255 .137255 .137255 rg
+BT /F1 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 48 565.6898 Tm (Services, Routes, ConfigMaps, resource limits, readiness, liveness and startup probes.) Tj T* ET
+.121569 .219608 .392157 rg
+BT /F2 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 36 555.4898 Tm (-) Tj T* ET
+.137255 .137255 .137255 rg
+BT /F1 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 48 555.4898 Tm (Worked across 30+ standardized containerized workloads including Java 17, Tomcat 10, Nginx sidecars and Hasura GraphQL engines.) Tj T* ET
+.121569 .219608 .392157 rg
+BT /F2 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 36 545.2898 Tm (-) Tj T* ET
+.137255 .137255 .137255 rg
+BT /F1 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 48 545.2898 Tm (Integrated HashiCorp Vault and OpenShift Secrets, supporting PostgreSQL, Kafka, TLS/JKS, IBM MQ and Hasura integrations.) Tj T* ET
+.121569 .219608 .392157 rg
+BT /F2 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 36 535.0898 Tm (-) Tj T* ET
+.137255 .137255 .137255 rg
+BT /F1 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 48 535.0898 Tm (Integrated SonarQube, Veracode SAST and Trivy into shift-left security and image-promotion controls.) Tj T* ET
+.121569 .219608 .392157 rg
+BT /F2 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 36 524.8898 Tm (-) Tj T* ET
+.137255 .137255 .137255 rg
+BT /F1 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 48 524.8898 Tm (Drove modernization from Jenkins/Bitbucket to GitLab, raw manifests to Helm, JDK 8 to Java 17, JBoss to Tomcat 10 and ELK to Observe.) Tj T* ET
+.137255 .137255 .137255 rg
+BT /F2 9 Tf 10.8 TL ET
+BT 1 0 0 1 36 513.6898 Tm (CloudNXT) Tj T* ET
+.333333 .33333 .333333 rg
+BT /F1 8 Tf 9.6 TL ET
+BT 1 0 0 1 518.8036 513.6898 Tm (Pune, India) Tj T* ET
+.333333 .333333 .333333 rg
+BT /F3 8 Tf 9.6 TL ET
+BT 1 0 0 1 36 503.6898 Tm (Cloud Engineer Intern) Tj T* ET
+.333333 .333333 .333333 rg
+BT /F3 8 Tf 9.6 TL ET
+BT 1 0 0 1 482.7876 503.6898 Tm (May 2022 - Aug 2022) Tj T* ET
+.121569 .219608 .392157 rg
+BT /F2 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 36 492.6898 Tm (-) Tj T* ET
+.137255 .137255 .137255 rg
+BT /F1 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 48 492.6898 Tm (Monitored 100+ Azure Virtual Machines, supported Disaster Recovery drills and Azure Snapshot backups, and assisted with provisioning,) Tj T* ET
+.137255 .137255 .137255 rg
+BT /F1 7.85 Tf 9.42 TL ET
+BT 1 0 0 1 48 483.4898 Tm (configuration and patching during client onboarding.) Tj T* ET
+.121569 .219608 .392157 rg
+BT /F2 10.8 Tf 12.96 TL ET
+BT 1 0 0 1 36 471.2898 Tm (PROJECTS) Tj T* ET
+.72 .74 .77 RG
+.5 w
+n 36 468.2898 m 559.2756 468.2898 l S
+.137255 .137255 .137255 rg
+BT /F2 9 Tf 10.8 TL ET
+BT 1 0 0 1 36 456.2898 Tm (Migration Assurance Platform \(MAP\)) Tj T* ET
+.333333 .333333 .333333 rg
+BT /F3 8 Tf 9.6 TL ET
+BT 1 0 0 1 469.4676 456.2898 Tm (Personal DevOps Project) Tj T* ET
+.333333 .333333 .333333 rg
+BT /F3 7.7 Tf 9.24 TL ET
+BT 1 0 0 1 36 446.2898 Tm (AWS \(EKS, ECR, ALB\), Terraform, Argo CD \(GitOps\), Docker, GitLab CI/CD) Tj T* ET
+.121569 .219608 .392157 rg
+BT /F2 7.65 Tf 9.18 TL ET
+BT 1 0 0 1 36 436.2898 Tm (-) Tj T* ET
+.137255 .137255 .137255 rg
+BT /F1 7.65 Tf 9.18 TL ET
+BT 1 0 0 1 48 436.2898 Tm (Designed AWS deployment architecture with Terraform-provisioned infrastructure, Amazon EKS behind an Application Load Balancer, immutable) Tj T* ET
+.137255 .137255 .137255 rg
+BT /F1 7.65 Tf 9.18 TL ET
+BT 1 0 0 1 48 427.4898 Tm (images in Amazon ECR, GitLab CI/CD build/test/security gates, and Argo CD reconciling deployment configuration into EKS.) Tj T* ET
+.137255 .137255 .137255 rg
+BT /F2 9 Tf 10.8 TL ET
+BT 1 0 0 1 36 416.6898 Tm (Career Autopilot) Tj T* ET
+.333333 .333333 .333333 rg
+BT /F3 8 Tf 9.6 TL ET
+BT 1 0 0 1 469.4676 416.6898 Tm (Personal DevOps Project) Tj T* ET
+.333333 .333333 .333333 rg
+BT /F3 7.7 Tf 9.24 TL ET
+BT 1 0 0 1 36 406.6898 Tm (Docker, CI/CD Pipelines, API Gateway, Monorepo, Vercel) Tj T* ET
+.121569 .219608 .392157 rg
+BT /F2 7.65 Tf 9.18 TL ET
+BT 1 0 0 1 36 396.6898 Tm (-) Tj T* ET
+.137255 .137255 .137255 rg
+BT /F1 7.65 Tf 9.18 TL ET
+BT 1 0 0 1 48 396.6898 Tm (Owned deployment and containerization for a 16-service architecture with per-service multi-stage Dockerfiles, path-based build/test/deploy pipelines,) Tj T* ET
+.137255 .137255 .137255 rg
+BT /F1 7.65 Tf 9.18 TL ET
+BT 1 0 0 1 48 387.8898 Tm (API Gateway routing, automatic legacy-monolith fallback, and incremental service-by-service migration.) Tj T* ET
+.121569 .219608 .392157 rg
+BT /F2 10.8 Tf 12.96 TL ET
+BT 1 0 0 1 36 376.0898 Tm (EDUCATION & CERTIFICATIONS) Tj T* ET
+.72 .74 .77 RG
+.5 w
+n 36 373.0898 m 559.2756 373.0898 l S
+.137255 .137255 .137255 rg
+BT /F2 8.8 Tf 10.56 TL ET
+BT 1 0 0 1 36 361.0898 Tm (University of Petroleum and Energy Studies \(UPES\)) Tj T* ET
+.333333 .333333 .333333 rg
+BT /F1 8 Tf 9.6 TL ET
+BT 1 0 0 1 502.3556 361.0898 Tm (Dehradun, India) Tj T* ET
+.333333 .333333 .333333 rg
+BT /F3 7.9 Tf 9.48 TL ET
+BT 1 0 0 1 36 351.0898 Tm (B.Tech in Computer Science - Cloud Computing & Virtualization Technology) Tj T* ET
+.333333 .333333 .333333 rg
+BT /F3 7.9 Tf 9.48 TL ET
+BT 1 0 0 1 487.7016 351.0898 Tm (Jul 2019 - May 2023) Tj T* ET
+.121569 .219608 .392157 rg
+BT /F2 8.2 Tf 9.84 TL ET
+BT 1 0 0 1 36 340.0898 Tm (Certifications:) Tj T* ET
+.137255 .137255 .137255 rg
+BT /F1 8 Tf 9.6 TL ET
+BT 1 0 0 1 98 340.0898 Tm (Microsoft Azure Administrator \(AZ-104\) | Azure Fundamentals \(AZ-900\) | AWS Cloud Practitioner) Tj T* ET
+ 
+endstream
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000061 00000 n 
+0000000112 00000 n 
+0000000219 00000 n 
+0000000331 00000 n 
+0000000446 00000 n 
+0000000649 00000 n 
+0000000717 00000 n 
+0000000978 00000 n 
+0000001037 00000 n 
+trailer
+<<
+/ID 
+[<c84a8e97a6c4dcb5e3fadc9e47a2cc6a><c84a8e97a6c4dcb5e3fadc9e47a2cc6a>]
+% ReportLab generated PDF document -- digest (opensource)
+
+/Info 7 0 R
+/Root 6 0 R
+/Size 10
+>>
+startxref
+11207
+%%EOF
