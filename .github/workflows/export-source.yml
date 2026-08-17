@@ -1,0 +1,28 @@
+name: Export Lockworks source
+
+on:
+  push:
+    branches:
+      - tooling/export-lockworks-c66
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: c66c0fee85046803603a34e399fed75477cb8d77
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lockworks-c66-source
+          path: |
+            .
+            !qa/**
+            !QA_REFERENCE_CURRENT_FAILURE/**
+            !test-results/**
+            !playwright-report/**
+          include-hidden-files: true
+          retention-days: 1
