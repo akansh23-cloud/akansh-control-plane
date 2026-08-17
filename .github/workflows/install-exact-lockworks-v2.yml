@@ -1,0 +1,93 @@
+name: Install exact Lockworks rebuild v2
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  install:
+    if: github.event.head_commit.message == 'Install exact Lockworks rebuild v2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download exact source archive from verified production transport
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 4 --retry-delay 2 \
+            https://akansh-mowar-lockworks.vercel.app/lockworks-source.tar.xz \
+            -o /tmp/lockworks-source.tar.xz
+          xz -t /tmp/lockworks-source.tar.xz
+          rm -rf /tmp/lockworks-source
+          mkdir -p /tmp/lockworks-source
+          tar -xJf /tmp/lockworks-source.tar.xz -C /tmp/lockworks-source
+          test -f /tmp/lockworks-source/package.json
+          test -f /tmp/lockworks-source/src/app/page.tsx
+
+      - name: Replace repository with exact rebuild source
+        shell: bash
+        run: |
+          set -euo pipefail
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a /tmp/lockworks-source/. .
+          rm -rf .vercel node_modules .next qa QA_REFERENCE_CURRENT_FAILURE
+          cat > vercel.json <<'JSON'
+          {
+            "$schema": "https://openapi.vercel.sh/vercel.json",
+            "framework": "nextjs"
+          }
+          JSON
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prepare asset dependencies
+        shell: bash
+        run: |
+          python3 -m venv /tmp/lockworks-venv
+          /tmp/lockworks-venv/bin/pip install --quiet pillow reportlab
+          echo '/tmp/lockworks-venv/bin' >> "$GITHUB_PATH"
+
+      - name: Generate production assets
+        run: npm run assets
+
+      - name: Source integrity
+        run: npm run audit:source
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit and factual tests
+        run: npm run test
+
+      - name: Asset freshness
+        run: npm run assets:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Production build
+        run: npm run build
+
+      - name: Commit rebuild source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Deploy exact Lockworks rebuild v2'
+          git push origin HEAD:main
