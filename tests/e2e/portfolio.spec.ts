@@ -68,7 +68,7 @@ test.describe('production shell', () => {
     const text = await tidewater.innerText();
     expect(text).toMatch(/CKAD/i);
     expect(text).toMatch(/DOP-C02/i);
-    expect(text.match(/In preparation — not certified/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
+    expect(text.match(/In preparation\s*[—–-]\s*not certified/gi)?.length ?? 0).toBeGreaterThanOrEqual(2);
   });
 
   test('resume page and generated PDF are reachable', async ({ page, request }) => {
@@ -175,7 +175,8 @@ test.describe('signature interactions', () => {
 
   test('persistent index opens and primary contact links are correct', async ({ page }) => {
     await page.goto('/');
-    const index = page.getByRole('button', { name: /Index/i });
+    const index = page.locator('button[aria-controls="key-plate"]');
+    await expect(index).toContainText('Index');
     await index.click();
     await expect(index).toHaveAttribute('aria-expanded', 'true');
 
