@@ -136,7 +136,7 @@
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--s-3);
-  min-height: 54px;
+  min-height: 46px;
   padding: 0 var(--s-4);
   background: color-mix(in oklab, var(--panel) 60%, transparent);
   border: 1px solid var(--edge);
@@ -160,6 +160,60 @@
     color-mix(in oklab, var(--water-500) 78%, transparent)
   );
   border-right: 2px solid var(--water-100);
+}
+
+/* The vessel. It is positioned by the same expression that sizes the water,
+   so it cannot drift off the surface it is supposed to be floating on. */
+.vessel {
+  position: absolute;
+  top: 50%;
+  left: clamp(0%, calc((var(--flow, 0) - var(--i)) * 100%), 100%);
+  width: 13px;
+  height: 13px;
+  margin-left: -7px;
+  margin-top: -7px;
+  border-radius: 2px;
+  background: var(--signal);
+  box-shadow:
+    0 0 0 4px color-mix(in oklab, var(--signal) 22%, transparent),
+    0 4px 14px color-mix(in oklab, var(--void) 74%, transparent);
+  transform: rotate(45deg);
+  opacity: 0;
+  transition: opacity var(--t-quick) var(--ease-water);
+}
+
+/* Only ever one vessel on the flight at a time. */
+.chamber[data-state='filling'] .vessel,
+.chamber[data-state='refused'] .vessel,
+.chamber[data-state='recovering'] .vessel {
+  opacity: 1;
+}
+
+.chamber[data-state='refused'] .vessel {
+  background: var(--fault);
+  box-shadow:
+    0 0 0 4px color-mix(in oklab, var(--fault) 26%, transparent),
+    0 4px 14px color-mix(in oklab, var(--void) 74%, transparent);
+}
+
+.chamber[data-state='recovering'] .vessel {
+  background: var(--hold);
+  box-shadow:
+    0 0 0 4px color-mix(in oklab, var(--hold) 26%, transparent),
+    0 4px 14px color-mix(in oklab, var(--void) 74%, transparent);
+}
+
+/* A crest on the leading edge of the water, so the fill reads as a moving
+   surface rather than a growing bar. */
+.water::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: -1px;
+  width: 2px;
+  background: var(--water-100);
+  box-shadow: 0 0 10px 2px color-mix(in oklab, var(--water-100) 45%, transparent);
 }
 
 /* The gate at the head of each chamber. */
@@ -249,12 +303,7 @@
 
 /* ---------------- fittings ---------------- */
 
-.fittings {
-  display: grid;
-  gap: var(--s-3);
-  padding-top: var(--s-4);
-  border-top: 1px solid var(--rule-faint);
-}
+.fittings { display: grid; }
 
 .fittingList {
   display: flex;
@@ -320,6 +369,23 @@
     );
     border-right: 0;
     border-top: 2px solid var(--water-100);
+  }
+
+  .vessel {
+    left: 50%;
+    top: auto;
+    bottom: clamp(0%, calc((var(--flow, 0) - var(--i)) * 100%), 100%);
+    margin-bottom: -7px;
+    margin-top: 0;
+  }
+
+  .water::after {
+    top: 0;
+    bottom: auto;
+    left: 0;
+    right: 0;
+    width: auto;
+    height: 2px;
   }
 
   .gate {

@@ -59,6 +59,33 @@ for (const vp of VIEWPORTS) {
   await page.goto(BASE, { waitUntil: 'networkidle' });
   await page.waitForTimeout(700);
 
+  /* The site uses CSS smooth scrolling, so a screenshot taken a fixed delay
+     after a scroll call can catch the page mid-flight and photograph a frame
+     that no visitor ever sees. This cost a full review cycle: a transient
+     mid-scroll frame was reported as a layout defect that did not exist.
+     Wait for the scroll position to actually stop changing. */
+  const settle = async () => {
+    await page.waitForFunction(
+      () =>
+        new Promise((resolve) => {
+          let last = window.scrollY;
+          let still = 0;
+          const tick = () => {
+            if (Math.abs(window.scrollY - last) < 0.5) {
+              if (++still >= 3) return resolve(true);
+            } else {
+              still = 0;
+            }
+            last = window.scrollY;
+            requestAnimationFrame(tick);
+          };
+          requestAnimationFrame(tick);
+        }),
+      null,
+      { timeout: 5000 },
+    );
+  };
+
   const shot = async (label, opts = {}) => {
     await page.screenshot({ path: `${OUT}/${vp.name}-${label}.png`, ...opts });
   };
@@ -70,11 +97,13 @@ for (const vp of VIEWPORTS) {
 
   await shot('01-hero');
   await page.evaluate(() => window.scrollBy(0, window.innerHeight));
-  await page.waitForTimeout(400);
+  await settle();
+  await page.waitForTimeout(500);
   await shot('02-hero-second');
 
   // Flight
   await page.locator('#flight').scrollIntoViewIfNeeded();
+  await settle();
   await page.waitForTimeout(500);
   await shot('03-flight-idle');
   await page.getByRole('button', { name: 'Run a release' }).click();
@@ -89,6 +118,7 @@ for (const vp of VIEWPORTS) {
 
   // Refit
   await page.locator('#refit').scrollIntoViewIfNeeded();
+  await settle();
   await page.waitForTimeout(400);
   await shot('07-refit');
   await page.getByRole('button', { name: 'Before', exact: true }).click();
@@ -101,11 +131,23 @@ for (const vp of VIEWPORTS) {
   // Basin
   await page.locator('#basin').scrollIntoViewIfNeeded();
   await page.waitForTimeout(500);
-  await shot('10-basin-gitops');
+  await shot('10-basin-verification');
+  await page.getByRole('tab', { name: 'Evidence' }).click();
+  await page.waitForTimeout(700);
+  await shot('10b-basin-evidence');
+  await page.getByRole('tab', { name: 'Access' }).click();
+  await page.waitForTimeout(700);
+  await shot('10c-basin-access');
+  // Selecting a component dims everything it does not touch.
+  await page.locator('[data-node="rbac"]').click();
+  await page.waitForTimeout(600);
+  await shot('10d-basin-selected');
+  await page.getByRole('tab', { name: 'GitOps' }).click();
+  await page.waitForTimeout(700);
   await page.getByRole('button', { name: 'Edit the cluster' }).click();
   await page.waitForTimeout(700);
   await shot('11-basin-drift');
-  await page.getByRole('button', { name: 'Reconcile' }).click();
+  await page.getByRole('button', { name: 'Reconcile', exact: true }).click();
   await page.waitForTimeout(1100);
   await shot('12-basin-reconciled');
   await page.getByRole('tab', { name: 'Runtime' }).click();
@@ -117,6 +159,7 @@ for (const vp of VIEWPORTS) {
 
   // Split
   await page.locator('#split').scrollIntoViewIfNeeded();
+  await settle();
   await page.waitForTimeout(400);
   await shot('15-split');
   for (let i = 0; i < 5; i++) {
@@ -129,6 +172,7 @@ for (const vp of VIEWPORTS) {
 
   // Gauges
   await page.locator('#gauges').scrollIntoViewIfNeeded();
+  await settle();
   await page.waitForTimeout(400);
   await shot('17-gauges');
   const marker = page.locator('[role="slider"][aria-label*="Load"]');
@@ -139,9 +183,11 @@ for (const vp of VIEWPORTS) {
 
   // Tidewater
   await page.locator('#tidewater').scrollIntoViewIfNeeded();
+  await settle();
   await page.waitForTimeout(400);
   await shot('19-tidewater');
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await settle();
   await page.waitForTimeout(400);
   await shot('20-contact');
 

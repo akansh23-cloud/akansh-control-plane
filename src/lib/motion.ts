@@ -11,11 +11,13 @@
 
 import {
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
   useSyncExternalStore,
 } from 'react';
+import type { MotionFamily, Rig } from './runtime';
 import { useLatest } from './runtime';
 
 export * from './runtime';
@@ -271,3 +273,152 @@ export const smoothstep = (t: number) => {
   const x = clamp(t);
   return x * x * (3 - 2 * x);
 };
+
+/* ------------------------------------------------------------------ */
+/* Entrance                                                            */
+/* ------------------------------------------------------------------ */
+
+export type RevealOptions = {
+  /** How far into the viewport the element must come before it plays. */
+  margin?: string;
+  /** Play once and stay played, or replay on every entry. */
+  once?: boolean;
+};
+
+/**
+ * Mark an element as revealed the first time it enters the viewport.
+ *
+ * The element gets `data-reveal="out"` immediately and `data-reveal="in"` when
+ * it arrives. Everything after that is CSS: the transition, the stagger, the
+ * distance. That division is deliberate — an entrance that is described in
+ * CSS costs nothing per frame, survives `prefers-reduced-motion` without any
+ * JavaScript branch, and cannot fight the rig for the compositor.
+ *
+ * It is not part of a rig on purpose. An entrance happens once and then never
+ * again; giving it a spring and a frame budget would be paying every frame for
+ * something that already finished.
+ */
+export function useReveal<T extends HTMLElement>(options: RevealOptions = {}) {
+  const { margin = '160px 0px 160px 0px', once = true } = options;
+  const nodeRef = useRef<T | null>(null);
+
+  const ref = useCallback((node: T | null) => {
+    nodeRef.current = node;
+    if (node && !node.dataset.reveal) node.dataset.reveal = 'out';
+  }, []);
+
+  useEffect(() => {
+    const node = nodeRef.current;
+    if (!node) return;
+
+    /* A dead man's switch. If the observer never fires — an old browser, a
+       zero-height box, a layout the margin does not agree with — the content
+       appears anyway. An entrance is a nicety; a blank screen is the bug this
+       entire rebuild exists to fix, so the nicety is never allowed to cause
+       one. */
+    const failSafe = window.setTimeout(() => {
+      node.dataset.reveal = 'in';
+    }, 1400);
+
+    if (typeof IntersectionObserver === 'undefined') {
+      node.dataset.reveal = 'in';
+      return () => window.clearTimeout(failSafe);
+    }
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          node.dataset.reveal = 'in';
+          window.clearTimeout(failSafe);
+          if (once) io.disconnect();
+        } else if (!once) {
+          node.dataset.reveal = 'out';
+        }
+      },
+      /* Positive margin: play before the block is on screen, never after. */
+      { rootMargin: margin, threshold: 0 },
+    );
+
+    io.observe(node);
+    return () => {
+      window.clearTimeout(failSafe);
+      io.disconnect();
+    };
+  }, [margin, once]);
+
+  return ref;
+}
+
+/* ------------------------------------------------------------------ */
+/* Scroll                                                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Feed scroll progress through an element into a rig channel.
+ *
+ * The listener is passive and does nothing but write a number; the rig's own
+ * loop is what smooths and paints it. That keeps the promise the runtime
+ * makes — one frame loop in the whole application — while still giving
+ * scroll-linked motion, which is the thing that makes a page feel like it is
+ * being operated rather than merely scrolled past.
+ *
+ * Progress is 0 when the element's top reaches the bottom of the viewport and
+ * 1 when its bottom reaches the top.
+ */
+export type ScrollMap =
+  /** 0 while the element's top is at the top of the viewport, 1 once it has
+   *  scrolled fully out of the top. Correct for a block that starts on
+   *  screen, such as a hero — it does not begin part-played. */
+  | 'out'
+  /** 0 as the element enters from the bottom, 1 as it leaves the top.
+   *  Correct for a block the reader passes through. */
+  | 'through';
+
+export function useScrollChannel<T extends HTMLElement>(
+  rig: Rig,
+  channel: string,
+  options: { family?: MotionFamily; tau?: number; map?: ScrollMap } = {},
+) {
+  const nodeRef = useRef<T | null>(null);
+  const optsRef = useLatest(options);
+
+  const ref = useCallback((node: T | null) => {
+    nodeRef.current = node;
+  }, []);
+
+  useEffect(() => {
+    const node = nodeRef.current;
+    if (!node) return;
+
+    const read = () => {
+      const r = node.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const o = optsRef.current;
+      let p: number;
+
+      if ((o.map ?? 'out') === 'out') {
+        /* An element sitting at the top of the document must read 0 when the
+           page loads, not "already half way", which is what measuring against
+           the whole viewport-plus-height span does to a hero. */
+        if (r.height <= 0) return;
+        p = clamp(-r.top / r.height);
+      } else {
+        const span = r.height + vh;
+        if (span <= 0) return;
+        p = clamp((vh - r.top) / span);
+      }
+
+      rig.set(channel, p, o.family, o.tau);
+    };
+
+    read();
+    window.addEventListener('scroll', read, { passive: true });
+    window.addEventListener('resize', read, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', read);
+      window.removeEventListener('resize', read);
+    };
+  }, [rig, channel, optsRef]);
+
+  return ref;
+}

@@ -273,3 +273,194 @@ export function disturbedSurface(o: SurfaceOptions): string {
   );
   return toPath(n, o.close ?? false, o.x, o.width, o.bottomY);
 }
+
+/* ------------------------------------------------------------------ */
+/* Architecture routing                                                */
+/* ------------------------------------------------------------------ */
+
+export type Rect = { x: number; y: number; w: number; h: number };
+
+export type RoutedEdge = {
+  /** The shaft, as a rounded orthogonal path. */
+  path: string;
+  /** A filled triangle at the entry point, aligned to the last segment. */
+  head: string;
+  /**
+   * Where an edge label should sit, and which way the run travels there, so
+   * the caller can offset the text clear of the line rather than across it.
+   */
+  label: { x: number; y: number; vertical: boolean; run: number };
+  /** Path length estimate, so a flow animation can be scaled to it. */
+  length: number;
+  /** Small dots marking the faces the edge attaches to. */
+  ports: [{ x: number; y: number }, { x: number; y: number }];
+};
+
+const mid = (r: Rect) => ({ x: r.x + r.w / 2, y: r.y + r.h / 2 });
+
+/**
+ * Route an edge between two boxes the way an engineering drawing does:
+ * leave a face at a right angle, travel in straight runs, turn through a
+ * fillet, and arrive at a face — never a diagonal across the canvas.
+ *
+ * Both boxes are measured from the live layout, so this is a description of
+ * where the browser actually put things rather than a second, hand-maintained
+ * set of coordinates that can drift away from it.
+ */
+export function routeEdge(
+  from: Rect,
+  to: Rect,
+  options: {
+    radius?: number;
+    gap?: number;
+    /**
+     * Force the first leg's axis. The automatic choice takes the shortest
+     * corridor, which is right most of the time but sends a long edge
+     * straight through whatever sits between its endpoints. An edge that
+     * would cross an occupied column can be told to leave vertically and
+     * travel through the empty band between rows instead.
+     */
+    axis?: 'auto' | 'horizontal' | 'vertical';
+  } = {},
+): RoutedEdge {
+  const radius = options.radius ?? 12;
+  const gap = options.gap ?? 0;
+  const axis = options.axis ?? 'auto';
+
+  const a = mid(from);
+  const b = mid(to);
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+
+  /* Pick the face pair that gives the shortest sensible run. Boxes that
+     overlap on one axis are joined along the other, which is what stops an
+     edge from cutting back across its own source. */
+  const horizontal =
+    axis === 'horizontal'
+      ? true
+      : axis === 'vertical'
+        ? false
+        : Math.abs(dx) >= Math.abs(dy);
+
+  let start: { x: number; y: number };
+  let end: { x: number; y: number };
+  let points: { x: number; y: number }[];
+
+  if (horizontal) {
+    const right = dx >= 0;
+    start = { x: right ? from.x + from.w + gap : from.x - gap, y: a.y };
+    end = { x: right ? to.x - gap : to.x + to.w + gap, y: b.y };
+    const seam = (start.x + end.x) / 2;
+    points = [
+      start,
+      { x: seam, y: start.y },
+      { x: seam, y: end.y },
+      end,
+    ];
+  } else {
+    const down = dy >= 0;
+    start = { x: a.x, y: down ? from.y + from.h + gap : from.y - gap };
+    end = { x: b.x, y: down ? to.y - gap : to.y + to.h + gap };
+    const seam = (start.y + end.y) / 2;
+    points = [
+      start,
+      { x: start.x, y: seam },
+      { x: end.x, y: seam },
+      end,
+    ];
+  }
+
+  return {
+    path: roundedPolyline(points, radius),
+    head: headAt(points[points.length - 2], end, 9),
+    label: labelPoint(points),
+    length: polylineLength(points),
+    ports: [start, end],
+  };
+}
+
+/** A polyline with its corners turned through quadratic fillets. */
+export function roundedPolyline(
+  points: { x: number; y: number }[],
+  radius = 12,
+): string {
+  if (points.length < 2) return '';
+  const f = (n: number) => Math.round(n * 10) / 10;
+  let d = `M ${f(points[0].x)},${f(points[0].y)}`;
+
+  for (let i = 1; i < points.length - 1; i += 1) {
+    const prev = points[i - 1];
+    const corner = points[i];
+    const next = points[i + 1];
+
+    const inLen = Math.hypot(corner.x - prev.x, corner.y - prev.y);
+    const outLen = Math.hypot(next.x - corner.x, next.y - corner.y);
+    /* Never round more than half of the shorter run, or adjacent fillets
+       would overlap and the path would fold back on itself. */
+    const r = Math.min(radius, inLen / 2, outLen / 2);
+
+    if (r < 0.5) {
+      d += ` L ${f(corner.x)},${f(corner.y)}`;
+      continue;
+    }
+
+    const t1 = {
+      x: corner.x - ((corner.x - prev.x) / inLen) * r,
+      y: corner.y - ((corner.y - prev.y) / inLen) * r,
+    };
+    const t2 = {
+      x: corner.x + ((next.x - corner.x) / outLen) * r,
+      y: corner.y + ((next.y - corner.y) / outLen) * r,
+    };
+
+    d += ` L ${f(t1.x)},${f(t1.y)} Q ${f(corner.x)},${f(corner.y)} ${f(t2.x)},${f(t2.y)}`;
+  }
+
+  const last = points[points.length - 1];
+  return `${d} L ${f(last.x)},${f(last.y)}`;
+}
+
+function headAt(
+  from: { x: number; y: number },
+  at: { x: number; y: number },
+  size: number,
+): string {
+  const ang = Math.atan2(at.y - from.y, at.x - from.x);
+  const f = (n: number) => Math.round(n * 10) / 10;
+  const p = (a: number, r: number) => ({
+    x: at.x + Math.cos(a) * r,
+    y: at.y + Math.sin(a) * r,
+  });
+  const l = p(ang + Math.PI * 0.82, size);
+  const r = p(ang - Math.PI * 0.82, size);
+  return `M ${f(at.x)},${f(at.y)} L ${f(l.x)},${f(l.y)} L ${f(r.x)},${f(r.y)} Z`;
+}
+
+function polylineLength(points: { x: number; y: number }[]): number {
+  let n = 0;
+  for (let i = 1; i < points.length; i += 1) {
+    n += Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y);
+  }
+  return n;
+}
+
+/** The midpoint of the longest run, which is where a label reads best. */
+function labelPoint(points: { x: number; y: number }[]) {
+  let best = 0;
+  let at = { x: points[0].x, y: points[0].y, vertical: false, run: 0 };
+  for (let i = 1; i < points.length; i += 1) {
+    const ax = points[i].x - points[i - 1].x;
+    const ay = points[i].y - points[i - 1].y;
+    const len = Math.hypot(ax, ay);
+    if (len > best) {
+      best = len;
+      at = {
+        x: (points[i].x + points[i - 1].x) / 2,
+        y: (points[i].y + points[i - 1].y) / 2,
+        vertical: Math.abs(ay) > Math.abs(ax),
+        run: len,
+      };
+    }
+  }
+  return at;
+}

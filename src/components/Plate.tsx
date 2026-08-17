@@ -1,4 +1,7 @@
+'use client';
+
 import type { ReactNode } from 'react';
+import { useReveal } from '@/lib/motion';
 import styles from './Plate.module.css';
 
 type PlateProps = {
@@ -38,6 +41,8 @@ export function Plate({
   children,
   note,
 }: PlateProps) {
+  const revealHead = useReveal<HTMLElement>();
+
   return (
     <section
       id={id}
@@ -47,7 +52,7 @@ export function Plate({
       <span className={styles.waterway} aria-hidden="true" />
 
       <div className={styles.inner}>
-        <header className={styles.head}>
+        <header ref={revealHead} className={styles.head}>
           <p className={styles.cartouche}>
             <span className={styles.no}>{no}</span>
             <span className={styles.name}>{name}</span>

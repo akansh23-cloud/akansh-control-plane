@@ -22,7 +22,7 @@
   align-items: center;
   gap: var(--s-3);
   padding: var(--s-3) var(--s-4);
-  min-height: 50px;
+  min-height: 44px;
   background: color-mix(in oklab, var(--panel) 70%, transparent);
 }
 
@@ -173,12 +173,17 @@
   text-wrap: pretty;
 }
 
-.meta {
-  display: grid;
-  gap: var(--s-5);
-  padding-top: var(--s-4);
-  border-top: 1px solid var(--rule-faint);
+.meta { display: grid; gap: var(--s-5); }
+
+.source {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s-3);
+  font-size: var(--step--1);
 }
+
+.source a { color: var(--water-100); }
 
 .meta > div { display: grid; gap: var(--s-3); align-content: start; }
 

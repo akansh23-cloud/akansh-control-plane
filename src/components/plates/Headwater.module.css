@@ -1,27 +1,173 @@
-/* PLATE 01 — HEADWATER. A header, not a canvas. Nothing here is 100vh. */
+/* PLATE 01 — HEADWATER. The masthead stands inside the chamber. */
 
 .root {
   position: relative;
+  isolation: isolate;
   padding-top: calc(var(--s-7) + env(safe-area-inset-top, 0px));
-  padding-bottom: 0;
-  background:
-    radial-gradient(
-      140% 90% at 12% 0%,
-      color-mix(in oklab, var(--water-700) 34%, transparent),
-      transparent 62%
-    ),
-    var(--ground);
+  padding-bottom: var(--s-8);
+  background: var(--void);
   overflow: hidden;
 }
 
+/* ---------------- the chamber ---------------- */
+
+.works {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  /* Written by the rig. --datum is the surface height, 0…1 from the top. */
+  --datum: 0.79;
+}
+
+.svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* A scrim over the water only, so type crossing the waterline keeps its
+   contrast without dulling the chamber above it. */
+.works::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--datum) * 100%);
+  bottom: 0;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--void) 34%, transparent),
+    color-mix(in oklab, var(--void) 62%, transparent)
+  );
+}
+
+/* Chamber walls, with a coping course along the top. */
+.wall {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 14px;
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--bone) 9%, transparent),
+      transparent
+    ),
+    repeating-linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--bone) 7%, transparent) 0 1px,
+      transparent 1px 22px
+    );
+  border-inline: 1px solid color-mix(in oklab, var(--bone) 12%, transparent);
+}
+
+.wallLeft { left: 0; }
+.wallRight { right: 0; transform: scaleX(-1); }
+
+/* ---------------- paddle gear on the head gate ---------------- */
+
+.gear {
+  position: absolute;
+  top: 34%;
+  right: clamp(20px, 2.4vw, 40px);
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in oklab, var(--signal) 44%, transparent);
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--void) 60%, transparent);
+}
+
+.gearSpokes {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in oklab, var(--signal) 30%, transparent);
+  background:
+    conic-gradient(
+      from 0deg,
+      color-mix(in oklab, var(--signal) 62%, transparent) 0deg 6deg,
+      transparent 6deg 45deg,
+      color-mix(in oklab, var(--signal) 62%, transparent) 45deg 51deg,
+      transparent 51deg 90deg,
+      color-mix(in oklab, var(--signal) 62%, transparent) 90deg 96deg,
+      transparent 96deg 135deg,
+      color-mix(in oklab, var(--signal) 62%, transparent) 135deg 141deg,
+      transparent 141deg 180deg,
+      color-mix(in oklab, var(--signal) 62%, transparent) 180deg 186deg,
+      transparent 186deg 225deg,
+      color-mix(in oklab, var(--signal) 62%, transparent) 225deg 231deg,
+      transparent 231deg 270deg,
+      color-mix(in oklab, var(--signal) 62%, transparent) 270deg 276deg,
+      transparent 276deg 315deg,
+      color-mix(in oklab, var(--signal) 62%, transparent) 315deg 321deg,
+      transparent 321deg 360deg
+    );
+  transform: rotate(calc(var(--gear, 0) * 1deg));
+}
+
+/* ---------------- depth gauge cut into the left wall ---------------- */
+
+.gauge {
+  position: absolute;
+  left: 22px;
+  top: 12%;
+  bottom: 8%;
+  width: 2px;
+  background: color-mix(in oklab, var(--bone) 14%, transparent);
+}
+
+.gaugeMark {
+  position: absolute;
+  left: 0;
+  width: 12px;
+  height: 1px;
+  background: color-mix(in oklab, var(--bone) 26%, transparent);
+}
+
+/* Reads the same --datum the water does, so the gauge cannot disagree with
+   the level it is measuring. */
+.gaugeLevel {
+  position: absolute;
+  left: -4px;
+  top: clamp(0%, calc((var(--datum, 0.79) * 100% - 12%) / 0.8), 100%);
+  width: 10px;
+  height: 2px;
+  background: var(--signal);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--signal) 22%, transparent);
+}
+
+/* ---------------- the vessel ---------------- */
+
+.token {
+  position: absolute;
+  left: calc(24px + var(--travel, 0) * (100% - 48px));
+  top: calc(var(--datum, 0.79) * 100%);
+  width: 15px;
+  height: 15px;
+  margin-left: -7px;
+  margin-top: -8px;
+  border-radius: 2px;
+  background: var(--signal);
+  box-shadow:
+    0 0 0 5px color-mix(in oklab, var(--signal) 20%, transparent),
+    0 8px 22px color-mix(in oklab, var(--void) 76%, transparent);
+  transform: rotate(45deg) scale(calc(0.85 + var(--lift, 0) * 0.4));
+}
+
+/* ---------------- content ---------------- */
+
 .inner {
+  position: relative;
+  z-index: 1;
   width: min(100% - var(--gutter) * 2, var(--shell));
   margin-inline: auto;
   display: grid;
   gap: var(--s-5);
 }
-
-/* ---------------- eyebrow ---------------- */
 
 .eyebrow {
   display: flex;
@@ -43,23 +189,18 @@
 }
 
 .plateName { color: var(--bone-2); }
-
-.place {
-  margin-left: auto;
-  color: var(--muted);
-}
-
-/* ---------------- identity ---------------- */
+.place { margin-left: auto; color: var(--muted); }
 
 .name {
   display: grid;
   font-size: clamp(3.75rem, 1.6rem + 9.6vw, 9.5rem);
   color: var(--bone);
   margin-block: var(--s-1) 0;
+  text-shadow: 0 10px 40px color-mix(in oklab, var(--void) 70%, transparent);
 }
 
 .name span:last-child {
-  color: color-mix(in oklab, var(--bone) 62%, var(--water-300));
+  color: color-mix(in oklab, var(--bone) 58%, var(--water-100));
 }
 
 .role {
@@ -72,8 +213,6 @@
   color: var(--bone);
   max-width: 18ch;
 }
-
-/* ---------------- the facts a recruiter needs first ---------------- */
 
 .meta {
   display: grid;
@@ -96,10 +235,7 @@
   font-weight: 500;
 }
 
-.thesis {
-  color: var(--bone-2);
-  max-width: 44ch;
-}
+.thesis { color: var(--bone-2); max-width: 44ch; }
 
 .actions {
   display: grid;
@@ -110,11 +246,7 @@
 .actions .ctl { width: 100%; padding-inline: var(--s-3); }
 
 @media (min-width: 560px) {
-  .actions {
-    display: flex;
-    flex-wrap: wrap;
-  }
-
+  .actions { display: flex; flex-wrap: wrap; }
   .actions .ctl { width: auto; padding-inline: var(--s-5); }
 }
 
@@ -126,6 +258,7 @@
   margin-top: var(--s-2);
 }
 
+/* These sit over water, so they carry their own ground. */
 .stat {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -133,10 +266,20 @@
   column-gap: var(--s-4);
   row-gap: 2px;
   padding: var(--s-4);
-  background: color-mix(in oklab, var(--panel) 74%, transparent);
-  border: 1px solid var(--edge);
+  background: color-mix(in oklab, var(--void) 78%, transparent);
+  backdrop-filter: blur(6px);
+  border: 1px solid color-mix(in oklab, var(--water-100) 22%, transparent);
   border-left: 2px solid var(--signal);
   border-radius: 3px;
+  transition:
+    transform var(--t-quick) var(--ease-release),
+    border-color var(--t-quick) var(--ease-gear);
+}
+
+.stat:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in oklab, var(--water-100) 48%, transparent);
+  border-left-color: var(--signal);
 }
 
 .statValue {
@@ -158,74 +301,40 @@
   font-weight: 500;
 }
 
-.statQual {
-  font-size: var(--step--1);
-  line-height: 1.35;
-  color: var(--muted);
-}
+.statQual { font-size: var(--step--1); line-height: 1.35; color: var(--muted); }
 
-/* ---------------- the water band ---------------- */
+/* ---------------- the route, along the sill ---------------- */
 
-.band {
-  position: relative;
-  margin-top: var(--s-7);
-  --edge-inset: max(var(--gutter), 50% - var(--shell) / 2);
-}
-
-.bandInner {
-  position: relative;
-  height: 136px;
-  border-top: 1px solid color-mix(in oklab, var(--water-300) 40%, transparent);
-  background: linear-gradient(
-    180deg,
-    transparent,
-    color-mix(in oklab, var(--water-900) 55%, transparent)
-  );
-  overflow: hidden;
-  contain: paint;
-}
-
-.svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
-/* Station marks are DOM, not SVG text, so they never scale with a viewBox
-   and never end up at 8px. */
 .stations {
-  position: absolute;
-  inset: 0 max(var(--gutter), 50% - var(--shell) / 2);
-  pointer-events: none;
+  position: relative;
+  z-index: 1;
+  height: 34px;
+  margin-top: var(--s-6);
+  width: min(100% - var(--gutter) * 2, var(--shell));
+  margin-inline: auto;
+  border-top: 1px solid color-mix(in oklab, var(--water-100) 34%, transparent);
 }
 
 .station {
   position: absolute;
   top: 0;
-  bottom: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
   transform: translateX(-50%);
 }
 
-.station:first-child { transform: translateX(0); align-items: flex-start; }
-.station:last-child { transform: translateX(-100%); align-items: flex-end; }
+.station:first-child { transform: translateX(0); }
+.station:last-child { transform: translateX(-100%); }
 
 .tick {
+  position: absolute;
+  top: 0;
   width: 1px;
-  height: calc(var(--datum, 0.4) * 100%);
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--bone) 26%, transparent),
-    color-mix(in oklab, var(--water-100) 70%, transparent)
-  );
+  height: 8px;
+  background: color-mix(in oklab, var(--water-100) 60%, transparent);
 }
 
 .stationLabel {
   position: absolute;
-  top: var(--s-2);
+  top: 12px;
   font-family: var(--font-data);
   font-size: var(--step--2);
   font-stretch: 87.5%;
@@ -233,55 +342,18 @@
   text-transform: uppercase;
   color: var(--muted);
   white-space: nowrap;
-  padding-inline: 6px;
+  transform: translateX(-50%);
 }
 
-.station:first-child .stationLabel { left: 0; padding-left: 0; }
-.station:last-child .stationLabel { right: 0; padding-right: 0; }
+.station:first-child .stationLabel { transform: none; left: 0; }
+.station:last-child .stationLabel { transform: none; right: 0; }
 
-/* Second and fourth marks are dropped on a phone: five labels across 390px
-   would collide, and the shape of the route is still legible with three. */
+/* Five labels will not fit across a phone; three tell the same story. */
 @media (max-width: 719px) {
   .station:nth-child(2) .stationLabel,
-  .station:nth-child(4) .stationLabel {
-    display: none;
-  }
-}
-
-/* The vessel. Its position is written by the rig as --travel / --lift, so it
-   moves on the compositor and never re-renders React. */
-.token {
-  position: absolute;
-  left: calc(
-    var(--edge-inset) + var(--travel, 0) * (100% - var(--edge-inset) * 2)
-  );
-  top: calc(var(--datum, 0.4) * 100%);
-  width: 14px;
-  height: 14px;
-  margin-left: -7px;
-  margin-top: -7px;
-  border-radius: 2px;
-  background: var(--signal);
-  box-shadow:
-    0 0 0 4px color-mix(in oklab, var(--signal) 24%, transparent),
-    0 6px 18px color-mix(in oklab, var(--void) 70%, transparent);
-  transform: rotate(45deg) scale(calc(0.85 + var(--lift, 0) * 0.4));
-}
-
-.bandNote {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--s-2) var(--s-4);
-  width: min(100% - var(--gutter) * 2, var(--shell));
-  margin-inline: auto;
-  padding-block: var(--s-4);
-}
-
-.bandProse {
-  font-size: var(--step--1);
-  color: var(--muted);
-  max-width: 52ch;
+  .station:nth-child(4) .stationLabel { display: none; }
+  .gauge, .gear { display: none; }
+  .wall { width: 8px; }
 }
 
 /* ---------------- tablet and desktop ----------------
@@ -289,7 +361,7 @@
    so the right of the masthead carries information instead of air. */
 
 @media (min-width: 720px) {
-  .root { padding-top: var(--s-8); }
+  .root { padding-top: var(--s-8); padding-bottom: var(--s-9); }
 
   .inner {
     grid-template-columns: minmax(0, 1.3fr) minmax(250px, 0.7fr);
@@ -315,11 +387,7 @@
     border-left: 1px solid var(--rule);
   }
 
-  .meta li {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 2px;
-  }
-
+  .meta li { grid-template-columns: minmax(0, 1fr); gap: 2px; }
   .metaValue { font-size: var(--step-1); }
 
   .actions { grid-column: 1 / -1; grid-row: 5; }
@@ -331,27 +399,18 @@
     gap: var(--s-3);
   }
 
-  .stat {
-    grid-template-columns: minmax(0, 1fr);
-    row-gap: var(--s-2);
-  }
-
+  .stat { grid-template-columns: minmax(0, 1fr); row-gap: var(--s-2); }
   .statValue { grid-row: auto; }
-
-  .bandInner { height: 178px; }
 }
 
 @media (min-width: 1180px) {
   .root { padding-top: var(--s-9); }
-
   .inner { column-gap: var(--s-8); }
-
   .role { font-size: var(--step-3); max-width: 16ch; }
   .thesis { font-size: var(--step-1); max-width: 40ch; }
-
-  .bandInner { height: 216px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .token { transform: rotate(45deg); }
+  .gearSpokes { transform: none; }
 }

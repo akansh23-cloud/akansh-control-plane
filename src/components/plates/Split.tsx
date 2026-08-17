@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
+import { Fold } from '@/components/Fold';
 import { careerProject } from '@/content';
 import {
   usePointerField,
@@ -193,9 +194,9 @@ export function Split() {
         {verdict}
       </p>
 
-      <div className={styles.meta}>
+      <Fold label="How it was done" hint={`${careerProject.migration.length} steps`}>
+        <div className={styles.meta}>
         <div>
-          <p className="u-mark">How it was done</p>
           <ol className={styles.migration}>
             {careerProject.migration.map((m) => (
               <li key={m}>{m}</li>
@@ -210,9 +211,21 @@ export function Split() {
             ))}
           </ul>
         </div>
-      </div>
+        </div>
+      </Fold>
 
       <p className={styles.note}>{careerProject.serviceNote}</p>
+
+      <p className={styles.source}>
+        <span className="u-mark">Code</span>
+        <a href={careerProject.repo} target="_blank" rel="noreferrer noopener">
+          {careerProject.repoLabel}
+        </a>
+        <span className="u-mark">Live</span>
+        <a href={careerProject.live} target="_blank" rel="noreferrer noopener">
+          {careerProject.liveLabel}
+        </a>
+      </p>
     </div>
   );
 }

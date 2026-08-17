@@ -1,5 +1,6 @@
 'use client';
 
+import { Fold } from '@/components/Fold';
 import {
   cloudnxt,
   completedCredentials,
@@ -64,6 +65,7 @@ export function Tidewater() {
         <h3 id="toolkit" className={`u-sub ${styles.blockTitle}`}>
           Technical toolkit
         </h3>
+        <Fold label="Every tool, by group" hint={`${skillGroups.length} groups`}>
         <div
           className={styles.toolkit}
           style={{ '--cols': toolkitColumns } as React.CSSProperties}
@@ -79,6 +81,7 @@ export function Tidewater() {
             </div>
           ))}
         </div>
+        </Fold>
       </section>
 
       <div className={styles.split}>

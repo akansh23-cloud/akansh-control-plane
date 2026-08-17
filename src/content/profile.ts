@@ -28,6 +28,9 @@ export const contact = {
   email: 'mowar23akansh@gmail.com',
   linkedin: 'https://www.linkedin.com/in/akansh-mowar-5a83261a0',
   github: 'https://github.com/akansh23-cloud',
+  /* Shown as the link text. The profile, not a repository path — no repo URL
+     is asserted here that has not been confirmed to exist. */
+  githubHandle: 'github.com/akansh23-cloud',
 } as const;
 
 /**
@@ -88,6 +91,13 @@ export const credentials: Credential[] = [
     name: 'Cloud Practitioner',
     issuer: 'AWS',
     status: 'completed',
+  },
+  {
+    id: 'aws-dop',
+    name: 'DevOps Engineer – Professional',
+    issuer: 'AWS',
+    code: 'DOP-C02',
+    status: 'preparation',
   },
   {
     id: 'ckad',

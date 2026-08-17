@@ -7,8 +7,10 @@ import {
   usePaint,
   usePointerField,
   usePrefersReducedMotion,
+  useReveal,
   useRig,
   useRigRoot,
+  useScrollChannel,
   useTier,
   useVars,
   useViewport,
@@ -18,26 +20,25 @@ import styles from './Headwater.module.css';
 /**
  * PLATE 01 — HEADWATER.
  *
- * The rejected version of this hero was a full-screen canvas with the name
- * floating in the middle of it and a vertical slider down one side. It took
- * two thumb-scrolls to reach a single fact.
+ * Third attempt at this block, and the first one that is actually a place.
  *
- * This one is a header. Name, role, employer, location, tenure, thesis, four
- * routes out and the three scale facts are all reachable within the first
- * screen and a half on a 390px phone. The water is the last element rather
- * than the container: a band at the foot of the block, carrying a release
- * from source to promotion on a loop. Nothing has to be dragged before the
- * page says anything.
+ * The first version was a full-screen canvas with the name floating in it. The
+ * second was an honest header with a decorative water strip underneath — safe,
+ * legible, and completely forgettable. This one puts the reader inside the
+ * chamber: the water is the ground the masthead stands on, the gates are at
+ * either hand, and the level rises as they scroll, because that is what a lock
+ * does when it is working.
  *
- * The band's surface height is published as `--datum` on the document, which
- * is what the thin waterway down the left of every later chapter follows.
+ * It costs no extra page height, because the water is behind the type rather
+ * than below it. The name floods in from the bottom on arrival. The level is
+ * published as `--datum`, which the waterway down the left of every later
+ * chapter follows, so the whole page shares one water level.
  */
 
-/* The wave lives in a fixed 1200x200 box stretched to the band. The stretch
-   is uniform, so a wider screen gets a longer wavelength — which is what a
-   wider body of water actually looks like. */
+/* The chamber is drawn in a fixed box and stretched to the block. The stretch
+   is uniform, so a wider screen simply gets a wider chamber. */
 const VB_W = 1200;
-const VB_H = 200;
+const VB_H = 800;
 
 const STATIONS = [
   { at: 0.015, label: 'Source' },
@@ -54,7 +55,10 @@ export function Headwater() {
 
   const rig = useRig({
     channels: {
-      level: { value: 0.4, family: 'hydraulic' },
+      /* Where the surface sits, 0 (top of the block) … 1 (bottom). */
+      level: { value: 0.79, family: 'hydraulic' },
+      /* Scroll through the block, 0…1, written by a passive listener. */
+      scroll: { value: 0, family: 'hydraulic', tau: 0.22 },
       pointerX: { value: 0.5, family: 'mechanical' },
       pointerV: { value: 0, family: 'mechanical' },
       pointerIn: { value: 0, family: 'mechanical' },
@@ -67,30 +71,37 @@ export function Headwater() {
     rig.setClock(visible);
   });
 
+  const scrollRef = useScrollChannel<HTMLElement>(rig, 'scroll');
   const pointerRef = usePointerField(rig);
+  const revealRef = useReveal<HTMLDivElement>({ margin: '0px' });
 
   /* Surface resolution is a device decision, not a design one. */
   const samples =
     tier === 'calm'
       ? 14
       : viewport === 'mobile'
-        ? 22
+        ? 24
         : viewport === 'tablet'
-          ? 30
-          : 44;
+          ? 34
+          : 48;
+
+  /* The chamber fills as the reader descends: the surface starts low under the
+     masthead and climbs toward the gate sill by the time they leave. */
+  const surfaceLevel = (r: import('@/lib/motion').Rig) =>
+    r.reduced ? 0.78 : 0.79 - r.get('scroll') * 0.5;
 
   const surface = (r: import('@/lib/motion').Rig, close: boolean) =>
     disturbedSurface({
       x: 0,
       width: VB_W,
-      surfaceY: r.get('level') * VB_H,
+      surfaceY: surfaceLevel(r) * VB_H,
       bottomY: VB_H,
       t: r.time,
-      amp: 3.6,
-      wavelength: 430,
+      amp: 7,
+      wavelength: 460,
       samples,
       pointer: r.get('pointerX'),
-      pointerAmp: r.get('pointerIn') * (2 + r.get('pointerV') * 9),
+      pointerAmp: r.get('pointerIn') * (4 + r.get('pointerV') * 16),
       close,
     });
 
@@ -102,33 +113,89 @@ export function Headwater() {
     el.setAttribute('d', surface(r, false));
   });
 
-  /* The token's journey is written as CSS variables on the band, so a vessel
-     crossing the works costs no React render and no layout. */
-  const bandRef = useVars<HTMLDivElement>(rig, {
-    '--datum': (r) => r.get('level'),
+  /* Everything positional is a variable, so a vessel crossing the chamber and
+     a rising water level cost no React render and no layout. */
+  const worksRef = useVars<HTMLDivElement>(rig, {
+    '--datum': (r) => surfaceLevel(r),
     '--travel': (r) => {
       if (r.reduced) return 0.52;
-      const p = (r.time % 10) / 10;
-      /* Arrive, then hold. A release waits at promotion; it does not coast
-         straight back to the start. */
-      return Math.min(1, p / 0.84);
+      return Math.min(1, ((r.time % 11) / 11) / 0.84);
     },
     '--lift': (r) => {
       if (r.reduced) return 0.5;
-      const p = Math.min(1, (r.time % 10) / 10 / 0.84);
+      const p = Math.min(1, ((r.time % 11) / 11) / 0.84);
       return Math.sin(p * Math.PI) * 0.55 + 0.12;
     },
+    /* The paddle gear turns while the chamber is filling. */
+    '--gear': (r) => (r.reduced ? 0 : r.time * 42),
   });
 
-  /* Publish the water level to the document so the waterway running down the
-     left of every later chapter starts from where this one left off. */
-  useEffect(() => rig.bindVars(document.documentElement, {
-    '--datum': (r) => r.get('level'),
-  }), [rig]);
+  /* Publish the level to the document so the waterway running down the left of
+     every later chapter starts from where this one left off. */
+  useEffect(
+    () =>
+      rig.bindVars(document.documentElement, {
+        '--datum': (r) => surfaceLevel(r),
+      }),
+    [rig],
+  );
 
   return (
-    <header ref={rootRef} className={styles.root}>
-      <div className={styles.inner}>
+    <header
+      ref={(node) => {
+        rootRef(node);
+        scrollRef(node);
+        pointerRef(node);
+      }}
+      className={styles.root}
+    >
+      {/* The chamber. Behind the type, full bleed, no extra height. */}
+      <div ref={worksRef} className={styles.works} aria-hidden="true">
+        <svg
+          className={styles.svg}
+          viewBox={`0 0 ${VB_W} ${VB_H}`}
+          preserveAspectRatio="none"
+          focusable="false"
+        >
+          <defs>
+            <linearGradient id="hw-water" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#1b7f8e" stopOpacity="0.95" />
+              <stop offset="42%" stopColor="#0E4753" stopOpacity="0.98" />
+              <stop offset="100%" stopColor="#04191E" stopOpacity="1" />
+            </linearGradient>
+          </defs>
+          <path ref={surfaceRef} fill="url(#hw-water)" />
+          <path
+            ref={lineRef}
+            fill="none"
+            stroke="#A6DCE4"
+            strokeWidth="2"
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+
+        {/* Chamber walls, with the coping course at the top. */}
+        <span className={`${styles.wall} ${styles.wallLeft}`} />
+        <span className={`${styles.wall} ${styles.wallRight}`} />
+
+        {/* Paddle gear on the head gate. It turns while the chamber fills. */}
+        <span className={styles.gear}>
+          <span className={styles.gearSpokes} />
+        </span>
+
+        {/* Depth gauge cut into the left wall. */}
+        <span className={styles.gauge}>
+          {[0.2, 0.4, 0.6, 0.8].map((m) => (
+            <span key={m} className={styles.gaugeMark} style={{ top: `${m * 100}%` }} />
+          ))}
+          <span className={styles.gaugeLevel} />
+        </span>
+
+        {/* The vessel, riding the surface. */}
+        <span className={styles.token} />
+      </div>
+
+      <div ref={revealRef} className={styles.inner}>
         <p className={styles.eyebrow}>
           <span className={styles.plateNo}>01</span>
           <span className={styles.plateName}>Headwater</span>
@@ -136,8 +203,8 @@ export function Headwater() {
         </p>
 
         <h1 className={`u-display ${styles.name}`}>
-          <span>Akansh</span>
-          <span>Mowar</span>
+          <span className="u-flood">Akansh</span>
+          <span className="u-flood">Mowar</span>
         </h1>
 
         <p className={styles.role}>{profile.roleLine}</p>
@@ -199,56 +266,15 @@ export function Headwater() {
         </dl>
       </div>
 
-      {/* The works themselves. Full-bleed, short, and always moving. */}
-      <div ref={pointerRef} className={styles.band}>
-        <div ref={bandRef} className={styles.bandInner}>
-          <svg
-            className={styles.svg}
-            viewBox={`0 0 ${VB_W} ${VB_H}`}
-            preserveAspectRatio="none"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <defs>
-              <linearGradient id="hw-water" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#17707F" stopOpacity="0.95" />
-                <stop offset="100%" stopColor="#08272E" stopOpacity="1" />
-              </linearGradient>
-            </defs>
-            <path ref={surfaceRef} fill="url(#hw-water)" />
-            <path
-              ref={lineRef}
-              fill="none"
-              stroke="#8FCBD4"
-              strokeWidth="2"
-              vectorEffect="non-scaling-stroke"
-            />
-          </svg>
-
-          <ol className={styles.stations}>
-            {STATIONS.map((s) => (
-              <li
-                key={s.label}
-                className={styles.station}
-                style={{ left: `${s.at * 100}%` }}
-              >
-                <span className={styles.tick} aria-hidden="true" />
-                <span className={styles.stationLabel}>{s.label}</span>
-              </li>
-            ))}
-          </ol>
-
-          <span className={styles.token} aria-hidden="true" />
-        </div>
-
-        <p className={styles.bandNote}>
-          <span className="u-mark">The route</span>
-          <span className={styles.bandProse}>
-            Source to controlled promotion. Every chapter below is one section
-            of it.
-          </span>
-        </p>
-      </div>
+      {/* The route, as a sill along the foot of the chamber. */}
+      <ol className={styles.stations}>
+        {STATIONS.map((s) => (
+          <li key={s.label} className={styles.station} style={{ left: `${s.at * 100}%` }}>
+            <span className={styles.tick} aria-hidden="true" />
+            <span className={styles.stationLabel}>{s.label}</span>
+          </li>
+        ))}
+      </ol>
     </header>
   );
 }

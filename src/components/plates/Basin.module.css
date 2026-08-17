@@ -10,6 +10,16 @@
   gap: var(--s-4);
 }
 
+.viewGroups {
+  display: grid;
+  gap: var(--s-4);
+}
+
+.viewGroup {
+  display: grid;
+  gap: var(--s-2);
+}
+
 .views {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -67,6 +77,35 @@
   --drift: 0;
 }
 
+/* Labelled zones behind the nodes. These are what turn a set of boxes into
+   an architecture: a reader can see which tier a component belongs to before
+   reading a single label. */
+.zone {
+  position: relative;
+  z-index: 0;
+  border: 1px solid var(--rule-faint);
+  border-radius: 4px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--bone) 3%, transparent),
+      transparent
+    );
+}
+
+.zoneLabel {
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  white-space: nowrap;
+}
+
 .links {
   position: absolute;
   inset: 0;
@@ -74,12 +113,68 @@
   height: 100%;
   pointer-events: none;
   overflow: visible;
+  z-index: 1;
 }
+
+.linkLabels {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 3;
+}
+
+.linkLabel {
+  fill: var(--muted);
+  font-family: var(--font-data);
+  font-size: 11px;
+  font-stretch: 87.5%;
+  letter-spacing: 0.06em;
+  paint-order: stroke;
+  stroke: var(--void);
+  stroke-width: 5px;
+  stroke-linejoin: round;
+  transition: opacity var(--t-quick) var(--ease-gear);
+}
+
+.linkLabel[data-dim] { opacity: 0.14; }
+
+.link {
+  transition: opacity var(--t-quick) var(--ease-gear);
+}
+
+.link[data-dim] { opacity: 0.12; }
 
 .link path {
   fill: none;
   stroke: var(--muted-2);
   stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+/* The flow: a dashed copy of the shaft marching in the direction of travel.
+   Length comes from the routed path, so the dash cadence is the same on a
+   short hop as on a long one. */
+.link path[data-part='flow'] {
+  stroke: var(--bone);
+  stroke-width: 2.5;
+  stroke-dasharray: 10 calc(var(--len, 100) * 1px);
+  animation: march 2.6s linear infinite;
+  opacity: 0.85;
+}
+
+@keyframes march {
+  from { stroke-dashoffset: calc(var(--len, 100) * 1px + 10px); }
+  to { stroke-dashoffset: 0; }
+}
+
+.link circle[data-part='port'] {
+  fill: var(--edge);
+  stroke: var(--muted-2);
+  stroke-width: 1;
 }
 
 .link path[data-part='head'] {
@@ -88,25 +183,37 @@
 }
 
 .link[data-kind='build'] path { stroke: var(--bone-2); }
+.link[data-kind='build'] path[data-part='flow'] { stroke: var(--bone); }
 .link[data-kind='build'] path[data-part='head'] { fill: var(--bone-2); }
 
-.link[data-kind='supply'] path { stroke: var(--water-300); stroke-dasharray: 7 5; }
+.link[data-kind='supply'] path[data-part='line'] { stroke: var(--water-300); stroke-dasharray: 7 5; }
+.link[data-kind='supply'] path[data-part='flow'] { stroke: var(--water-100); }
 .link[data-kind='supply'] path[data-part='head'] { fill: var(--water-300); }
 
 .link[data-kind='control'] path { stroke: var(--signal); }
+.link[data-kind='control'] path[data-part='flow'] { stroke: var(--signal); }
 .link[data-kind='control'] path[data-part='head'] { fill: var(--signal); }
 
-.link[data-kind='provision'] path { stroke: var(--muted-2); stroke-dasharray: 2 6; }
+.link[data-kind='provision'] path[data-part='line'] { stroke: var(--muted-2); stroke-dasharray: 2 6; }
+.link[data-kind='provision'] path[data-part='flow'] { stroke: var(--muted); }
 .link[data-kind='provision'] path[data-part='head'] { fill: var(--muted-2); }
 
 .link[data-kind='traffic'] path { stroke: var(--live); stroke-width: 2; }
+.link[data-kind='traffic'] path[data-part='flow'] { stroke: var(--live); }
 .link[data-kind='traffic'] path[data-part='head'] { fill: var(--live); }
 
 /* ---------------- nodes ---------------- */
 
 .node {
   position: relative;
-  z-index: 1;
+  z-index: 2;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform var(--t-quick) var(--ease-release),
+    border-color var(--t-quick) var(--ease-gear),
+    opacity var(--t-quick) var(--ease-gear),
+    box-shadow var(--t-quick) var(--ease-release);
   display: grid;
   gap: 4px;
   align-content: center;
@@ -132,6 +239,20 @@
     var(--fault) calc(var(--drift) * 100%),
     var(--edge)
   );
+}
+
+.node:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in oklab, var(--water-100) 46%, transparent);
+}
+
+.node[data-dim] { opacity: 0.2; }
+
+.node[data-selected] {
+  border-color: var(--signal);
+  box-shadow:
+    0 0 0 1px var(--signal),
+    0 14px 32px color-mix(in oklab, var(--void) 60%, transparent);
 }
 
 .nodeLabel {
@@ -201,11 +322,25 @@
 .key li[data-kind='provision']::before { border-top-style: dotted; border-color: var(--muted-2); }
 .key li[data-kind='traffic']::before { border-color: var(--live); }
 
-.principles {
-  display: grid;
+.principles { display: grid; gap: var(--s-3); }
+
+.source {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
   gap: var(--s-3);
   padding-top: var(--s-4);
   border-top: 1px solid var(--rule-faint);
+  font-size: var(--step--1);
+}
+
+.source a { color: var(--water-100); }
+
+.deployNote {
+  flex: 1 1 100%;
+  color: var(--muted-2);
+  font-size: var(--step--1);
+  line-height: 1.45;
 }
 
 .principles li {
@@ -252,6 +387,25 @@
 .stage[data-view='runtime'] [data-node='pods'] { order: 5; }
 
 .stage:not([data-view='gitops']) .ghost { display: none; }
+
+/* On a phone the zones are dropped and the nodes stack in reading order: three
+   labelled bands side by side do not fit, and a routed diagram at 360px is
+   less useful than a legible list of components. The edges still draw. */
+@media (max-width: 719px) {
+  .zone { display: none; }
+  .stage[data-product] { gap: 30px; }
+  .linkLabels {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 3;
+}
+
+.linkLabel { font-size: 10px; }
+}
 
 /* ---------------- tablet ---------------- */
 
@@ -329,6 +483,55 @@
   .stage [data-node='terraform'] { grid-area: terraform; }
 
   .stage[data-view='gitops'] .ghost { grid-area: eks; align-self: stretch; }
+
+  /* ---- product views: three labelled zones, nodes inside them ---- */
+
+  .stage[data-product] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 34px 30px;
+    padding-top: var(--s-7);
+  }
+
+  /* Each zone spans its column and every row, sitting behind the nodes. */
+  .zone {
+    grid-row: 1 / -1;
+    padding-top: var(--s-6);
+  }
+
+  .zone[data-zone='entry'],
+  .zone[data-zone='core'] { grid-column: 1; }
+  .zone[data-zone='idp'] { grid-column: 1; }
+  .zone[data-zone='service'] { grid-column: 2; }
+  .zone[data-zone='store'] { grid-column: 2; }
+  .zone[data-zone='verify'] { grid-column: 3; }
+
+  .stage[data-view='verification'] .zone[data-zone='entry'] { grid-column: 1; }
+  .stage[data-view='verification'] .zone[data-zone='service'] { grid-column: 2; }
+  .stage[data-view='verification'] .zone[data-zone='core'] { grid-column: 3; }
+
+  .stage[data-view='evidence'] .zone[data-zone='core'] { grid-column: 1; }
+  .stage[data-view='evidence'] .zone[data-zone='store'] { grid-column: 2; }
+  .stage[data-view='evidence'] .zone[data-zone='verify'] { grid-column: 3; }
+
+  .stage[data-view='tenancy'] .zone[data-zone='idp'] { grid-column: 1; }
+  .stage[data-view='tenancy'] .zone[data-zone='service'] { grid-column: 2; }
+  .stage[data-view='tenancy'] .zone[data-zone='core'] { grid-column: 3; }
+
+  /* Nodes are placed by the zone they declare, so adding a component to the
+     content layer places it correctly without touching this file. */
+  .stage[data-view='verification'] .node[data-zone='entry'] { grid-column: 1; }
+  .stage[data-view='verification'] .node[data-zone='service'] { grid-column: 2; }
+  .stage[data-view='verification'] .node[data-zone='core'] { grid-column: 3; }
+
+  .stage[data-view='evidence'] .node[data-zone='core'] { grid-column: 1; }
+  .stage[data-view='evidence'] .node[data-zone='store'] { grid-column: 2; }
+  .stage[data-view='evidence'] .node[data-zone='verify'] { grid-column: 3; }
+
+  .stage[data-view='tenancy'] .node[data-zone='idp'] { grid-column: 1; }
+  .stage[data-view='tenancy'] .node[data-zone='service'] { grid-column: 2; }
+  .stage[data-view='tenancy'] .node[data-zone='core'] { grid-column: 3; }
+
+  .stage[data-product] .node { align-self: start; }
 }
 
 @media (min-width: 1180px) {
@@ -351,4 +554,133 @@
 .sync .ctl { width: 100%; padding-inline: var(--s-2); }
 
 .caption { font-size: var(--step-2); max-width: 40ch; }
+}
+
+
+/* ------------------------------------------------------------------ */
+/* Selection detail                                                    */
+/* ------------------------------------------------------------------ */
+
+.detail {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-4);
+  min-height: 84px;
+  align-content: center;
+  border: 1px solid var(--edge);
+  border-left: 2px solid var(--edge);
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--panel) 52%, transparent);
+  transition: border-color var(--t-quick) var(--ease-gear);
+}
+
+.detail[data-open] { border-left-color: var(--signal); }
+
+.detailName {
+  font-family: var(--font-display);
+  font-weight: 640;
+  font-stretch: 92%;
+  font-size: var(--step-1);
+  letter-spacing: -0.014em;
+  color: var(--bone);
+}
+
+.detailNote {
+  font-size: var(--step-0);
+  line-height: 1.45;
+  color: var(--bone-2);
+  max-width: 68ch;
+}
+
+.detailHint {
+  font-size: var(--step--1);
+  color: var(--muted-2);
+}
+
+.clear {
+  justify-self: start;
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  min-height: 34px;
+}
+
+.clear:hover { color: var(--bone); }
+
+/* ------------------------------------------------------------------ */
+/* The guarantee                                                       */
+/* ------------------------------------------------------------------ */
+
+.guarantee {
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  border: 1px solid var(--edge);
+  border-left: 3px solid var(--signal);
+  border-radius: 3px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--panel) 88%, transparent),
+    color-mix(in oklab, var(--void) 58%, transparent)
+  );
+}
+
+.guaranteeHead {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-stretch: 90%;
+  font-size: var(--step-2);
+  line-height: 1.08;
+  letter-spacing: -0.022em;
+  color: var(--bone);
+}
+
+.guaranteeBody {
+  font-size: var(--step-0);
+  line-height: 1.5;
+  color: var(--bone-2);
+  max-width: 66ch;
+}
+
+.proofs {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.proofs li {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  gap: var(--s-2);
+  font-size: var(--step--1);
+  line-height: 1.45;
+  color: var(--bone-2);
+}
+
+.proofs li::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  margin-top: 0.5em;
+  background: var(--live);
+  transform: rotate(45deg);
+}
+
+@media (min-width: 720px) {
+  .viewGroups {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 4fr);
+    gap: var(--s-5);
+    align-items: start;
+  }
+
+  .views { grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); }
+
+  .guarantee { padding: var(--s-6); }
+  .proofs { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-3) var(--s-5); }
+}
+
+@media (min-width: 1180px) {
+  .guaranteeHead { font-size: var(--step-3); }
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import { Fold } from '@/components/Fold';
 import { gauges, observabilityChain, readAt } from '@/content';
 import {
   useAxisDrag,
@@ -149,11 +150,13 @@ export function Gauges() {
         </div>
       </div>
 
-      <ol className={styles.chain} aria-label="How a signal reaches you">
-        {observabilityChain.map((c) => (
-          <li key={c}>{c}</li>
-        ))}
-      </ol>
+      <Fold label="How a signal reaches you" hint={`${observabilityChain.length} hops`}>
+        <ol className={styles.chain}>
+          {observabilityChain.map((c) => (
+            <li key={c}>{c}</li>
+          ))}
+        </ol>
+      </Fold>
     </div>
   );
 }

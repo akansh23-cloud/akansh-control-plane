@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fold } from '@/components/Fold';
 import { chambers, faults, workloadFittings } from '@/content';
 import {
   usePaint,
@@ -45,6 +46,10 @@ export function Flight() {
   const [mode, setMode] = useState<Mode>('idle');
   const [faultId, setFaultId] = useState<string | null>(null);
 
+  /* Late-bound so the visibility callback can reach `run` without either
+     one having to be declared before the other. */
+  const autoRef = useRef<(() => void) | null>(null);
+
   const rig = useRig({
     channels: {
       flow: { value: 0, family: 'release' },
@@ -56,7 +61,19 @@ export function Flight() {
     tier,
   });
 
-  const rootRef = useRigRoot<HTMLDivElement>(rig);
+  /* The best moment on the page should not require a click to discover.
+     The first time the flight comes into view it sends a release up on its
+     own; after that it is the visitor's instrument. `played` makes sure an
+     autoplay never fights a person who has already pressed something. */
+  const played = useRef(false);
+
+  const rootRef = useRigRoot<HTMLDivElement>(rig, (visible) => {
+    if (!visible || played.current) return;
+    played.current = true;
+    window.setTimeout(() => {
+      if (autoRef.current) autoRef.current();
+    }, 420);
+  });
   const pointerRef = usePointerField(rig);
 
   const fault = useMemo(
@@ -141,6 +158,7 @@ export function Flight() {
 
   const run = useCallback(
     (id: string | null) => {
+      played.current = true;
       rig.jump('flow', 0);
       setFaultId(id);
       setStage(0);
@@ -154,6 +172,13 @@ export function Flight() {
     setMode('recovering');
     rig.set('flow', stage + 1, 'recovery');
   }, [rig, stage]);
+
+  /* Only the untouched, faultless run is ever automatic. */
+  useEffect(() => {
+    autoRef.current = () => {
+      if (mode === 'idle') run(null);
+    };
+  }, [mode, run]);
 
   const reset = useCallback(() => {
     rig.jump('flow', 0);
@@ -306,6 +331,10 @@ export function Flight() {
               }
             >
               <span className={styles.water} aria-hidden="true" />
+              {/* The vessel rides the surface of whichever chamber is
+                  filling, and is handed to the next one at the gate — the
+                  same token that crosses the chamber in the masthead. */}
+              <span className={styles.vessel} aria-hidden="true" />
               <span className={styles.gate} aria-hidden="true" />
               <span className={styles.no}>{String(i + 1).padStart(2, '0')}</span>
               <span className={styles.name}>{c.name}</span>
@@ -320,12 +349,16 @@ export function Flight() {
       </div>
 
       <div className={styles.fittings}>
-        <p className="u-mark">Configured on every workload</p>
-        <ul className={styles.fittingList}>
-          {workloadFittings.map((f) => (
-            <li key={f}>{f}</li>
-          ))}
-        </ul>
+        <Fold
+          label="Configured on every workload"
+          hint={`${workloadFittings.length} items`}
+        >
+          <ul className={styles.fittingList}>
+            {workloadFittings.map((f) => (
+              <li key={f}>{f}</li>
+            ))}
+          </ul>
+        </Fold>
       </div>
     </div>
   );
