@@ -56,7 +56,7 @@ jobs:
           set -euo pipefail
           find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
           cp -a /tmp/lockworks-source/. .
-          rm -rf .vercel node_modules .next qa QA_REFERENCE_CURRENT_FAILURE scripts/.fontcache scripts/__pycache__
+          rm -rf .github .vercel node_modules .next qa QA_REFERENCE_CURRENT_FAILURE scripts/.fontcache scripts/__pycache__
           cat > vercel.json <<'JSON'
           {
             "$schema": "https://openapi.vercel.sh/vercel.json",
@@ -67,8 +67,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: package-lock.json
         continue-on-error: true
 
       - name: Install Node dependencies and create lockfile
