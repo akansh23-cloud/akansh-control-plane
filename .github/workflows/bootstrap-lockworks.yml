@@ -1,0 +1,47 @@
+name: Bootstrap Lockworks rebuild v2
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  replace-source:
+    if: github.event.head_commit.message == 'Bootstrap Lockworks rebuild v2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Expand verified rebuild
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/lockworks-src /tmp/lockworks-assets
+          cp public/Akansh_Mowar_DevOps_Platform_Engineer_Resume.pdf /tmp/lockworks-assets/
+          cp public/og.png /tmp/lockworks-assets/
+          cp public/favicon.ico /tmp/lockworks-assets/
+          cp public/apple-icon.png /tmp/lockworks-assets/
+          unzip -q .bootstrap/source.zip -d /tmp/lockworks-src
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a /tmp/lockworks-src/. .
+          mkdir -p public
+          cp /tmp/lockworks-assets/* public/
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Recreate dependency lock
+        run: npm install --package-lock-only --ignore-scripts
+      - name: Commit exact rebuild source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Deploy Lockworks rebuild v2'
+          git push origin HEAD:main
