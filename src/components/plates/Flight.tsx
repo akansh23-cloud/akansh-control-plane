@@ -161,17 +161,47 @@ export function Flight() {
       played.current = true;
       rig.jump('flow', 0);
       setFaultId(id);
+
+      /* Reduced motion teleports channels to their targets. A threshold
+         watcher cannot observe a crossing that happens before it is mounted,
+         so reduced motion advances the semantic release state directly. The
+         outcome is identical; only the animated journey is removed. */
+      if (reduced) {
+        if (id) {
+          const injected = faults.find((f) => f.id === id);
+          const at = injected
+            ? chambers.findIndex((c) => c.id === injected.at)
+            : 0;
+          setStage(Math.max(0, at));
+          setMode('held');
+          rig.jump('flow', Math.max(0, at) + 0.42);
+        } else {
+          setStage(LAST);
+          setMode('running');
+          rig.jump('flow', LAST);
+        }
+        return;
+      }
+
       setStage(0);
       setMode('running');
     },
-    [rig],
+    [rig, reduced],
   );
 
   const remediate = useCallback(() => {
     setFaultId(null);
+
+    if (reduced) {
+      setStage(LAST);
+      setMode('running');
+      rig.jump('flow', LAST);
+      return;
+    }
+
     setMode('recovering');
     rig.set('flow', stage + 1, 'recovery');
-  }, [rig, stage]);
+  }, [rig, stage, reduced]);
 
   /* Only the untouched, faultless run is ever automatic. */
   useEffect(() => {
