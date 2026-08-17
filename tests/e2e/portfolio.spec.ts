@@ -136,7 +136,7 @@ test.describe('signature interactions', () => {
 
     await basin.getByRole('tab', { name: 'Access', exact: true }).click();
     await basin.getByRole('button', { name: /Five roles/i }).click();
-    await expect(basin.getByText(/owner · admin · engineer · auditor · viewer/i)).toBeVisible();
+    await expect(basin.getByText(/owner · admin · engineer · auditor · viewer/i).last()).toBeVisible();
 
     await basin.getByRole('tab', { name: 'GitOps', exact: true }).click();
     await basin.getByRole('button', { name: 'Edit the cluster' }).click();
@@ -153,7 +153,7 @@ test.describe('signature interactions', () => {
     for (let i = 0; i < 5; i += 1) {
       await split.getByRole('button', { name: 'Extract a service' }).click();
     }
-    await expect(split.getByText(/7 \/ 16 still answered here/i)).toBeVisible();
+    await expect(split.getByText(/7 of 16 still answered here/i)).toBeVisible();
 
     await split.getByRole('button', { name: 'Take one out of service' }).click();
     await expect(split).toContainText(/not answering.*falls back to the monolith/i);
