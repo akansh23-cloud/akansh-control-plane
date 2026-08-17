@@ -1,0 +1,80 @@
+.wrap {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: var(--s-7) var(--gutter);
+}
+
+.inner {
+  width: 100%;
+  max-width: 56ch;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.svg {
+  width: 100%;
+  height: auto;
+  max-width: 460px;
+  margin: var(--s-4) 0 var(--s-2);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: var(--step-3);
+  font-weight: 650;
+  font-stretch: 86%;
+  letter-spacing: -0.022em;
+  line-height: 1.02;
+}
+
+.prose {
+  max-width: 48ch;
+  color: var(--bone-2);
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  margin-top: var(--s-3);
+}
+
+.primary,
+.secondary {
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 12px 20px;
+  border: 1px solid var(--bone);
+  transition:
+    transform var(--t-tap) var(--ease-gear),
+    box-shadow var(--t-tap) var(--ease-gear);
+}
+
+.primary {
+  background: var(--signal);
+  color: var(--void);
+  box-shadow: 3px 3px 0 color-mix(in oklab, var(--void) 60%, transparent);
+}
+
+.secondary {
+  background: transparent;
+  color: var(--bone);
+  border-color: var(--rule-strong);
+}
+
+.primary:hover {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 var(--bone);
+}
+
+.secondary:hover {
+  border-color: var(--bone);
+}

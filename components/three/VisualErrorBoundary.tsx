@@ -1,2 +1,0 @@
-'use client';
-import { Component,type ReactNode } from 'react';export default class VisualErrorBoundary extends Component<{children:ReactNode;fallback:ReactNode},{failed:boolean}>{state={failed:false};static getDerivedStateFromError(){return{failed:true}}componentDidCatch(error:unknown){console.error('Visual layer failed, falling back to canvas:',error)}render(){return this.state.failed?this.props.fallback:this.props.children}}

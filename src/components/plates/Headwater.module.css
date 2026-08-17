@@ -1,0 +1,357 @@
+/* PLATE 01 — HEADWATER. A header, not a canvas. Nothing here is 100vh. */
+
+.root {
+  position: relative;
+  padding-top: calc(var(--s-7) + env(safe-area-inset-top, 0px));
+  padding-bottom: 0;
+  background:
+    radial-gradient(
+      140% 90% at 12% 0%,
+      color-mix(in oklab, var(--water-700) 34%, transparent),
+      transparent 62%
+    ),
+    var(--ground);
+  overflow: hidden;
+}
+
+.inner {
+  width: min(100% - var(--gutter) * 2, var(--shell));
+  margin-inline: auto;
+  display: grid;
+  gap: var(--s-5);
+}
+
+/* ---------------- eyebrow ---------------- */
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.plateNo {
+  color: var(--signal);
+  font-weight: 600;
+  padding-right: var(--s-3);
+  border-right: 1px solid var(--rule);
+}
+
+.plateName { color: var(--bone-2); }
+
+.place {
+  margin-left: auto;
+  color: var(--muted);
+}
+
+/* ---------------- identity ---------------- */
+
+.name {
+  display: grid;
+  font-size: clamp(3.75rem, 1.6rem + 9.6vw, 9.5rem);
+  color: var(--bone);
+  margin-block: var(--s-1) 0;
+}
+
+.name span:last-child {
+  color: color-mix(in oklab, var(--bone) 62%, var(--water-300));
+}
+
+.role {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-stretch: 92%;
+  font-size: var(--step-2);
+  line-height: 1.15;
+  letter-spacing: -0.012em;
+  color: var(--bone);
+  max-width: 18ch;
+}
+
+/* ---------------- the facts a recruiter needs first ---------------- */
+
+.meta {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-4) 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.meta li {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: var(--s-3);
+  align-items: baseline;
+}
+
+.metaValue {
+  font-size: var(--step-0);
+  color: var(--bone);
+  font-weight: 500;
+}
+
+.thesis {
+  color: var(--bone-2);
+  max-width: 44ch;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-2);
+}
+
+.actions .ctl { width: 100%; padding-inline: var(--s-3); }
+
+@media (min-width: 560px) {
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .actions .ctl { width: auto; padding-inline: var(--s-5); }
+}
+
+/* ---------------- scale facts ---------------- */
+
+.scale {
+  display: grid;
+  gap: var(--s-3);
+  margin-top: var(--s-2);
+}
+
+.stat {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: var(--s-4);
+  row-gap: 2px;
+  padding: var(--s-4);
+  background: color-mix(in oklab, var(--panel) 74%, transparent);
+  border: 1px solid var(--edge);
+  border-left: 2px solid var(--signal);
+  border-radius: 3px;
+}
+
+.statValue {
+  grid-row: 1 / span 2;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-stretch: 88%;
+  font-size: clamp(2.25rem, 1.6rem + 2.6vw, 3.5rem);
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+  color: var(--signal);
+  font-variant-numeric: tabular-nums;
+}
+
+.statNoun {
+  font-size: var(--step-0);
+  line-height: 1.28;
+  color: var(--bone);
+  font-weight: 500;
+}
+
+.statQual {
+  font-size: var(--step--1);
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+/* ---------------- the water band ---------------- */
+
+.band {
+  position: relative;
+  margin-top: var(--s-7);
+  --edge-inset: max(var(--gutter), 50% - var(--shell) / 2);
+}
+
+.bandInner {
+  position: relative;
+  height: 136px;
+  border-top: 1px solid color-mix(in oklab, var(--water-300) 40%, transparent);
+  background: linear-gradient(
+    180deg,
+    transparent,
+    color-mix(in oklab, var(--water-900) 55%, transparent)
+  );
+  overflow: hidden;
+  contain: paint;
+}
+
+.svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Station marks are DOM, not SVG text, so they never scale with a viewBox
+   and never end up at 8px. */
+.stations {
+  position: absolute;
+  inset: 0 max(var(--gutter), 50% - var(--shell) / 2);
+  pointer-events: none;
+}
+
+.station {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  transform: translateX(-50%);
+}
+
+.station:first-child { transform: translateX(0); align-items: flex-start; }
+.station:last-child { transform: translateX(-100%); align-items: flex-end; }
+
+.tick {
+  width: 1px;
+  height: calc(var(--datum, 0.4) * 100%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--bone) 26%, transparent),
+    color-mix(in oklab, var(--water-100) 70%, transparent)
+  );
+}
+
+.stationLabel {
+  position: absolute;
+  top: var(--s-2);
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+  padding-inline: 6px;
+}
+
+.station:first-child .stationLabel { left: 0; padding-left: 0; }
+.station:last-child .stationLabel { right: 0; padding-right: 0; }
+
+/* Second and fourth marks are dropped on a phone: five labels across 390px
+   would collide, and the shape of the route is still legible with three. */
+@media (max-width: 719px) {
+  .station:nth-child(2) .stationLabel,
+  .station:nth-child(4) .stationLabel {
+    display: none;
+  }
+}
+
+/* The vessel. Its position is written by the rig as --travel / --lift, so it
+   moves on the compositor and never re-renders React. */
+.token {
+  position: absolute;
+  left: calc(
+    var(--edge-inset) + var(--travel, 0) * (100% - var(--edge-inset) * 2)
+  );
+  top: calc(var(--datum, 0.4) * 100%);
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  margin-top: -7px;
+  border-radius: 2px;
+  background: var(--signal);
+  box-shadow:
+    0 0 0 4px color-mix(in oklab, var(--signal) 24%, transparent),
+    0 6px 18px color-mix(in oklab, var(--void) 70%, transparent);
+  transform: rotate(45deg) scale(calc(0.85 + var(--lift, 0) * 0.4));
+}
+
+.bandNote {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s-2) var(--s-4);
+  width: min(100% - var(--gutter) * 2, var(--shell));
+  margin-inline: auto;
+  padding-block: var(--s-4);
+}
+
+.bandProse {
+  font-size: var(--step--1);
+  color: var(--muted);
+  max-width: 52ch;
+}
+
+/* ---------------- tablet and desktop ----------------
+   The identity and the three facts a recruiter checks first share one row,
+   so the right of the masthead carries information instead of air. */
+
+@media (min-width: 720px) {
+  .root { padding-top: var(--s-8); }
+
+  .inner {
+    grid-template-columns: minmax(0, 1.3fr) minmax(250px, 0.7fr);
+    column-gap: var(--s-7);
+    row-gap: var(--s-5);
+    align-items: start;
+  }
+
+  .eyebrow { grid-column: 1 / -1; grid-row: 1; }
+  .name { grid-column: 1; grid-row: 2; }
+  .role { grid-column: 1; grid-row: 3; }
+  .thesis { grid-column: 1; grid-row: 4; }
+
+  .meta {
+    grid-column: 2;
+    grid-row: 2 / span 3;
+    align-self: end;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s-4);
+    padding: 0 0 var(--s-2) var(--s-5);
+    border-top: 0;
+    border-bottom: 0;
+    border-left: 1px solid var(--rule);
+  }
+
+  .meta li {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+
+  .metaValue { font-size: var(--step-1); }
+
+  .actions { grid-column: 1 / -1; grid-row: 5; }
+
+  .scale {
+    grid-column: 1 / -1;
+    grid-row: 6;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--s-3);
+  }
+
+  .stat {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--s-2);
+  }
+
+  .statValue { grid-row: auto; }
+
+  .bandInner { height: 178px; }
+}
+
+@media (min-width: 1180px) {
+  .root { padding-top: var(--s-9); }
+
+  .inner { column-gap: var(--s-8); }
+
+  .role { font-size: var(--step-3); max-width: 16ch; }
+  .thesis { font-size: var(--step-1); max-width: 40ch; }
+
+  .bandInner { height: 216px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .token { transform: rotate(45deg); }
+}

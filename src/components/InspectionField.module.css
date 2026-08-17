@@ -1,0 +1,42 @@
+.field {
+  pointer-events: none;
+  color: var(--bone);
+}
+
+.field path,
+.field circle {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.field circle {
+  fill: var(--signal);
+  stroke-width: 1.25;
+}
+
+.field text {
+  fill: currentColor;
+  font-family: var(--font-data);
+  font-size: 10px;
+  font-stretch: 87.5%;
+  letter-spacing: 0.15em;
+  dominant-baseline: middle;
+}
+
+.night {
+  color: color-mix(in oklab, var(--bone) 72%, transparent);
+}
+
+@media (pointer: coarse), (hover: none) {
+  .field {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .field {
+    display: none;
+  }
+}

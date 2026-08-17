@@ -1,0 +1,424 @@
+/* =====================================================================
+   THE WORKS — visual identity, second build.
+
+   The first build drew the site as a survey plate on stone paper: a small
+   diagram at the top of a very large fixed canvas. On a phone that produced
+   screens that were 70% empty and labels at 8px. This build inverts it.
+
+   Ground is wet graphite. Type is bone. Water is the only cool colour and
+   machinery yellow is the only warm one. Nothing is sized by a viewBox any
+   more — every section is exactly as tall as what is inside it.
+   ===================================================================== */
+
+:root {
+  /* --- ground: a works at night, not a sheet of paper --- */
+  --void: #070D0F;
+  --ground: #0A1315;
+  --ground-2: #0E1B1E;
+  --panel: #101F23;
+  --panel-2: #142A2F;
+  --edge: #1D3940;
+
+  /* --- ink --- */
+  --bone: #F2EFE6;
+  --bone-2: #D5DCDA;
+  --muted: #93A6A8;
+  --muted-2: #6E8285;
+
+  /* --- water --- */
+  --water-900: #08272E;
+  --water-700: #0E4753;
+  --water-500: #17707F;
+  --water-300: #3F9EAC;
+  --water-100: #8FCBD4;
+
+  /* --- machinery paint: the only accent --- */
+  --signal: #F0BE3A;
+  --signal-2: #C4901A;
+
+  /* --- states --- */
+  --live: #4FBE93;
+  --fault: #E4614A;
+  --hold: #E39A2B;
+
+  /* --- semantic --- */
+  --bg: var(--ground);
+  --fg: var(--bone);
+  --fg-soft: var(--muted);
+  --rule: color-mix(in oklab, var(--bone) 13%, transparent);
+  --rule-strong: color-mix(in oklab, var(--bone) 26%, transparent);
+  --rule-faint: color-mix(in oklab, var(--bone) 7%, transparent);
+
+  /* --- type --- */
+  --font-display: 'Bricolage Grotesque Variable', 'Bricolage Grotesque',
+    ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Instrument Sans Variable', 'Instrument Sans', ui-sans-serif,
+    system-ui, sans-serif;
+  --font-data: 'Martian Mono Variable', 'Martian Mono', ui-monospace,
+    SFMono-Regular, Menlo, monospace;
+
+  /* Type scale. The floor is the important number: nothing that carries
+     meaning is allowed below 12px, and body copy starts at 16px on a
+     390px screen rather than ending up there after a clamp. */
+  --step--2: clamp(0.75rem, 0.73rem + 0.1vw, 0.8rem);   /* 12 → 12.8 */
+  --step--1: clamp(0.8125rem, 0.79rem + 0.12vw, 0.875rem);
+  --step-0: clamp(1rem, 0.97rem + 0.15vw, 1.0625rem);
+  --step-1: clamp(1.125rem, 1.06rem + 0.3vw, 1.3125rem);
+  --step-2: clamp(1.375rem, 1.24rem + 0.6vw, 1.75rem);
+  --step-3: clamp(1.75rem, 1.45rem + 1.4vw, 2.75rem);
+  --step-4: clamp(2.375rem, 1.7rem + 3vw, 4.25rem);
+  --step-5: clamp(3rem, 1.9rem + 5.2vw, 7rem);
+
+  /* --- space --- */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 44px;
+  --s-8: 64px;
+  --s-9: 92px;
+  --s-10: 128px;
+
+  --measure: 60ch;
+  --gutter: clamp(18px, 5.2vw, 84px);
+  --shell: 1360px;
+
+  /* Section rhythm: earned by content, never by 100vh. */
+  --band: clamp(56px, 8vw, 116px);
+
+  /* --- motion --- */
+  --ease-water: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-gear: cubic-bezier(0.66, 0, 0.28, 1);
+  --ease-release: cubic-bezier(0.16, 1, 0.3, 1);
+  --t-tap: 130ms;
+  --t-quick: 240ms;
+  --t-move: 480ms;
+  --t-fill: 820ms;
+
+  /* Height of the persistent index bar, so nothing hides behind it. */
+  --rail: 60px;
+
+  --grain-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.86' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.5'/%3E%3C/svg%3E");
+
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  scroll-padding-top: var(--s-6);
+  scroll-padding-bottom: calc(var(--rail) + var(--s-4));
+  background: var(--ground);
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: var(--step-0);
+  line-height: 1.55;
+  font-synthesis-weight: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+  /* Room for the persistent index bar at the foot of the page. */
+  padding-bottom: calc(var(--rail) + env(safe-area-inset-bottom, 0px));
+}
+
+h1, h2, h3, h4, p, figure, blockquote, ul, ol, dl, dd {
+  margin: 0;
+}
+
+ul, ol {
+  padding: 0;
+  list-style: none;
+}
+
+a {
+  color: inherit;
+  text-decoration-color: color-mix(in oklab, currentColor 38%, transparent);
+  text-underline-offset: 0.22em;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+svg { display: block; }
+img { max-width: 100%; height: auto; }
+
+::selection {
+  background: color-mix(in oklab, var(--signal) 70%, transparent);
+  color: var(--void);
+}
+
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* =====================================================================
+   Type roles
+   ===================================================================== */
+
+.u-display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-stretch: 88%;
+  letter-spacing: -0.03em;
+  line-height: 0.88;
+  text-wrap: balance;
+}
+
+.u-title {
+  font-family: var(--font-display);
+  font-weight: 620;
+  font-stretch: 90%;
+  letter-spacing: -0.022em;
+  line-height: 1.04;
+  font-size: var(--step-3);
+  text-wrap: balance;
+}
+
+.u-sub {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-stretch: 92%;
+  letter-spacing: -0.014em;
+  line-height: 1.12;
+  font-size: var(--step-2);
+}
+
+/* Engraved label. Mono is seasoning: short strings, never paragraphs. */
+.u-mark {
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-weight: 500;
+  font-stretch: 87.5%;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.u-data {
+  font-family: var(--font-data);
+  font-size: var(--step--1);
+  font-stretch: 87.5%;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+  color: var(--bone-2);
+}
+
+.u-prose {
+  max-width: var(--measure);
+  font-size: var(--step-1);
+  line-height: 1.52;
+  color: var(--bone-2);
+  text-wrap: pretty;
+}
+
+.u-note {
+  max-width: 52ch;
+  font-size: var(--step--1);
+  line-height: 1.5;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.u-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* =====================================================================
+   Shared primitives. Plates compose these instead of re-inventing a
+   button or a panel each time, which is what kept the old CSS modules
+   drifting apart from each other.
+   ===================================================================== */
+
+.shell {
+  width: min(100% - var(--gutter) * 2, var(--shell));
+  margin-inline: auto;
+}
+
+/* A raised surface. Everything readable sits on one of these. */
+.card {
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--panel) 92%, var(--bone) 3%),
+    var(--panel)
+  );
+  border: 1px solid var(--edge);
+  border-radius: 3px;
+}
+
+/* Controls. 44px minimum on every axis — this is the fix for "tiny
+   buttons" and it is enforced here rather than per component. */
+.ctl {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  min-height: 46px;
+  padding: 0 var(--s-5);
+  border: 1px solid var(--rule-strong);
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--panel-2) 70%, transparent);
+  color: var(--bone);
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background var(--t-tap) var(--ease-gear),
+    border-color var(--t-tap) var(--ease-gear),
+    color var(--t-tap) var(--ease-gear),
+    transform var(--t-tap) var(--ease-gear);
+}
+
+.ctl:hover {
+  border-color: var(--water-300);
+  background: color-mix(in oklab, var(--water-700) 45%, transparent);
+}
+
+.ctl:active { transform: translateY(1px); }
+
+.ctl[data-primary] {
+  background: var(--signal);
+  border-color: var(--signal);
+  color: var(--void);
+  font-weight: 600;
+}
+
+.ctl[data-primary]:hover {
+  background: color-mix(in oklab, var(--signal) 84%, var(--bone));
+  border-color: color-mix(in oklab, var(--signal) 84%, var(--bone));
+}
+
+.ctl[aria-pressed='true'],
+.ctl[data-on] {
+  background: var(--water-500);
+  border-color: var(--water-300);
+  color: var(--bone);
+}
+
+.ctl:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.ctl-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+/* A status light. Used anywhere a state needs a colour and a word. */
+.lamp {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bone-2);
+}
+
+.lamp::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 4px color-mix(in oklab, currentColor 20%, transparent);
+  flex: none;
+}
+
+.lamp[data-state='idle'] { color: var(--muted); }
+.lamp[data-state='running'] { color: var(--water-100); }
+.lamp[data-state='hold'] { color: var(--hold); }
+.lamp[data-state='fault'] { color: var(--fault); }
+.lamp[data-state='ok'] { color: var(--live); }
+
+/* Hairline rule with a tick, like a datum line on a drawing. */
+.rule-h {
+  height: 1px;
+  background: var(--rule);
+  border: 0;
+}
+
+.skip-link {
+  position: fixed;
+  top: var(--s-3);
+  left: var(--s-3);
+  z-index: 300;
+  transform: translateY(-220%);
+  background: var(--signal);
+  color: var(--void);
+  padding: 12px 18px;
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: transform var(--t-quick) var(--ease-gear);
+}
+
+.skip-link:focus-visible { transform: translateY(0); }
+
+/* Grain, very quiet, and never over content on a phone. */
+.paper-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+  opacity: 0.16;
+  mix-blend-mode: overlay;
+  background-image: var(--grain-url);
+  background-size: 180px 180px;
+}
+
+/* =====================================================================
+   Reduced motion. The drawing stops moving; it does not stop working.
+   Every state a visitor can reach by animation is still reachable.
+   ===================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}

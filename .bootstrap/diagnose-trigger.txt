@@ -1,1 +1,0 @@
-Validate the repaired Lockworks payload already stored in this repository.

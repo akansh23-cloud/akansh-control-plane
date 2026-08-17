@@ -1,0 +1,216 @@
+/* PLATE 03 — THE REFIT. One seam wiping between two states of one platform. */
+
+.root {
+  display: grid;
+  gap: var(--s-4);
+}
+
+.controls {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.hint {
+  font-size: var(--step--1);
+  color: var(--muted);
+}
+
+.field {
+  position: relative;
+  padding: var(--s-5) 0 var(--s-4);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--panel) 90%, transparent),
+    color-mix(in oklab, var(--ground-2) 96%, transparent)
+  );
+  border: 1px solid var(--edge);
+  border-radius: 3px;
+  overflow: hidden;
+  /* The seam position, published by the rig. */
+  --seam: 0.34;
+}
+
+/* Everything left of the seam is the old works, and reads that way. */
+.field::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: calc(var(--seam) * 100%);
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, #2A241B 70%, transparent),
+    color-mix(in oklab, #35301f 46%, transparent)
+  );
+  pointer-events: none;
+}
+
+.legend {
+  display: flex;
+  justify-content: space-between;
+  padding-inline: var(--s-4);
+  margin-bottom: var(--s-4);
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  position: relative;
+}
+
+.legendBefore { color: var(--signal-2); }
+.legendAfter { color: var(--water-100); }
+
+.rows {
+  position: relative;
+  display: grid;
+  gap: 1px;
+  background: var(--rule-faint);
+  border-block: 1px solid var(--rule-faint);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+  padding: var(--s-4);
+  background: color-mix(in oklab, var(--ground) 62%, transparent);
+}
+
+.layer {
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Both states live in the same box. The seam clips one over the other, so a
+   name physically turns into the name that replaced it. */
+.cell {
+  position: relative;
+  display: block;
+  min-height: 1.5em;
+  font-family: var(--font-display);
+  font-weight: 620;
+  font-stretch: 92%;
+  font-size: var(--step-2);
+  line-height: 1.16;
+  letter-spacing: -0.018em;
+}
+
+.before,
+.after {
+  display: block;
+  white-space: nowrap;
+}
+
+.before {
+  color: color-mix(in oklab, var(--signal) 52%, var(--muted));
+  clip-path: inset(0 calc((1 - var(--seam)) * 100%) 0 0);
+}
+
+.after {
+  position: absolute;
+  inset: 0;
+  color: var(--bone);
+  clip-path: inset(0 0 0 calc(var(--seam) * 100%));
+}
+
+.gain {
+  font-size: var(--step--1);
+  line-height: 1.4;
+  color: var(--muted);
+  opacity: clamp(0, calc((var(--seam) - 0.35) * 3), 1);
+  transition: opacity var(--t-quick) var(--ease-water);
+}
+
+/* ---------------- the seam ---------------- */
+
+.seam {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    var(--water-100) 12%,
+    var(--water-100) 88%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+.handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 52px;
+  margin-left: -26px;
+  display: grid;
+  place-items: center;
+  cursor: ew-resize;
+  touch-action: none;
+  background: none;
+}
+
+.grip {
+  width: 26px;
+  height: 52px;
+  border-radius: 3px;
+  background: var(--signal);
+  box-shadow: 0 6px 22px color-mix(in oklab, var(--void) 76%, transparent);
+  background-image: repeating-linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--void) 34%, transparent) 0 1px,
+    transparent 1px 5px
+  );
+  transition: transform var(--t-tap) var(--ease-gear);
+}
+
+.field[data-dragging] .grip { transform: scale(1.08); }
+
+.handle:focus-visible .grip {
+  outline: 2px solid var(--bone);
+  outline-offset: 3px;
+}
+
+.footer {
+  font-size: var(--step--1);
+  line-height: 1.5;
+  color: var(--muted);
+  max-width: 62ch;
+}
+
+/* ---------------- tablet and up ---------------- */
+
+@media (min-width: 720px) {
+  .root { gap: var(--s-5); }
+
+  .controls {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: var(--s-5);
+  }
+
+  .row {
+    grid-template-columns: 132px minmax(0, 1.1fr) minmax(0, 1fr);
+    align-items: baseline;
+    gap: var(--s-5);
+    padding: var(--s-5) var(--s-5);
+  }
+
+  .cell { font-size: var(--step-2); }
+}
+
+@media (min-width: 1180px) {
+  .row {
+    grid-template-columns: 160px minmax(0, 1fr) minmax(0, 1fr);
+    padding: var(--s-5) var(--s-6);
+  }
+
+  .cell { font-size: var(--step-3); }
+  .legend { padding-inline: var(--s-6); }
+}

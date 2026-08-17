@@ -1,0 +1,393 @@
+/* PLATE 02 — THE FLIGHT. Nine chambers, sized by their own content. */
+
+.root {
+  display: grid;
+  gap: var(--s-5);
+}
+
+.controls {
+  display: grid;
+  gap: var(--s-4);
+}
+
+.faults {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.faults .ctl-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s-2);
+}
+
+.faultBtn {
+  min-width: 0;
+  padding-inline: var(--s-2);
+}
+
+.faultLong { display: none; }
+
+@media (min-width: 560px) {
+  .faults .ctl-row { display: flex; flex-wrap: wrap; }
+  .faultBtn { flex: 1 1 auto; padding-inline: var(--s-4); }
+  .faultShort { display: none; }
+  .faultLong { display: inline; }
+}
+
+.faultBtn[aria-pressed='true'] {
+  background: color-mix(in oklab, var(--fault) 30%, transparent);
+  border-color: var(--fault);
+  color: var(--bone);
+}
+
+/* ---------------- readout ---------------- */
+
+.readout {
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--panel) 94%, var(--bone) 3%),
+    var(--panel)
+  );
+  border: 1px solid var(--edge);
+  border-left: 3px solid var(--water-500);
+  border-radius: 3px;
+  transition: border-color var(--t-quick) var(--ease-gear);
+}
+
+.readout[data-phase='held'] { border-left-color: var(--fault); }
+.readout[data-phase='recovering'] { border-left-color: var(--hold); }
+.readout[data-phase='complete'] { border-left-color: var(--live); }
+
+.headline {
+  font-family: var(--font-display);
+  font-weight: 640;
+  font-stretch: 90%;
+  font-size: var(--step-2);
+  line-height: 1.08;
+  letter-spacing: -0.018em;
+  color: var(--bone);
+  text-transform: none;
+}
+
+.body {
+  font-size: var(--step-0);
+  line-height: 1.5;
+  color: var(--bone-2);
+  max-width: 60ch;
+  text-wrap: pretty;
+}
+
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.tool {
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: 0.08em;
+  color: var(--water-100);
+  border: 1px solid color-mix(in oklab, var(--water-300) 44%, transparent);
+  border-radius: 2px;
+  padding: 5px 9px;
+}
+
+.remedy {
+  display: grid;
+  gap: var(--s-3);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--rule);
+}
+
+.remedyLine {
+  display: grid;
+  gap: 3px;
+  font-size: var(--step--1);
+  line-height: 1.45;
+  color: var(--bone-2);
+  max-width: 58ch;
+}
+
+.remedy .ctl {
+  justify-self: start;
+}
+
+/* ---------------- the flight ---------------- */
+
+.ladderWrap {
+  position: relative;
+}
+
+.ladder {
+  display: grid;
+  gap: 3px;
+  counter-reset: chamber;
+}
+
+.chamber {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 54px;
+  padding: 0 var(--s-4);
+  background: color-mix(in oklab, var(--panel) 60%, transparent);
+  border: 1px solid var(--edge);
+  border-radius: 2px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Water. Its extent is derived from one channel: how far the release has
+   climbed, minus this chamber's index. */
+.water {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: -1;
+  width: clamp(0%, calc((var(--flow, 0) - var(--i)) * 100%), 100%);
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--water-700) 92%, transparent),
+    color-mix(in oklab, var(--water-500) 78%, transparent)
+  );
+  border-right: 2px solid var(--water-100);
+}
+
+/* The gate at the head of each chamber. */
+.gate {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--rule);
+  transition: background var(--t-quick) var(--ease-gear);
+}
+
+.no {
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: 0.06em;
+  color: var(--muted-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.name {
+  font-size: var(--step-0);
+  font-weight: 550;
+  color: var(--bone);
+  letter-spacing: -0.005em;
+}
+
+.kind {
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+
+.chamber[data-kind='security'] .kind { color: var(--signal-2); }
+.chamber[data-kind='release'] .kind { color: var(--water-300); }
+
+.chamber[data-state='filling'] {
+  border-color: color-mix(in oklab, var(--water-300) 60%, transparent);
+}
+
+.chamber[data-state='filling'] .gate,
+.chamber[data-state='full'] .gate {
+  background: var(--water-100);
+}
+
+.chamber[data-state='full'] .name { color: var(--bone); }
+.chamber[data-state='empty'] .name { color: var(--muted); }
+
+.chamber[data-state='refused'] {
+  border-color: var(--fault);
+}
+
+.chamber[data-state='refused'] .gate {
+  background: var(--fault);
+  width: 5px;
+}
+
+.chamber[data-state='refused'] .water {
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--water-700) 88%, transparent),
+    color-mix(in oklab, var(--fault) 34%, transparent)
+  );
+  border-right-color: var(--fault);
+}
+
+.chamber[data-state='recovering'] {
+  border-color: var(--hold);
+}
+
+.chamber[data-state='recovering'] .gate { background: var(--hold); }
+
+/* The rising edge. Decorative, and stretched to the ladder. */
+.wake {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* ---------------- fittings ---------------- */
+
+.fittings {
+  display: grid;
+  gap: var(--s-3);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--rule-faint);
+}
+
+.fittingList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.fittingList li {
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  padding: 5px 9px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+
+/* ---------------- tablet and up: the flight becomes a staircase ------- */
+
+@media (min-width: 720px) {
+  .root {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s-6);
+  }
+
+  .controls {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: end;
+    gap: var(--s-6);
+  }
+
+  .ladder {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  .chamber {
+    flex: 1 1 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    align-items: start;
+    height: calc(148px + var(--i) * var(--rise, 14) * 1px);
+    min-height: 0;
+    padding: var(--s-3) var(--s-2) var(--s-4);
+    gap: var(--s-2);
+  }
+
+  /* Bottom-up fill, because a lock chamber fills from the floor. */
+  .water {
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: 0;
+    width: auto;
+    height: clamp(0%, calc((var(--flow, 0) - var(--i)) * 100%), 100%);
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--water-500) 82%, transparent),
+      color-mix(in oklab, var(--water-900) 96%, transparent)
+    );
+    border-right: 0;
+    border-top: 2px solid var(--water-100);
+  }
+
+  .gate {
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: auto;
+    width: auto;
+    height: 3px;
+  }
+
+  .chamber[data-state='refused'] .gate { height: 5px; width: auto; }
+
+  .chamber[data-state='refused'] .water {
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--fault) 34%, transparent),
+      color-mix(in oklab, var(--water-900) 96%, transparent)
+    );
+    border-top-color: var(--fault);
+  }
+
+  /* Nine columns is a narrow measure. Names hyphenate rather than being
+     clipped or broken mid-syllable — "Certificates" losing its last three
+     letters, and then splitting as "Certifica tes", were both wrong. */
+  .name {
+    align-self: end;
+    font-size: var(--step--1);
+    line-height: 1.16;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+
+  /* The classification is a word only where a word fits. Below that it is
+     carried by the colour of the chamber number and the gate, which is the
+     same information without the broken typography. */
+  .kind { display: none; }
+
+  .chamber[data-kind='security'] .no { color: var(--signal); }
+  .chamber[data-kind='release'] .no { color: var(--water-100); }
+}
+
+@media (min-width: 1400px) {
+  .kind {
+    display: block;
+    align-self: end;
+    white-space: nowrap;
+    font-size: 10px;
+    letter-spacing: 0.03em;
+  }
+}
+
+@media (min-width: 1180px) {
+  .root {
+    grid-template-columns: minmax(320px, 0.72fr) minmax(0, 1.9fr);
+    grid-template-areas:
+      'controls ladder'
+      'readout  ladder'
+      'fittings fittings';
+    gap: var(--s-6) var(--s-7);
+    align-items: start;
+  }
+
+  .controls { grid-area: controls; grid-template-columns: minmax(0, 1fr); align-items: start; }
+  .readout { grid-area: readout; }
+  .ladderWrap { grid-area: ladder; align-self: center; }
+  .fittings { grid-area: fittings; }
+
+  .chamber { height: calc(196px + var(--i) * var(--rise, 14) * 1px); }
+  .name { font-size: var(--step-0); }
+}

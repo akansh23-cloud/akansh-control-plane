@@ -1,0 +1,182 @@
+/* PLATE 07 — TIDEWATER. Toolkit, credentials, earlier work, contact. */
+
+.root { display: grid; gap: var(--s-7); }
+
+.block { display: grid; gap: var(--s-4); align-content: start; }
+
+.blockTitle { color: var(--bone); }
+
+/* ---------------- toolkit ---------------- */
+
+.toolkit {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr));
+  gap: var(--s-5);
+}
+
+.group { display: grid; gap: var(--s-3); align-content: start; }
+
+.chips { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+
+.chips li {
+  font-size: var(--step--1);
+  line-height: 1.2;
+  color: var(--bone-2);
+  padding: 7px 11px;
+  border: 1px solid var(--edge);
+  border-radius: 2px;
+  background: color-mix(in oklab, var(--panel) 58%, transparent);
+}
+
+/* ---------------- credentials ---------------- */
+
+.split { display: grid; gap: var(--s-7); }
+
+.creds { display: grid; gap: var(--s-2); }
+
+.cred {
+  display: grid;
+  gap: 3px;
+  padding: var(--s-4);
+  border: 1px solid var(--edge);
+  border-left: 2px solid var(--live);
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--panel) 58%, transparent);
+}
+
+.cred[data-status='preparation'] {
+  border-left-color: var(--hold);
+}
+
+.credName {
+  font-size: var(--step-0);
+  font-weight: 560;
+  color: var(--bone);
+}
+
+.credMeta {
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.credTag {
+  justify-self: start;
+  margin-top: var(--s-1);
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--live);
+}
+
+.cred[data-status='preparation'] .credTag { color: var(--hold); }
+
+/* ---------------- education ---------------- */
+
+.education {
+  display: grid;
+  gap: 3px;
+  padding: var(--s-4);
+  border: 1px solid var(--edge);
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--panel) 58%, transparent);
+}
+
+.eduDegree {
+  font-size: var(--step-1);
+  font-weight: 560;
+  color: var(--bone);
+}
+
+.eduField { font-size: var(--step-0); color: var(--bone-2); }
+
+/* ---------------- earlier role ---------------- */
+
+.role { display: grid; gap: var(--s-3); }
+
+.roleTitle {
+  font-family: var(--font-display);
+  font-weight: 620;
+  font-stretch: 92%;
+  font-size: var(--step-1);
+  color: var(--bone);
+}
+
+.roleWork { display: grid; gap: var(--s-2); }
+
+.roleWork li {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: var(--s-2);
+  font-size: var(--step-0);
+  line-height: 1.45;
+  color: var(--bone-2);
+}
+
+.roleWork li::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  margin-top: 0.55em;
+  background: var(--water-300);
+  transform: rotate(45deg);
+}
+
+/* ---------------- contact ---------------- */
+
+.contact {
+  position: relative;
+  display: grid;
+  gap: var(--s-4);
+  padding: var(--s-6) var(--s-5);
+  border: 1px solid var(--edge);
+  border-radius: 3px;
+  background:
+    radial-gradient(
+      60% 120% at calc(var(--px, 0.5) * 100%) calc(var(--py, 0.5) * 100%),
+      color-mix(in oklab, var(--water-500) calc(var(--pin, 0) * 26%), transparent),
+      transparent 70%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--panel) 92%, transparent),
+      color-mix(in oklab, var(--void) 70%, transparent)
+    );
+  overflow: hidden;
+}
+
+.email {
+  font-size: clamp(1.375rem, 0.9rem + 3.2vw, 3rem);
+  line-height: 1.05;
+  word-break: break-word;
+}
+
+.email a {
+  color: var(--bone);
+  text-decoration-color: color-mix(in oklab, var(--signal) 70%, transparent);
+  text-decoration-thickness: 2px;
+}
+
+.email a:hover { color: var(--signal); }
+
+.contactNote {
+  font-size: var(--step-0);
+  color: var(--muted);
+}
+
+.links { gap: var(--s-2); }
+
+/* ---------------- tablet and up ---------------- */
+
+@media (min-width: 720px) {
+  .split { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: var(--s-8); }
+  .contact { padding: var(--s-8) var(--s-7); }
+}
+
+@media (min-width: 1180px) {
+  .toolkit { gap: var(--s-6); }
+}

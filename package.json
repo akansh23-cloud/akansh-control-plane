@@ -1,38 +1,42 @@
 {
-  "name": "akansh-control-plane",
+  "name": "akansh-mowar-lockworks",
   "version": "1.0.0",
   "private": true,
-  "description": "AKANSH // CONTROL PLANE — portfolio of Akansh Mowar, DevOps / Platform / Cloud Engineer",
+  "description": "The Lockworks — personal engineering portfolio for Akansh Mowar (DevOps / Platform / Cloud Engineer).",
   "scripts": {
     "dev": "next dev",
+    "prebuild": "npm run audit:source && npm run typecheck && npm run test && npm run assets:check",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint . --max-warnings 0",
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "verify": "node scripts/verify.mjs",
-    "test:e2e": "playwright test"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "assets": "node --experimental-strip-types scripts/export-content.mjs && python3 scripts/build_pdf.py && python3 scripts/build_images.py && node scripts/check-assets.mjs --write",
+    "assets:check": "node scripts/check-assets.mjs",
+    "verify:prod": "node scripts/verify-production.mjs",
+    "qa:shots": "node scripts/screenshots.mjs qa",
+    "ci": "npm run lint && npm run audit:source && npm run typecheck && npm run test && npm run assets:check && npm run build",
+    "audit:source": "node scripts/source-audit.mjs"
   },
   "dependencies": {
-    "@react-three/fiber": "9.6.1",
-    "framer-motion": "11.18.2",
-    "gsap": "3.15.0",
-    "lucide-react": "0.454.0",
-    "next": "15.5.21",
-    "react": "19.2.7",
-    "react-dom": "19.2.7",
-    "three": "0.169.0"
+    "@fontsource-variable/bricolage-grotesque": "5.3.0",
+    "@fontsource-variable/instrument-sans": "5.3.0",
+    "@fontsource-variable/martian-mono": "5.3.0",
+    "next": "16.3.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
   },
   "devDependencies": {
     "@playwright/test": "1.62.1",
-    "@types/node": "20.19.43",
+    "@types/node": "24.9.1",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
-    "@types/three": "0.169.0",
-    "autoprefixer": "10.4.20",
-    "eslint": "8.57.1",
-    "eslint-config-next": "15.5.21",
-    "postcss": "8.4.47",
-    "tailwindcss": "3.4.14",
-    "typescript": "5.6.3"
-  }
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.3.1",
+    "typescript": "5.9.3",
+    "vitest": "4.1.10"
+  },
+  "type": "module"
 }
