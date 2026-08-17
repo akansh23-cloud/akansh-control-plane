@@ -9,49 +9,40 @@ permissions:
 
 jobs:
   replace-source:
-    if: github.event.head_commit.message == 'Finalize Lockworks payload'
+    if: github.event.head_commit.message == 'Finalize Lockworks chunk payload'
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Download verified rebuild archive
+      - name: Reconstruct verified source archive
         shell: bash
         run: |
           set -euo pipefail
-          python3 -m pip install --quiet gdown
-          gdown 'https://drive.google.com/uc?id=1CpqVyqd9CKgJuMGfwR1J3oOyF1UCASXp' -O /tmp/lockworks.zip
-          test -s /tmp/lockworks.zip
-          unzip -t /tmp/lockworks.zip >/dev/null
-
-      - name: Expand exact production source
-        shell: bash
-        run: |
-          set -euo pipefail
-          rm -rf /tmp/lockworks-src
           mkdir -p /tmp/lockworks-src
-          unzip -q /tmp/lockworks.zip -d /tmp/lockworks-src
-          PACKAGE_JSON="$(find /tmp/lockworks-src -mindepth 1 -maxdepth 4 -type f -name package.json -print -quit)"
-          if [ -z "$PACKAGE_JSON" ]; then
-            echo 'No package.json found in Lockworks rebuild' >&2
-            exit 1
-          fi
-          SOURCE_DIR="$(dirname "$PACKAGE_JSON")"
-          rsync -a --delete \
-            --exclude='.git' \
-            --exclude='node_modules' \
-            --exclude='.next' \
-            --exclude='qa' \
-            "$SOURCE_DIR"/ ./
-          test -f package.json
-          test -f src/app/page.tsx
-          test -f public/Akansh_Mowar_DevOps_Platform_Engineer_Resume.pdf
+          cat \
+            .bootstrap/payload/part00 \
+            .bootstrap/payload/part01 \
+            .bootstrap/payload/part02 \
+            .bootstrap/payload/part03 \
+            .bootstrap/payload/part04 \
+            .bootstrap/payload/part05 \
+            .bootstrap/payload/part06 \
+            .bootstrap/payload/part07 \
+            | base64 -d > /tmp/lockworks.tar.xz
+          xz -t /tmp/lockworks.tar.xz
+          tar -xJf /tmp/lockworks.tar.xz -C /tmp/lockworks-src
+          test -f /tmp/lockworks-src/package.json
+          test -f /tmp/lockworks-src/src/app/page.tsx
 
-      - name: Force Vercel Next.js preset
+      - name: Replace repository with rebuild source
         shell: bash
         run: |
+          set -euo pipefail
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a /tmp/lockworks-src/. .
           cat > vercel.json <<'JSON'
           {
             "$schema": "https://openapi.vercel.sh/vercel.json",
@@ -62,10 +53,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
+
+      - name: Prepare Python asset dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv /tmp/lockworks-venv
+          /tmp/lockworks-venv/bin/pip install --quiet pillow reportlab
+          echo '/tmp/lockworks-venv/bin' >> "$GITHUB_PATH"
+
+      - name: Generate production assets
+        run: npm run assets
 
       - name: Validate source integrity
         run: npm run audit:source
