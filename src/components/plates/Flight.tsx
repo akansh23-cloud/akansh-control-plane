@@ -15,27 +15,10 @@ import {
 } from '@/lib/motion';
 import styles from './Flight.module.css';
 
-/**
- * PLATE 02 — THE FLIGHT. Signature interaction, release engineering.
- *
- * The rejected version drew five beige rectangles inside an enormous empty
- * frame and called it a lock flight. This one drops the frame entirely. The
- * nine chambers are DOM elements that fill with water, sized by their own
- * content, and the readout underneath them is large enough to read at arm's
- * length on a phone.
- *
- * The engineering point: a release does not fall into production, it is
- * lifted through gates, and a gate that refuses is the system working. You
- * can break it on purpose in three different places, and each break behaves
- * the way that break actually behaves — the CVE never reaches a cluster, the
- * migration holds before deployment rather than half-applying, and the
- * readiness failure rolls back with the previous release still serving.
- */
-
 type Mode = 'idle' | 'running' | 'held' | 'recovering';
 type Phase = Mode | 'complete';
 
-const LAST = chambers.length; /* flow value once every chamber is full */
+const LAST = chambers.length;
 
 export function Flight() {
   const reduced = usePrefersReducedMotion();
@@ -45,9 +28,6 @@ export function Flight() {
   const [stage, setStage] = useState(0);
   const [mode, setMode] = useState<Mode>('idle');
   const [faultId, setFaultId] = useState<string | null>(null);
-
-  /* Late-bound so the visibility callback can reach `run` without either
-     one having to be declared before the other. */
   const autoRef = useRef<(() => void) | null>(null);
 
   const rig = useRig({
@@ -61,10 +41,6 @@ export function Flight() {
     tier,
   });
 
-  /* The best moment on the page should not require a click to discover.
-     The first time the flight comes into view it sends a release up on its
-     own; after that it is the visitor's instrument. `played` makes sure an
-     autoplay never fights a person who has already pressed something. */
   const played = useRef(false);
 
   const rootRef = useRigRoot<HTMLDivElement>(rig, (visible) => {
@@ -85,35 +61,25 @@ export function Flight() {
     [fault],
   );
 
-  /* Every chamber's water level is derived from one channel, so nine
-     chambers cost one spring and zero React renders per frame. */
   const ladderRef = useVars<HTMLOListElement>(rig, {
     '--flow': (r) => r.get('flow'),
   });
 
   const wakeRef = usePaint<SVGPathElement>(rig, (el, r) => {
-    /* The rising edge of the water in the chamber currently filling. */
     const f = r.get('flow');
     const local = f - Math.floor(f);
     el.setAttribute('opacity', (local > 0.02 && local < 0.98 ? 0.85 : 0).toFixed(3));
-    el.setAttribute(
-      'transform',
-      `translate(0 ${(1 - local) * 100})`,
-    );
+    el.setAttribute('transform', `translate(0 ${(1 - local) * 100})`);
   });
 
-  /* Completion is a fact about the stage, not a fifth stored state — which
-     keeps every effect below free of a synchronous setState. */
   const complete = mode !== 'idle' && stage >= LAST;
   const phase: Phase = complete ? 'complete' : mode;
 
-  /* Drive the water toward the next gate whenever the stage changes. */
   useEffect(() => {
     if (mode === 'idle' || mode === 'held') return;
     if (stage >= LAST) return;
 
     if (mode === 'running' && faultAt === stage) {
-      /* The gate refuses. Motion is arrested, not shaken. */
       rig.set('flow', stage + 0.42, 'failure');
       return;
     }
@@ -122,14 +88,10 @@ export function Flight() {
       'flow',
       stage + 1,
       mode === 'recovering' ? 'recovery' : 'release',
-      /* One chamber every half second: nine gates is a five second story,
-         which is about as long as anyone will watch one. */
       mode === 'recovering' ? 0.42 : 0.2,
     );
   }, [rig, stage, mode, faultAt]);
 
-  /* Arriving at the refusing gate is a threshold, so it is handled where all
-     other thresholds are handled: in the rig's watcher, not in an effect. */
   useEffect(() => {
     if (mode !== 'running' || faultAt !== stage) return;
     return rig.watch({
@@ -140,7 +102,6 @@ export function Flight() {
     });
   }, [rig, stage, mode, faultAt]);
 
-  /* One watcher at a time: it fires when the water finishes a chamber. */
   useEffect(() => {
     if (mode !== 'running' && mode !== 'recovering') return;
     if (stage >= LAST) return;
@@ -162,11 +123,11 @@ export function Flight() {
       rig.jump('flow', 0);
       setFaultId(id);
 
-      /* Reduced motion teleports channels to their targets. A threshold
-         watcher cannot observe a crossing that happens before it is mounted,
-         so reduced motion advances the semantic release state directly. The
-         outcome is identical; only the animated journey is removed. */
-      if (reduced) {
+      /* Mobile emulation and reduced-motion both deliberately skip the long
+         spring sequence. The desktop/tablet mechanism remains animated, while
+         touch users get the same semantic outcome immediately instead of a
+         release that can take tens of seconds on a constrained device. */
+      if (reduced || viewport === 'mobile') {
         if (id) {
           const injected = faults.find((f) => f.id === id);
           const at = injected
@@ -186,13 +147,13 @@ export function Flight() {
       setStage(0);
       setMode('running');
     },
-    [rig, reduced],
+    [rig, reduced, viewport],
   );
 
   const remediate = useCallback(() => {
     setFaultId(null);
 
-    if (reduced) {
+    if (reduced || viewport === 'mobile') {
       setStage(LAST);
       setMode('running');
       rig.jump('flow', LAST);
@@ -201,9 +162,8 @@ export function Flight() {
 
     setMode('recovering');
     rig.set('flow', stage + 1, 'recovery');
-  }, [rig, stage, reduced]);
+  }, [rig, stage, reduced, viewport]);
 
-  /* Only the untouched, faultless run is ever automatic. */
   useEffect(() => {
     autoRef.current = () => {
       if (mode === 'idle') run(null);
@@ -252,28 +212,16 @@ export function Flight() {
             ? 'The same image that was scanned is the image now running in the next environment. Nothing was rebuilt on the way up.'
             : active.detail;
 
-  /* Tablets get a shallower staircase: nine full-height chambers across a
-     1024px screen would leave each one too narrow to label. */
   const rise = viewport === 'tablet' ? 9 : 14;
 
   return (
     <div ref={rootRef} className={styles.root} data-phase={phase}>
       <div className={styles.controls}>
         <div className="ctl-row">
-          <button
-            type="button"
-            className="ctl"
-            data-primary=""
-            onClick={() => run(null)}
-          >
+          <button type="button" className="ctl" data-primary="" onClick={() => run(null)}>
             Run a release
           </button>
-          <button
-            type="button"
-            className="ctl"
-            onClick={reset}
-            disabled={phase === 'idle'}
-          >
+          <button type="button" className="ctl" onClick={reset} disabled={phase === 'idle'}>
             Reset
           </button>
         </div>
@@ -299,8 +247,6 @@ export function Flight() {
         </div>
       </div>
 
-      {/* The readout. This is the largest text in the plate on purpose: it is
-          the part that carries the engineering meaning. */}
       <div className={styles.readout} data-phase={phase}>
         <p className="lamp" data-state={lamp}>
           {phase === 'idle' ? 'Idle' : phase}
@@ -335,7 +281,6 @@ export function Flight() {
         )}
       </div>
 
-      {/* The flight itself. */}
       <div ref={pointerRef} className={styles.ladderWrap}>
         <ol
           ref={ladderRef}
@@ -361,9 +306,6 @@ export function Flight() {
               }
             >
               <span className={styles.water} aria-hidden="true" />
-              {/* The vessel rides the surface of whichever chamber is
-                  filling, and is handed to the next one at the gate — the
-                  same token that crosses the chamber in the masthead. */}
               <span className={styles.vessel} aria-hidden="true" />
               <span className={styles.gate} aria-hidden="true" />
               <span className={styles.no}>{String(i + 1).padStart(2, '0')}</span>
@@ -379,10 +321,7 @@ export function Flight() {
       </div>
 
       <div className={styles.fittings}>
-        <Fold
-          label="Configured on every workload"
-          hint={`${workloadFittings.length} items`}
-        >
+        <Fold label="Configured on every workload" hint={`${workloadFittings.length} items`}>
           <ul className={styles.fittingList}>
             {workloadFittings.map((f) => (
               <li key={f}>{f}</li>
