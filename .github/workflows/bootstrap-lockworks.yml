@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   replace-source:
-    if: github.event.head_commit.message == 'Finalize Lockworks chunk payload'
+    if: github.event.head_commit.message == 'Finalize repaired Lockworks payload'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -27,10 +27,19 @@ jobs:
             .bootstrap/payload/part01 \
             .bootstrap/payload/part02 \
             .bootstrap/payload/part03 \
-            .bootstrap/payload/part04 \
+            .bootstrap/fix/04a \
+            .bootstrap/fix/04b \
+            .bootstrap/fix/04c0 \
+            .bootstrap/fix/04c1 \
             .bootstrap/payload/part05 \
             .bootstrap/payload/part06 \
-            .bootstrap/payload/part07 \
+            .bootstrap/fix/07a0 \
+            .bootstrap/fix/07a1 \
+            .bootstrap/fix/07b0 \
+            .bootstrap/fix/07b1a \
+            .bootstrap/fix/07b1b \
+            .bootstrap/fix/07c0 \
+            .bootstrap/fix/07c1 \
             | base64 -d > /tmp/lockworks.tar.xz
           xz -t /tmp/lockworks.tar.xz
           tar -xJf /tmp/lockworks.tar.xz -C /tmp/lockworks-src
