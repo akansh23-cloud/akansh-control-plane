@@ -28,7 +28,10 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr));
+  /* Four narrow columns force the final readiness card beyond a 390px
+     viewport. Phones use a legible 2 × 2 instrument bank; the configured
+     column count returns once there is enough room for the gauges. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--s-3);
 }
 
@@ -36,6 +39,7 @@
   display: grid;
   gap: var(--s-2);
   align-content: start;
+  min-width: 0;
   padding: var(--s-4);
   border: 1px solid var(--edge);
   border-radius: 3px;
@@ -54,7 +58,9 @@
 .gaugeValue {
   display: flex;
   align-items: baseline;
+  flex-wrap: wrap;
   gap: var(--s-2);
+  min-width: 0;
   font-family: var(--font-display);
   font-weight: 700;
   font-stretch: 88%;
@@ -227,7 +233,10 @@
 
 @media (min-width: 720px) {
   .panel { padding: var(--s-6); gap: var(--s-6); }
-  .grid { gap: var(--s-4); }
+  .grid {
+    grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr));
+    gap: var(--s-4);
+  }
 }
 
 @media (min-width: 1180px) {
