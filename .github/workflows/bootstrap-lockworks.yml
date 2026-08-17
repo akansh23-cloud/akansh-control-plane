@@ -1,4 +1,4 @@
-name: Bootstrap Lockworks rebuild v2
+name: Install Lockworks rebuild v2
 
 on:
   push:
@@ -9,33 +9,82 @@ permissions:
 
 jobs:
   replace-source:
-    if: github.event.head_commit.message == 'Bootstrap Lockworks rebuild v2'
+    if: github.event.head_commit.message == 'Finalize Lockworks payload'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Expand verified rebuild
+
+      - name: Download verified rebuild archive
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p /tmp/lockworks-src /tmp/lockworks-assets
-          cp public/Akansh_Mowar_DevOps_Platform_Engineer_Resume.pdf /tmp/lockworks-assets/
-          cp public/og.png /tmp/lockworks-assets/
-          cp public/favicon.ico /tmp/lockworks-assets/
-          cp public/apple-icon.png /tmp/lockworks-assets/
-          unzip -q .bootstrap/source.zip -d /tmp/lockworks-src
-          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
-          cp -a /tmp/lockworks-src/. .
-          mkdir -p public
-          cp /tmp/lockworks-assets/* public/
+          python3 -m pip install --quiet gdown
+          gdown 'https://drive.google.com/uc?id=1CpqVyqd9CKgJuMGfwR1J3oOyF1UCASXp' -O /tmp/lockworks.zip
+          test -s /tmp/lockworks.zip
+          unzip -t /tmp/lockworks.zip >/dev/null
+
+      - name: Expand exact production source
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/lockworks-src
+          mkdir -p /tmp/lockworks-src
+          unzip -q /tmp/lockworks.zip -d /tmp/lockworks-src
+          PACKAGE_JSON="$(find /tmp/lockworks-src -mindepth 1 -maxdepth 4 -type f -name package.json -print -quit)"
+          if [ -z "$PACKAGE_JSON" ]; then
+            echo 'No package.json found in Lockworks rebuild' >&2
+            exit 1
+          fi
+          SOURCE_DIR="$(dirname "$PACKAGE_JSON")"
+          rsync -a --delete \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='.next' \
+            --exclude='qa' \
+            "$SOURCE_DIR"/ ./
+          test -f package.json
+          test -f src/app/page.tsx
+          test -f public/Akansh_Mowar_DevOps_Platform_Engineer_Resume.pdf
+
+      - name: Force Vercel Next.js preset
+        shell: bash
+        run: |
+          cat > vercel.json <<'JSON'
+          {
+            "$schema": "https://openapi.vercel.sh/vercel.json",
+            "framework": "nextjs"
+          }
+          JSON
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - name: Recreate dependency lock
-        run: npm install --package-lock-only --ignore-scripts
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate source integrity
+        run: npm run audit:source
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit and factual tests
+        run: npm run test
+
+      - name: Validate generated assets
+        run: npm run assets:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Production build
+        run: npm run build
+
       - name: Commit exact rebuild source
         shell: bash
         run: |
