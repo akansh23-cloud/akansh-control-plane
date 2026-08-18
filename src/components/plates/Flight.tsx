@@ -71,11 +71,12 @@ export function Flight() {
   });
   const pointerRef = usePointerField(rig);
 
-  /* How long one chamber takes. A phone runs the same nine-stage sequence as
-     everything else, but at a pace a hand-held device can actually paint —
-     the previous build skipped the simulation entirely on touch, which meant
-     the one interaction the plate exists for never ran there. */
-  const pace = viewport === 'mobile' ? 0.1 : viewport === 'tablet' ? 0.15 : 0.2;
+  /* A clean release should read as nine distinct checks, not as nine waits.
+     Keep phones fastest because their paint budget is smallest, while every
+     viewport still spends long enough in each chamber for the log and gate
+     state to be readable. The previous 0.20 desktop spring made the sequence
+     exceed the established 15s browser contract on slower engines. */
+  const pace = viewport === 'mobile' ? 0.08 : viewport === 'tablet' ? 0.1 : 0.12;
 
   const fault = useMemo(
     () => faults.find((f) => f.id === faultId) ?? null,
