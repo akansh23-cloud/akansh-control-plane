@@ -75,4 +75,23 @@ test.describe('V7 living release', () => {
     await expect(finale).toBeHidden();
     await expect(page.locator('#tidewater')).toBeVisible();
   });
+
+  test('Blackwater Drill advances only after a real recovery', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-1920', 'One canonical drill path is enough; the global layout matrix covers the launcher elsewhere.');
+
+    await page.goto('/');
+    await page.getByRole('button', { name: /Blackwater Drill/i }).click();
+
+    const drill = page.locator('[aria-label="Blackwater operator challenge"]');
+    await expect(drill.getByText('Contain a refused release', { exact: true })).toBeVisible();
+    await drill.getByRole('button', { name: 'Go to The Flight' }).click();
+
+    const flight = page.locator('#flight');
+    await flight.getByRole('button', { name: /Critical CVE in the image/i }).click();
+    await expect(flight.getByText(/Held at/i)).toBeVisible({ timeout: 12_000 });
+    await flight.getByRole('button', { name: 'Apply the fix' }).click();
+
+    await expect(drill.getByText('Restore declared state', { exact: true })).toBeVisible();
+    await expect(drill.getByText(/1 \/ 5/)).toBeVisible();
+  });
 });
