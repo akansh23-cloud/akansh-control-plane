@@ -1,21 +1,6 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
-async function installOpeningProbe(page: Page) {
-  await page.addInitScript(() => {
-    const state = window as Window & { __lockworksOpeningSeen?: boolean };
-    state.__lockworksOpeningSeen = false;
-    const mark = () => {
-      if (document.documentElement.dataset.opening === 'commissioning') {
-        state.__lockworksOpeningSeen = true;
-      }
-    };
-    new MutationObserver(mark).observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['data-opening'],
-    });
-    queueMicrotask(mark);
-  });
-}
+const OPENING_STORAGE_KEY = 'lockworks:opening:v8';
 
 test.describe('Cross-browser Lockworks contract', () => {
   test('chrome, Index and depth controls remain stable', async ({ page }) => {
@@ -55,16 +40,14 @@ test.describe('Cross-browser Lockworks contract', () => {
   });
 
   test('forced commissioning opening is registered, replayable and skippable', async ({ page }) => {
-    await installOpeningProbe(page);
     await page.goto('/?intro=1', { waitUntil: 'domcontentloaded' });
-    await expect.poll(() =>
-      page.evaluate(() =>
-        Boolean((window as Window & { __lockworksOpeningSeen?: boolean }).__lockworksOpeningSeen),
-      ),
-    ).toBe(true);
 
     const html = page.locator('html');
     await expect(html).toHaveAttribute('data-opening', 'ready', { timeout: 8_000 });
+    await expect.poll(() =>
+      page.evaluate((key) => window.sessionStorage.getItem(key), OPENING_STORAGE_KEY),
+    ).toBe('seen');
+
     const opening = page.getByRole('dialog', { name: 'Commissioning the Lockworks' });
     await page.getByRole('button', { name: 'Replay opening' }).click();
     await expect(opening).toBeVisible();
