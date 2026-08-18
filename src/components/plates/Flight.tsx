@@ -186,6 +186,11 @@ export function Flight() {
   const run = useCallback(
     (id: string | null) => {
       played.current = true;
+      /* A direct interaction proves the mechanism is on-screen. WebKit can
+         deliver its IntersectionObserver transition a frame late after a
+         programmatic section jump; re-arming the existing rig here prevents
+         a real operator click from being discarded as offscreen work. */
+      rig.setVisible(true);
       rig.jump('flow', 0);
       setFaultId(id);
       startedAt.current = performance.now();
@@ -224,6 +229,9 @@ export function Flight() {
   );
 
   const remediate = useCallback(() => {
+    /* The recovery button is itself inside the visible Flight. Keep recovery
+       deterministic even if the observer reports a stale offscreen sample. */
+    rig.setVisible(true);
     const held = faultId;
     emit(
       chambers[Math.min(stage, LAST - 1)].name,
