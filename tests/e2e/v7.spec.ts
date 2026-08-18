@@ -82,16 +82,17 @@ test.describe('V7 living release', () => {
     await page.goto('/');
     await page.getByRole('button', { name: /Blackwater Drill/i }).click();
 
-    const drill = page.locator('[aria-label="Blackwater operator challenge"]');
-    await expect(drill.getByText('Contain a refused release', { exact: true })).toBeVisible();
-    await drill.getByRole('button', { name: 'Go to The Flight' }).click();
+    const drillPanel = page.locator('#blackwater-drill-panel');
+    const drillBar = page.locator('button[aria-controls="blackwater-drill-panel"]');
+    await expect(drillPanel.getByRole('heading', { name: 'Contain a refused release' })).toBeVisible();
+    await drillPanel.getByRole('button', { name: 'Go to The Flight' }).click();
 
     const flight = page.locator('#flight');
     await flight.getByRole('button', { name: /Critical CVE in the image/i }).click();
     await expect(flight.getByText(/Held at/i)).toBeVisible({ timeout: 12_000 });
     await flight.getByRole('button', { name: 'Apply the fix' }).click();
 
-    await expect(drill.getByText('Restore declared state', { exact: true })).toBeVisible();
-    await expect(drill.getByText(/1 \/ 5/)).toBeVisible();
+    await expect(drillBar).toContainText('Restore declared state');
+    await expect(drillBar).toContainText('1 / 5');
   });
 });
