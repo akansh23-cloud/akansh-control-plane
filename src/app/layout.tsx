@@ -4,6 +4,7 @@ import '@fontsource-variable/instrument-sans/index.css';
 import '@fontsource-variable/martian-mono/wdth.css';
 import './globals.css';
 import { JourneyProvider } from '@/components/JourneySystem';
+import { ProductionFinale } from '@/components/ProductionFinale';
 import {
   completedCredentials,
   contact,
@@ -155,7 +156,10 @@ export default function RootLayout({
         <a className="skip-link" href="#main">
           Skip to content
         </a>
-        <JourneyProvider commit={commit}>{children}</JourneyProvider>
+        <JourneyProvider commit={commit}>
+          {children}
+          <ProductionFinale />
+        </JourneyProvider>
         <div className="paper-grain" aria-hidden="true" />
         <script
           type="application/ld+json"
