@@ -1,5 +1,7 @@
+import { Brief } from '@/components/Brief';
 import { Legend } from '@/components/Legend';
 import { Plate } from '@/components/Plate';
+import { Waterway } from '@/components/Waterway';
 import { Basin } from '@/components/plates/Basin';
 import { Flight } from '@/components/plates/Flight';
 import { Gauges } from '@/components/plates/Gauges';
@@ -7,10 +9,13 @@ import { Headwater } from '@/components/plates/Headwater';
 import { Refit } from '@/components/plates/Refit';
 import { Split } from '@/components/plates/Split';
 import { Tidewater } from '@/components/plates/Tidewater';
+import { Vault } from '@/components/plates/Vault';
+import { Watch } from '@/components/plates/Watch';
 import {
   barclays,
   careerProject,
   flightNote,
+  incident,
   mapProject,
   observabilityNote,
   plates,
@@ -27,6 +32,10 @@ export default function Home() {
         <section id="headwater" className={styles.hero}>
           <Headwater />
         </section>
+
+        {/* The sixty-second version of everything below. Shown only when the
+            reader asks for that depth; the content is the same content. */}
+        <Brief />
 
         <Plate
           id="flight"
@@ -148,6 +157,49 @@ export default function Home() {
         </Plate>
 
         <Plate
+          id="watch"
+          no={plate('watch').no}
+          name={plate('watch').name}
+          sub={plate('watch').sub}
+          title="The half hour where it is not obvious that it is working."
+          intro={
+            <>
+              <p className="u-prose">
+                Everything above shows a system behaving. This is the other
+                half of the job: reading what the platform is telling you, in
+                the right order, and noticing when it has already contained the
+                fault for you.
+              </p>
+              <p className="u-note">
+                Read the signals, then call it. There is a wrong answer that
+                looks very reasonable.
+              </p>
+            </>
+          }
+          note={incident.simulated}
+        >
+          <Watch />
+        </Plate>
+
+        <Plate
+          id="vault"
+          no={plate('vault').no}
+          name={plate('vault').name}
+          sub={plate('vault').sub}
+          title="A claim is worth what backs it."
+          intro={
+            <p className="u-prose">
+              Every strong statement on this site, opened up: the claim, the
+              context, what I actually did, what it was built with, and what a
+              reader can check — including the places where the work is
+              confidential and honestly cannot be checked.
+            </p>
+          }
+        >
+          <Vault />
+        </Plate>
+
+        <Plate
           id="tidewater"
           no={plate('tidewater').no}
           name={plate('tidewater').name}
@@ -174,6 +226,7 @@ export default function Home() {
         </footer>
       </main>
 
+      <Waterway />
       <Legend />
     </>
   );

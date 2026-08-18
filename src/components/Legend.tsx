@@ -1,7 +1,16 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { contact, plates, profile, scanFacts, site } from '@/content';
+import {
+  contact,
+  defaultDepth,
+  depthModes,
+  plates,
+  profile,
+  scanFacts,
+  site,
+  type DepthMode,
+} from '@/content';
 import styles from './Legend.module.css';
 
 /**
@@ -18,9 +27,20 @@ import styles from './Legend.module.css';
  */
 export function Legend() {
   const [open, setOpen] = useState(false);
+  const [depth, setDepth] = useState<DepthMode>(defaultDepth);
   const [current, setCurrent] = useState(0);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
+
+  /* Depth is published on the document element, so progressive disclosure is
+     one CSS attribute rather than a second copy of the application. The server
+     renders the engineer view; nothing is hidden before hydration. */
+  useEffect(() => {
+    document.documentElement.dataset.depth = depth;
+    return () => {
+      delete document.documentElement.dataset.depth;
+    };
+  }, [depth]);
 
   useEffect(() => {
     const sections = plates
@@ -121,6 +141,15 @@ export function Legend() {
             ))}
           </dl>
 
+          <div className={styles.depthNote}>
+            <p className="u-mark">Depth</p>
+            <p>
+              {depth === 'recruiter'
+                ? 'Recruiter view: role, outcomes, projects, credentials and the résumé. The simulations are folded away — switch to Engineer to open them.'
+                : 'Engineer view: every simulation and the full technical detail. Switch to Recruiter for the sixty-second version of the same content.'}
+            </p>
+          </div>
+
           <nav className={styles.nav} aria-label="Sections">
             <p className="u-mark">Go to</p>
             <ol className={styles.plateList}>
@@ -185,11 +214,28 @@ export function Legend() {
           <span className={styles.tabHint}>{open ? 'Close' : 'Index'}</span>
         </button>
 
+        <div className={styles.depth} role="group" aria-label="How much detail to show">
+          {depthModes.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              className={styles.depthBtn}
+              aria-pressed={depth === m.id}
+              onClick={() => setDepth(m.id)}
+            >
+              <span className={styles.depthLong}>{m.label}</span>
+              <span className={styles.depthShort}>
+                {m.id === 'recruiter' ? '60s' : 'Full'}
+              </span>
+            </button>
+          ))}
+        </div>
+
         <div className={styles.barLinks}>
           <a className={styles.barLink} href={site.resumeRoute}>
             Résumé
           </a>
-          <a className={styles.barLink} href={`mailto:${contact.email}`}>
+          <a className={`${styles.barLink} ${styles.barLinkWide}`} href={`mailto:${contact.email}`}>
             Email
           </a>
         </div>

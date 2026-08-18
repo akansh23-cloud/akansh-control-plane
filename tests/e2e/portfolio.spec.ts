@@ -33,7 +33,7 @@ test.describe('production shell', () => {
     );
     expect(overflow).toBeLessThanOrEqual(1);
 
-    for (const id of ['headwater', 'flight', 'refit', 'basin', 'split', 'gauges', 'tidewater']) {
+    for (const id of ['headwater', 'flight', 'refit', 'basin', 'split', 'gauges', 'watch', 'vault', 'tidewater']) {
       const section = page.locator(`#${id}`);
       await expect(section).toHaveCount(1);
       await section.scrollIntoViewIfNeeded();
@@ -184,5 +184,168 @@ test.describe('signature interactions', () => {
     const github = page.getByRole('link', { name: 'GitHub', exact: true }).first();
     await expect(linkedin).toHaveAttribute('href', 'https://www.linkedin.com/in/akansh-mowar-5a83261a0');
     await expect(github).toHaveAttribute('href', 'https://github.com/akansh23-cloud');
+  });
+});
+
+test.describe('controls and layout', () => {
+  test('no control clips its own label at any width', async ({ page }) => {
+    await page.goto('/');
+
+    const clipped = await page.evaluate(() => {
+      const bad: string[] = [];
+      for (const el of Array.from(document.querySelectorAll<HTMLElement>('.ctl'))) {
+        if (!el.offsetParent && el.offsetHeight === 0) continue;
+        if (
+          el.scrollWidth > el.clientWidth + 1 ||
+          el.scrollHeight > el.clientHeight + 1
+        ) {
+          bad.push(`${el.textContent?.trim()} (${el.scrollWidth}x${el.scrollHeight} in ${el.clientWidth}x${el.clientHeight})`);
+        }
+      }
+      return bad;
+    });
+
+    expect(clipped, `clipped controls: ${clipped.join(' | ')}`).toEqual([]);
+  });
+
+  test('Basin tab labels are fully rendered, not truncated', async ({ page }) => {
+    await page.goto('/');
+    const basin = page.locator('#basin');
+    await basin.scrollIntoViewIfNeeded();
+
+    for (const name of ['Verification', 'Infrastructure']) {
+      const tab = basin.getByRole('tab', { name, exact: true });
+      await expect(tab).toBeVisible();
+      const fits = await tab.evaluate(
+        (el) => el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1,
+      );
+      expect(fits, `${name} does not fit its control`).toBe(true);
+    }
+  });
+
+  test('nothing on the page overflows sideways after every plate is opened', async ({ page }) => {
+    await page.goto('/');
+    for (const id of ['flight', 'refit', 'basin', 'split', 'gauges', 'watch', 'vault', 'tidewater']) {
+      await page.locator(`#${id}`).scrollIntoViewIfNeeded();
+    }
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(1);
+  });
+});
+
+test.describe('the refit', () => {
+  test('keeps both states as whole words at every seam position', async ({ page }) => {
+    await page.goto('/');
+    const refit = page.locator('#refit');
+    await refit.scrollIntoViewIfNeeded();
+    const seam = refit.getByRole('slider', { name: /Modernisation seam/i });
+
+    await seam.focus();
+    await page.keyboard.press('Home');
+    for (let i = 0; i < 6; i += 1) {
+      await page.keyboard.press('ArrowRight');
+      const text = await refit.innerText();
+      expect(text).toContain('Jenkins + Bitbucket');
+      expect(text).toContain('GitLab CI/CD');
+      expect(text).toContain('Tomcat 10');
+      expect(text).not.toMatch(/GitLab CI\/C\b(?!D)/);
+    }
+  });
+
+  test('keeps the Before and After buttons in step with the seam', async ({ page }) => {
+    await page.goto('/');
+    const refit = page.locator('#refit');
+    await refit.scrollIntoViewIfNeeded();
+
+    const before = refit.getByRole('button', { name: 'Before', exact: true });
+    const after = refit.getByRole('button', { name: 'After', exact: true });
+    const seam = refit.getByRole('slider', { name: /Modernisation seam/i });
+
+    await before.click();
+    await expect(seam).toHaveAttribute('aria-valuenow', '0');
+    await expect(before).toHaveAttribute('aria-pressed', 'true');
+    await expect(after).toHaveAttribute('aria-pressed', 'false');
+
+    await after.click();
+    await expect(seam).toHaveAttribute('aria-valuenow', '100');
+    await expect(after).toHaveAttribute('aria-pressed', 'true');
+    await expect(before).toHaveAttribute('aria-pressed', 'false');
+
+    await seam.focus();
+    await page.keyboard.press('Home');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
+    await expect(before).toHaveAttribute('aria-pressed', 'false');
+    await expect(after).toHaveAttribute('aria-pressed', 'false');
+    await expect(refit.getByText(/layers rebuilt/i).first()).toBeVisible();
+  });
+});
+
+test.describe('the incident room', () => {
+  test('rejects the plausible wrong answer and resolves on the right one', async ({ page }) => {
+    await page.goto('/');
+    const watch = page.locator('#watch');
+    await watch.scrollIntoViewIfNeeded();
+
+    await watch.getByRole('button', { name: /Application log/i }).click();
+    await expect(watch.getByText(/could not obtain connection/i)).toBeVisible();
+
+    await watch.getByRole('button', { name: /The image is bad/i }).click();
+    await expect(watch.getByText('Not this one')).toBeVisible();
+
+    await watch.getByRole('button', { name: /exceeds what the database will allow/i }).click();
+    await expect(watch.getByText('That is it')).toBeVisible();
+    await expect(watch.getByText(/the resolution path/i)).toBeVisible();
+    await expect(watch.getByText(/Nothing is rolled back first/i)).toBeVisible();
+  });
+});
+
+test.describe('the evidence vault', () => {
+  test('opens a claim and shows what can be checked', async ({ page }) => {
+    await page.goto('/');
+    const vault = page.locator('#vault');
+    await vault.scrollIntoViewIfNeeded();
+
+    await vault.getByRole('button', { name: 'Personal projects' }).click();
+    const drawer = vault.getByRole('button', { name: /deterministic migration verification platform/i });
+    await drawer.click();
+    await expect(drawer).toHaveAttribute('aria-expanded', 'true');
+    await expect(vault.getByText('Evidence').first()).toBeVisible();
+    await expect(vault.getByText(/repository is public/i).first()).toBeVisible();
+  });
+
+  test('never claims a metric it cannot back', async ({ page }) => {
+    await page.goto('/');
+    const vault = page.locator('#vault');
+    await vault.scrollIntoViewIfNeeded();
+    const text = await vault.innerText();
+    expect(text).not.toMatch(/\d+\s?% (faster|improvement|reduction)/i);
+    expect(text).not.toMatch(/99\.9/);
+  });
+});
+
+test.describe('depth', () => {
+  test('recruiter mode folds the drawings and opens the sixty-second brief', async ({ page }) => {
+    await page.goto('/');
+
+    const recruiter = page.getByRole('button', { name: /Recruiter/ });
+    const engineer = page.getByRole('button', { name: /Engineer/ });
+
+    await expect(page.locator('html')).not.toHaveAttribute('data-depth', 'recruiter');
+    await expect(page.locator('#refit').getByRole('slider')).toBeVisible();
+
+    await recruiter.click();
+    await expect(page.locator('html')).toHaveAttribute('data-depth', 'recruiter');
+    await expect(page.getByText('The sixty-second brief')).toBeVisible();
+    await expect(page.locator('#refit').getByRole('slider')).toBeHidden();
+    await expect(page.locator('#refit')).toContainText(/Jenkins and Bitbucket to GitLab/i);
+    await expect(page.getByRole('link', { name: 'Download PDF' })).toBeVisible();
+
+    await engineer.click();
+    await expect(page.locator('html')).toHaveAttribute('data-depth', 'engineer');
+    await expect(page.locator('#refit').getByRole('slider')).toBeVisible();
   });
 });

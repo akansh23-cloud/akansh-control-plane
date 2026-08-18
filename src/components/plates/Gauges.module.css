@@ -243,3 +243,146 @@
   .panel { padding: var(--s-7) var(--s-6); }
   .note { font-size: var(--step-2); max-width: 46ch; }
 }
+
+
+/* ---------------- the causal chain ---------------- */
+
+.causal {
+  display: grid;
+  gap: var(--s-4);
+}
+
+.causalHead { display: grid; gap: var(--s-2); }
+
+.decision {
+  font-size: var(--step-0);
+  line-height: 1.5;
+  color: var(--bone);
+  max-width: 74ch;
+  text-wrap: pretty;
+}
+
+.links {
+  display: grid;
+  gap: var(--s-3);
+}
+
+/* One link of the chain. The pipe on the left carries the pressure at this
+   point in the sequence, so the whole chain reads as one flow rather than four
+   independent cards. */
+.link {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 4px var(--s-3);
+  padding: var(--s-3) var(--s-4) var(--s-4) var(--s-5);
+  border: 1px solid var(--edge);
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--panel) 48%, transparent);
+  transition: border-color var(--t-move) var(--ease-water);
+}
+
+.linkPipe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--rule-faint);
+  overflow: hidden;
+}
+
+.linkPipe::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(var(--intensity, 0) * 100%);
+  background: linear-gradient(180deg, var(--water-300), var(--water-500));
+  transition: height var(--t-move) var(--ease-water);
+}
+
+.link[data-state='moving'] { border-color: color-mix(in oklab, var(--hold) 46%, transparent); }
+.link[data-state='moving'] .linkPipe::after { background: linear-gradient(180deg, var(--hold), var(--signal-2)); }
+.link[data-state='critical'] { border-color: color-mix(in oklab, var(--fault) 58%, transparent); }
+.link[data-state='critical'] .linkPipe::after { background: linear-gradient(180deg, var(--fault), var(--signal-2)); }
+
+.linkNo {
+  grid-column: 1;
+  grid-row: 1;
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  color: var(--muted-2);
+}
+
+.linkName {
+  grid-column: 2;
+  grid-row: 1;
+  font-size: var(--step-0);
+  font-weight: 560;
+  color: var(--bone);
+  line-height: 1.25;
+}
+
+.linkValue {
+  grid-column: 3;
+  grid-row: 1;
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: 0.06em;
+  color: var(--water-100);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.link[data-state='moving'] .linkValue { color: var(--hold); }
+.link[data-state='critical'] .linkValue { color: var(--fault); }
+
+.linkWhat {
+  grid-column: 2 / -1;
+  font-size: var(--step--1);
+  line-height: 1.5;
+  color: var(--bone-2);
+  text-wrap: pretty;
+}
+
+.linkBecause {
+  grid-column: 2 / -1;
+  font-size: var(--step--1);
+  line-height: 1.5;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.linkBecause::before {
+  content: 'so → ';
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--signal);
+}
+
+/* The last link has nothing downstream of it. */
+.link:last-child .linkBecause::before { content: 'and → '; }
+
+.linkSeen {
+  grid-column: 2 / -1;
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: 0.08em;
+  color: var(--muted-2);
+}
+
+@media (min-width: 1180px) {
+  .links { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-4); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .linkPipe::after,
+  .link { transition: none; }
+}

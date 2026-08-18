@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-import { barclays, contact, profile, scale, site } from '@/content';
+import { useEffect, useState } from 'react';
+import { barclays, contact, journey, profile, scale, site } from '@/content';
 import { disturbedSurface } from '@/lib/geometry';
 import {
   usePaint,
@@ -14,6 +14,7 @@ import {
   useTier,
   useVars,
   useViewport,
+  useWatch,
 } from '@/lib/motion';
 import styles from './Headwater.module.css';
 
@@ -40,13 +41,14 @@ import styles from './Headwater.module.css';
 const VB_W = 1200;
 const VB_H = 800;
 
-const STATIONS = [
-  { at: 0.015, label: 'Source' },
-  { at: 0.27, label: 'Build' },
-  { at: 0.52, label: 'Gates' },
-  { at: 0.75, label: 'Registry' },
-  { at: 0.985, label: 'Production' },
-];
+/* The sill is the route, and the route is declared once in the content layer,
+   so the stations along the bottom of the chamber and the channel running down
+   the left of every later chapter are the same six places. */
+const STATIONS = journey.map((s, i) => ({
+  at: i / (journey.length - 1),
+  label: s.label,
+  id: s.id,
+}));
 
 export function Headwater() {
   const reduced = usePrefersReducedMotion();
@@ -59,6 +61,11 @@ export function Headwater() {
       level: { value: 0.79, family: 'hydraulic' },
       /* Scroll through the block, 0…1, written by a passive listener. */
       scroll: { value: 0, family: 'hydraulic', tau: 0.22 },
+      /* The start sequence. It runs once, on arrival, and then it is over —
+         an artifact crossing the works and settling at a healthy level. It is
+         deliberately not a loop: a hero that keeps restarting is a hero that
+         keeps asking to be looked at while somebody is trying to read. */
+      start: { value: 0, family: 'release', tau: 1.15 },
       pointerX: { value: 0.5, family: 'mechanical' },
       pointerV: { value: 0, family: 'mechanical' },
       pointerIn: { value: 0, family: 'mechanical' },
@@ -67,9 +74,19 @@ export function Headwater() {
     tier,
   });
 
+  const [arrived, setArrived] = useState(false);
+
   const rootRef = useRigRoot<HTMLElement>(rig, (visible) => {
     rig.setClock(visible);
+    if (visible) rig.set('start', 1, 'release', 1.15);
   });
+
+  useWatch(rig, (r) => r.get('start'), 0.94, 'up', () => setArrived(true));
+
+  /* Reduced motion has no sequence to finish, so the works are simply already
+     started: the same end state, reached without the journey. Derived rather
+     than pushed into state by an effect. */
+  const settled = arrived || reduced;
 
   const scrollRef = useScrollChannel<HTMLElement>(rig, 'scroll');
   const pointerRef = usePointerField(rig);
@@ -117,17 +134,18 @@ export function Headwater() {
      a rising water level cost no React render and no layout. */
   const worksRef = useVars<HTMLDivElement>(rig, {
     '--datum': (r) => surfaceLevel(r),
-    '--travel': (r) => {
-      if (r.reduced) return 0.52;
-      return Math.min(1, ((r.time % 11) / 11) / 0.84);
-    },
+    /* One pass, left to right, and then it stays where it stopped. */
+    '--travel': (r) => r.get('start'),
+    /* It rides up as the chamber equalises and settles at a working level. */
     '--lift': (r) => {
-      if (r.reduced) return 0.5;
-      const p = Math.min(1, ((r.time % 11) / 11) / 0.84);
-      return Math.sin(p * Math.PI) * 0.55 + 0.12;
+      const p = r.get('start');
+      return Math.sin(Math.min(1, p) * Math.PI) * 0.34 + p * 0.26 + 0.1;
     },
-    /* The paddle gear turns while the chamber is filling. */
-    '--gear': (r) => (r.reduced ? 0 : r.time * 42),
+    '--settled': (r) => r.get('start'),
+    /* The paddle gear turns while the chamber is filling, and stops when it
+       has finished — machinery that runs with nothing to lift is a fault. */
+    '--gear': (r) =>
+      r.reduced ? 0 : r.time * 42 * Math.max(0, 1 - r.get('start')),
   });
 
   /* Publish the level to the document so the waterway running down the left of
@@ -267,14 +285,23 @@ export function Headwater() {
       </div>
 
       {/* The route, as a sill along the foot of the chamber. */}
-      <ol className={styles.stations}>
-        {STATIONS.map((s) => (
-          <li key={s.label} className={styles.station} style={{ left: `${s.at * 100}%` }}>
+      <ol className={styles.stations} data-settled={settled || undefined}>
+        {STATIONS.map((s, i) => (
+          <li
+            key={s.id}
+            className={styles.station}
+            style={{ left: `${s.at * 100}%` }}
+            data-last={i === STATIONS.length - 1 ? '' : undefined}
+          >
             <span className={styles.tick} aria-hidden="true" />
             <span className={styles.stationLabel}>{s.label}</span>
           </li>
         ))}
       </ol>
+
+      <p className={styles.state} data-settled={settled || undefined} aria-live="polite">
+        {settled ? 'Production · healthy' : 'Starting the works'}
+      </p>
     </header>
   );
 }

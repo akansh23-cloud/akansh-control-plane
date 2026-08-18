@@ -197,3 +197,96 @@
   .nav { grid-column: 2; grid-row: 1 / span 2; }
   .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-3) var(--s-5); }
 }
+
+/* ---------------- depth switch ---------------- */
+
+/* Two readers, one application. The switch lives in the persistent bar because
+   the decision is not a landing choice — a recruiter may want the detail on
+   plate four, and an engineer may want the sixty-second version at the end. */
+.depth {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  align-self: center;
+  padding: 2px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+}
+
+.depthBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding-inline: var(--s-3);
+  border-radius: 2px;
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition:
+    background var(--t-tap) var(--ease-gear),
+    color var(--t-tap) var(--ease-gear);
+}
+
+.depthBtn[aria-pressed='true'] {
+  background: var(--water-500);
+  color: var(--bone);
+}
+
+/* Both labels are always in the accessibility tree; only one is ever on
+   screen. `display: none` here would have made the control's accessible name
+   change with the viewport, which is how a button ends up being called "60s"
+   to a screen reader on a phone and "Recruiter" on a laptop. */
+.depthLong,
+.depthShort {
+  display: inline;
+}
+
+.depthLong {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.depthNote {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-4);
+  border: 1px solid var(--rule-faint);
+  border-left: 2px solid var(--signal);
+  border-radius: 3px;
+  font-size: var(--step--1);
+  line-height: 1.5;
+  color: var(--muted);
+  max-width: 74ch;
+}
+
+@media (max-width: 519px) {
+  .barLinkWide { display: none; }
+}
+
+@media (min-width: 720px) {
+  .depthLong {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+  }
+
+  .depthShort {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
