@@ -91,6 +91,16 @@ button[aria-controls='key-plate'] {
   min-width: 0 !important;
 }
 
+/* The Index is itself the command surface. Floating operator launchers become
+   inert while it is open instead of stacking on top of navigation rows. */
+body:has(#key-plate:not([hidden])) aside[aria-label='Living release run'],
+body:has(#key-plate:not([hidden])) aside[aria-label='Optional operator challenge'],
+body:has(#key-plate:not([hidden])) aside[aria-label='Blackwater operator challenge'] {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
 @media (min-width: 720px) and (max-width: 1199px) {
   #key-plate > div {
     grid-template-columns: minmax(0, 1fr) !important;
@@ -210,14 +220,38 @@ body aside[aria-label='Blackwater operator challenge'] > button {
     right: 9px !important;
   }
 
+  body aside[aria-label='Living release run']:has(> button[aria-expanded='false']) {
+    width: min(168px, calc(100vw - 18px)) !important;
+  }
+
+  body aside[aria-label='Living release run'] > button[aria-expanded='false'] > :last-child {
+    display: none !important;
+  }
+
   body aside[aria-label='Living release run']:has(#living-release-panel:not([hidden])) {
     width: min(330px, calc(100vw - 18px)) !important;
   }
 
-  body aside[aria-label='Optional operator challenge'],
+  body aside[aria-label='Optional operator challenge'] {
+    width: min(176px, calc(100vw - 18px)) !important;
+    left: 9px !important;
+  }
+
+  body aside[aria-label='Optional operator challenge'] > button > span:last-child > small {
+    display: none !important;
+  }
+
   body aside[aria-label='Blackwater operator challenge'] {
     width: min(214px, calc(100vw - 18px)) !important;
     left: 9px !important;
+  }
+
+  body aside[aria-label='Blackwater operator challenge']:has(> button[aria-expanded='false']) {
+    width: min(184px, calc(100vw - 18px)) !important;
+  }
+
+  body aside[aria-label='Blackwater operator challenge'] > button[aria-expanded='false'] > :nth-child(2) > strong {
+    display: none !important;
   }
 
   body aside[aria-label='Blackwater operator challenge']:has(#blackwater-drill-panel:not([hidden])) {
