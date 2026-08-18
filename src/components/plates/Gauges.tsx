@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Fold } from '@/components/Fold';
+import { useJourney } from '@/components/JourneySystem';
 import {
   causalAt,
   causalChain,
@@ -25,17 +26,18 @@ import styles from './Gauges.module.css';
 /**
  * PLATE 06 — GAUGE HOUSE. Observability as relationships, not a dashboard.
  *
- * The reading is derived from the load the visitor sets, using a deliberately
- * simple model: latency curves upward as saturation approaches the limit,
- * errors stay at zero until latency crosses the timeout budget, and readiness
- * drops once errors are sustained — which takes pods out of rotation instead
- * of serving failures. It is labelled as a model on screen, because it is one.
+ * V7 keeps the deterministic model, but its starting point can now inherit
+ * stress from the visitor's own upstream run. That is narrative state, not
+ * production telemetry, and the UI says so explicitly. Once the visitor moves
+ * the load control, their hand owns the model again.
  */
 
 export function Gauges() {
   const reduced = usePrefersReducedMotion();
   const tier = useTier();
   const viewport = useViewport();
+  const journey = useJourney();
+  const touched = useRef(false);
 
   const [load, setLoad] = useState(0.34);
   const reading = readAt(load);
@@ -60,8 +62,25 @@ export function Gauges() {
     '--load': (r) => r.get('load'),
   });
 
+  /* Upstream faults, drift and fallback seed this simulation before the reader
+     reaches it. The actual gauge values remain derived from readAt(load), so no
+     fake metric is introduced and the existing accuracy contract stays true. */
+  useEffect(() => {
+    if (!journey.launched || touched.current) return;
+    const seed = journey.signalSeed;
+    if (Math.abs(seed - load) < 0.005) return;
+    setLoad(seed);
+    rig.jump('load', seed);
+    const seeded = readAt(seed).state;
+    journey.telemetryChanged(
+      seed,
+      seeded === 'critical' ? 'critical' : seeded === 'degrading' ? 'degrading' : 'healthy',
+    );
+  }, [journey, load, rig]);
+
   const move = useCallback(
     (next: number) => {
+      touched.current = true;
       setLoad(next);
       rig.set('load', next, 'hydraulic');
     },
@@ -72,6 +91,13 @@ export function Gauges() {
     step: 0.06,
     detents: [0, 0.5, 0.75, 1],
     snap: 0.035,
+    onCommit: (value) => {
+      const state = readAt(value).state;
+      journey.telemetryChanged(
+        value,
+        state === 'critical' ? 'critical' : state === 'degrading' ? 'degrading' : 'healthy',
+      );
+    },
   });
 
   /* A tablet drops to two gauge columns rather than four — four columns at
@@ -85,8 +111,18 @@ export function Gauges() {
     readiness: { display: `${reading.readiness} / 3`, fill: reading.readiness / 3 },
   };
 
+  const inherited = journey.launched && journey.signalSeed > 0.345;
+
   return (
     <div ref={rootRef} className={styles.root} data-state={reading.state}>
+      {inherited ? (
+        <p className="u-note">
+          Run context · Earlier operator actions seeded this simulation at{' '}
+          {Math.round(journey.signalSeed * 100)}% of the modeled limit. This is
+          narrative carry-over, not production telemetry; move the control to take over.
+        </p>
+      ) : null}
+
       <div
         ref={(node) => {
           pointerRef(node);
