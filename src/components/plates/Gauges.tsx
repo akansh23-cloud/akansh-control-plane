@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Fold } from '@/components/Fold';
 import { useJourney } from '@/components/JourneySystem';
 import {
@@ -37,13 +37,16 @@ export function Gauges() {
   const tier = useTier();
   const viewport = useViewport();
   const journey = useJourney();
-  const touched = useRef(false);
 
   const [load, setLoad] = useState(0.34);
-  const reading = readAt(load);
+  const [controlled, setControlled] = useState(false);
+  /* Inherited load is derived state, not state copied by an effect. This keeps
+     the React layer semantic and lets upstream actions remain the source. */
+  const effectiveLoad = controlled || !journey.launched ? load : journey.signalSeed;
+  const reading = readAt(effectiveLoad);
   /* The same load, read as a chain of causes rather than four dials. */
-  const chain = causalAt(load);
-  const decision = decisionAt(load);
+  const chain = causalAt(effectiveLoad);
+  const decision = decisionAt(effectiveLoad);
 
   const rig = useRig({
     channels: {
@@ -62,32 +65,23 @@ export function Gauges() {
     '--load': (r) => r.get('load'),
   });
 
-  /* Upstream faults, drift and fallback seed this simulation before the reader
-     reaches it. The actual gauge values remain derived from readAt(load), so no
-     fake metric is introduced and the existing accuracy contract stays true. */
+  /* The physical marker follows whichever semantic source currently owns the
+     model. This effect only writes to the motion runtime; it never copies React
+     state into more React state. */
   useEffect(() => {
-    if (!journey.launched || touched.current) return;
-    const seed = journey.signalSeed;
-    if (Math.abs(seed - load) < 0.005) return;
-    setLoad(seed);
-    rig.jump('load', seed);
-    const seeded = readAt(seed).state;
-    journey.telemetryChanged(
-      seed,
-      seeded === 'shedding' ? 'critical' : seeded === 'degrading' ? 'degrading' : 'healthy',
-    );
-  }, [journey, load, rig]);
+    rig.set('load', effectiveLoad, 'hydraulic');
+  }, [effectiveLoad, rig]);
 
   const move = useCallback(
     (next: number) => {
-      touched.current = true;
+      setControlled(true);
       setLoad(next);
       rig.set('load', next, 'hydraulic');
     },
     [rig],
   );
 
-  const { trackRef, dragging, handlers } = useAxisDrag('x', load, move, {
+  const { trackRef, dragging, handlers } = useAxisDrag('x', effectiveLoad, move, {
     step: 0.06,
     detents: [0, 0.5, 0.75, 1],
     snap: 0.035,
@@ -111,7 +105,7 @@ export function Gauges() {
     readiness: { display: `${reading.readiness} / 3`, fill: reading.readiness / 3 },
   };
 
-  const inherited = journey.launched && journey.signalSeed > 0.345;
+  const inherited = journey.launched && !controlled && journey.signalSeed > 0.345;
 
   return (
     <div ref={rootRef} className={styles.root} data-state={reading.state}>
@@ -165,8 +159,6 @@ export function Gauges() {
           ))}
         </dl>
 
-        {/* The load control. A designed track with a 48px grip, not a default
-            range input squeezed into a drawing. */}
         <div className={styles.control}>
           <p className="u-mark">Load against the limit</p>
           <div
@@ -187,8 +179,8 @@ export function Gauges() {
               aria-label="Load against the resource limit"
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-valuenow={Math.round(load * 100)}
-              aria-valuetext={`${Math.round(load * 100)} percent of limit — ${reading.state}`}
+              aria-valuenow={Math.round(effectiveLoad * 100)}
+              aria-valuetext={`${Math.round(effectiveLoad * 100)} percent of limit — ${reading.state}`}
               style={{ left: `calc(var(--load, 0.34) * 100%)` }}
               {...handlers}
             />
@@ -196,8 +188,6 @@ export function Gauges() {
         </div>
       </div>
 
-      {/* The causal sequence. The gauges say what each signal is; this says
-          what makes the next one move, which is where an alert belongs. */}
       <section className={styles.causal} aria-labelledby="gauges-causal">
         <div className={styles.causalHead}>
           <p className="u-mark" id="gauges-causal">
