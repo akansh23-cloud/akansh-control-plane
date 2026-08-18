@@ -1,66 +1,34 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useJourney } from '@/components/JourneySystem';
 import { usePrefersReducedMotion } from '@/lib/motion';
 import styles from './ProductionFinale.module.css';
 
 /**
- * Tidewater is once per semantic run, not once per mounted page. A run becomes
- * finale-eligible only after The Flight has genuinely cleared and that same run
- * reaches Tidewater. Merely jumping to the anchor can no longer manufacture a
- * finale.
+ * Tidewater is once per semantic run, not once per mounted page. JourneySystem
+ * owns the lifecycle; this component only renders the receipt for a run that
+ * actually cleared The Flight and reached production.
  */
 export function ProductionFinale() {
   const pathname = usePathname();
   const reduced = usePrefersReducedMotion();
   const run = useJourney();
-  const [runId, setRunId] = useState(0);
-  const [releaseClearedForRunId, setReleaseClearedForRunId] = useState<number | null>(null);
-  const [finalePlayedForRunId, setFinalePlayedForRunId] = useState<number | null>(null);
-  const wasStarted = useRef(false);
 
-  useEffect(() => {
-    if (!run.launched) {
-      wasStarted.current = false;
-      return;
-    }
-    if (wasStarted.current) return;
-    wasStarted.current = true;
-    setRunId((id) => id + 1);
-  }, [run.launched]);
-
-  useEffect(() => {
-    if (runId === 0) return;
-    if (run.events.some((event) => event.key === 'release-complete')) {
-      setReleaseClearedForRunId(runId);
-    }
-  }, [run.events, runId]);
-
-  const runStarted = run.launched && runId > 0;
   const runCompleted =
-    runStarted &&
+    run.launched &&
+    run.runId > 0 &&
     run.currentStage === 'tidewater' &&
-    run.productionReached &&
-    releaseClearedForRunId === runId;
+    run.releaseCleared &&
+    run.productionReached;
 
-  useEffect(() => {
-    if (pathname !== '/') return;
-    const html = document.documentElement;
-    html.dataset.runId = String(runId);
-    html.dataset.runStarted = String(runStarted);
-    html.dataset.runCompleted = String(runCompleted);
-    html.dataset.finalePlayedForRunId = finalePlayedForRunId === null ? '' : String(finalePlayedForRunId);
-    return () => {
-      delete html.dataset.runId;
-      delete html.dataset.runStarted;
-      delete html.dataset.runCompleted;
-      delete html.dataset.finalePlayedForRunId;
-    };
-  }, [finalePlayedForRunId, pathname, runCompleted, runId, runStarted]);
-
-  if (pathname !== '/' || !runCompleted || finalePlayedForRunId === runId) return null;
+  if (
+    pathname !== '/' ||
+    !runCompleted ||
+    run.finalePlayedForRunId === run.runId
+  ) {
+    return null;
+  }
 
   const gateResult = run.fault
     ? run.faultRemediated
@@ -81,10 +49,10 @@ export function ProductionFinale() {
       ? `${run.incidentAttempts} unresolved call${run.incidentAttempts === 1 ? '' : 's'}`
       : 'No diagnosis recorded';
 
-  const dismiss = () => setFinalePlayedForRunId(runId);
+  const dismiss = () => run.markFinalePlayed();
 
   return (
-    <section className={styles.root} aria-labelledby="production-finale-title" data-run-id={runId}>
+    <section className={styles.root} aria-labelledby="production-finale-title" data-run-id={run.runId}>
       <p className={styles.live} aria-live="polite">
         Release {run.artifact} reached production.
       </p>
@@ -108,7 +76,7 @@ export function ProductionFinale() {
       <div className={styles.release} aria-hidden="true"><span /></div>
 
       <div className={styles.receipt}>
-        <p className={styles.eyebrow}>TIDEWATER · RELEASE ACCEPTED · RUN {String(runId).padStart(2, '0')}</p>
+        <p className={styles.eyebrow}>TIDEWATER · RELEASE ACCEPTED · RUN {String(run.runId).padStart(2, '0')}</p>
         <h2 id="production-finale-title">The same artifact made it through.</h2>
         <p className={styles.artifact}>{run.artifact}</p>
         <p className={styles.summary}>
