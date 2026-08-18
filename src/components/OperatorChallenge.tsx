@@ -211,7 +211,7 @@ export function OperatorChallenge() {
         </ol>
 
         <div className={styles.footer}>
-          <p>No leaderboard. No fake SRE score. The system itself is the test.</p>
+          <p>No leaderboard. No fake reliability score. The system itself is the test.</p>
           <button
             type="button"
             className={styles.exit}
