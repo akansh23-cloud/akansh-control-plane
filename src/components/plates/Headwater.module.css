@@ -243,11 +243,11 @@
   gap: var(--s-2);
 }
 
-.actions .ctl { width: 100%; padding-inline: var(--s-3); }
+.actions :global(.ctl) { width: 100%; padding-inline: var(--s-3); }
 
 @media (min-width: 560px) {
   .actions { display: flex; flex-wrap: wrap; }
-  .actions .ctl { width: auto; padding-inline: var(--s-5); }
+  .actions :global(.ctl) { width: auto; padding-inline: var(--s-5); }
 }
 
 /* ---------------- scale facts ---------------- */
@@ -348,10 +348,52 @@
 .station:first-child .stationLabel { transform: none; left: 0; }
 .station:last-child .stationLabel { transform: none; right: 0; }
 
-/* Five labels will not fit across a phone; three tell the same story. */
+/* The far end of the route lights when the start sequence has finished and the
+   artifact is sitting in a healthy production state. */
+.stations[data-settled] .station[data-last] .tick {
+  width: 3px;
+  height: 12px;
+  background: var(--live);
+}
+
+.stations[data-settled] .station[data-last] .stationLabel { color: var(--live); }
+
+/* The one-line report on the start sequence. It says what state the works
+   ended in, which is the only thing the sequence was ever for. */
+.state {
+  position: relative;
+  z-index: 1;
+  width: min(100% - var(--gutter) * 2, var(--shell));
+  margin: var(--s-6) auto 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: color var(--t-move) var(--ease-water);
+}
+
+.state::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 4px color-mix(in oklab, currentColor 20%, transparent);
+}
+
+.state[data-settled] { color: var(--live); }
+
+/* Six labels will not fit across a phone; three tell the same story, and the
+   channel down the side of the page carries the rest. */
 @media (max-width: 719px) {
   .station:nth-child(2) .stationLabel,
-  .station:nth-child(4) .stationLabel { display: none; }
+  .station:nth-child(4) .stationLabel,
+  .station:nth-child(5) .stationLabel { display: none; }
   .gauge, .gear { display: none; }
   .wall { width: 8px; }
 }

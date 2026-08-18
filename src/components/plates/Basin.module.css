@@ -21,13 +21,17 @@
 }
 
 .views {
+  /* Content-aware: the track never gets narrower than the longest label needs,
+     so a tab reflows onto a second row instead of clipping "Verification" or
+     "Infrastructure". */
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
   gap: var(--s-2);
 }
 
-.views .ctl {
+.views :global(.ctl) {
   width: 100%;
+  min-width: 0;
   padding-inline: var(--s-3);
 }
 
@@ -41,13 +45,13 @@
   background: color-mix(in oklab, var(--panel) 58%, transparent);
 }
 
-.sync .ctl-row {
+.sync :global(.ctl-row) {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
   gap: var(--s-2);
 }
 
-.sync .ctl { width: 100%; padding-inline: var(--s-2); }
+.sync :global(.ctl) { width: 100%; min-width: 0; padding-inline: var(--s-3); }
 
 .caption {
   font-size: var(--step-1);
@@ -103,7 +107,9 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted-2);
-  white-space: nowrap;
+  /* Wraps rather than pushing the zone wider than its column. */
+  max-width: calc(100% - 24px);
+  line-height: 1.3;
 }
 
 .links {
@@ -416,14 +422,14 @@
     gap: var(--s-5);
   }
 
-  .views { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .views { grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); }
 
   .sync {
     grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
   }
 
-  .sync .ctl { padding-inline: var(--s-4); }
+  .sync :global(.ctl) { padding-inline: var(--s-4); }
 
   .key {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -545,13 +551,13 @@
     grid-template-areas: 'dev ci gates image ecr';
   }
 
-  .sync .ctl-row {
+  .sync :global(.ctl-row) {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
   gap: var(--s-2);
 }
 
-.sync .ctl { width: 100%; padding-inline: var(--s-2); }
+.sync :global(.ctl) { width: 100%; min-width: 0; padding-inline: var(--s-3); }
 
 .caption { font-size: var(--step-2); max-width: 40ch; }
 }
@@ -590,6 +596,47 @@
   line-height: 1.45;
   color: var(--bone-2);
   max-width: 68ch;
+}
+
+/* The selection's connections, in words. The drawing isolates them; this
+   states them, which is what a reader on a phone gets instead of a diagram. */
+.wiring {
+  display: grid;
+  gap: var(--s-2);
+  margin-top: var(--s-2);
+}
+
+.wiring li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s-2) var(--s-3);
+  padding-left: var(--s-3);
+  border-left: 2px solid var(--rule);
+  font-size: var(--step--1);
+  color: var(--bone-2);
+}
+
+.wiring li[data-kind='control'] { border-left-color: var(--signal); }
+.wiring li[data-kind='supply'] { border-left-color: var(--water-300); }
+.wiring li[data-kind='traffic'] { border-left-color: var(--live); }
+.wiring li[data-kind='provision'] { border-left-color: var(--muted-2); }
+.wiring li[data-kind='build'] { border-left-color: var(--bone-2); }
+
+.wiringDir {
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+
+.wiringName { font-weight: 560; color: var(--bone); }
+
+.wiringKind {
+  font-size: var(--step--1);
+  color: var(--muted);
 }
 
 .detailHint {
@@ -675,7 +722,7 @@
     align-items: start;
   }
 
-  .views { grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); }
+  .views { grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); }
 
   .guarantee { padding: var(--s-6); }
   .proofs { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-3) var(--s-5); }

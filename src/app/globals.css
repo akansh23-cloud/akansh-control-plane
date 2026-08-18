@@ -161,6 +161,10 @@ button {
 svg { display: block; }
 img { max-width: 100%; height: auto; }
 
+/* A class that sets `display` beats the user agent's [hidden] rule, which is
+   how a collapsed drawer ends up open anyway. State wins over layout. */
+[hidden] { display: none !important; }
+
 ::selection {
   background: color-mix(in oklab, var(--signal) 70%, transparent);
   color: var(--void);
@@ -281,8 +285,13 @@ img { max-width: 100%; height: auto; }
   align-items: center;
   justify-content: center;
   gap: var(--s-2);
+  /* 46px is a floor, not a fixed height. A control grows to fit its label:
+     nothing on this site is ever allowed to truncate the word it is made of,
+     which is what a fixed height plus nowrap plus overflow:hidden was doing to
+     "Verification" and "Infrastructure". */
   min-height: 46px;
-  padding: 0 var(--s-5);
+  min-width: 0;
+  padding: 11px clamp(10px, 1.6vw, 22px);
   border: 1px solid var(--rule-strong);
   border-radius: 3px;
   background: color-mix(in oklab, var(--panel-2) 70%, transparent);
@@ -290,10 +299,16 @@ img { max-width: 100%; height: auto; }
   font-family: var(--font-data);
   font-size: var(--step--2);
   font-stretch: 87.5%;
+  line-height: 1.25;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   text-decoration: none;
-  white-space: nowrap;
+  text-align: center;
+  /* Wrap and reflow. Never clip. */
+  white-space: normal;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+  hyphens: auto;
   transition:
     background var(--t-tap) var(--ease-gear),
     border-color var(--t-tap) var(--ease-gear),
@@ -484,13 +499,17 @@ img { max-width: 100%; height: auto; }
     color-mix(in oklab, var(--water-500) 80%, transparent),
     color-mix(in oklab, var(--water-700) 90%, transparent)
   );
-  transform: translateY(101%);
+  /* Scaled from the floor rather than translated in from below: a translated
+     child extends the control's scroll area to twice its height, which is
+     invisible but makes every control look clipped to anything measuring it. */
+  transform-origin: bottom;
+  transform: scaleY(0);
   transition: transform var(--t-quick) var(--ease-water);
 }
 
 .ctl:hover::before,
 .ctl:focus-visible::before {
-  transform: translateY(0);
+  transform: scaleY(1);
 }
 
 .ctl[data-primary]::before {
@@ -503,10 +522,10 @@ img { max-width: 100%; height: auto; }
 
 .ctl[aria-pressed='true']::before,
 .ctl[data-on]::before {
-  transform: translateY(0);
+  transform: scaleY(1);
 }
 
-.ctl:disabled::before { transform: translateY(101%); }
+.ctl:disabled::before { transform: scaleY(0); }
 
 @media (prefers-reduced-motion: reduce) {
   [data-reveal='out'] > *,
