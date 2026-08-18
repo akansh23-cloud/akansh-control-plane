@@ -1,14 +1,32 @@
 import { mkdir } from 'node:fs/promises';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
-const targets = new Set(['laptop-1440', 'laptop-1366', 'mobile-390-chromium']);
+const canonical = 'laptop-1366';
+const matrix = [
+  { label: '1920x1080', width: 1920, height: 1080 },
+  { label: '1600x900', width: 1600, height: 900 },
+  { label: '1440x900', width: 1440, height: 900 },
+  { label: '1366x768', width: 1366, height: 768 },
+  { label: '1280x800', width: 1280, height: 800 },
+  { label: '1024x768', width: 1024, height: 768 },
+  { label: '430x932', width: 430, height: 932 },
+  { label: '390x844', width: 390, height: 844 },
+] as const;
 
-test('capture Flight, Refit, Index and global V8 composition', async ({ page }, testInfo) => {
-  test.skip(!targets.has(testInfo.project.name));
-  const dir = 'test-results/visual-qa';
-  await mkdir(dir, { recursive: true });
-  const prefix = `${dir}/${testInfo.project.name}`;
+const captures = matrix.filter(({ width }) => width === 1440 || width === 1366 || width === 390);
 
+async function expectNoHorizontalOverflow(page: Page, label: string) {
+  const geometry = await page.evaluate(() => ({
+    document: document.documentElement.scrollWidth,
+    body: document.body.scrollWidth,
+    viewport: window.innerWidth,
+  }));
+  expect.soft(geometry.document, `${label}: document overflow`).toBeLessThanOrEqual(geometry.viewport + 1);
+  expect.soft(geometry.body, `${label}: body overflow`).toBeLessThanOrEqual(geometry.viewport + 1);
+}
+
+async function captureComposition(page: Page, dir: string, label: string) {
+  const prefix = `${dir}/${label}`;
   await page.goto('/');
   await page.screenshot({ path: `${prefix}-headwater.png`, fullPage: false });
 
@@ -28,9 +46,48 @@ test('capture Flight, Refit, Index and global V8 composition', async ({ page }, 
 
   const indexButton = page.locator('button[aria-controls="key-plate"]');
   await indexButton.click();
-  await expect(page.locator('#key-plate')).toBeVisible();
-  await page.locator('#key-plate').screenshot({ path: `${prefix}-index.png` });
+  const index = page.locator('#key-plate');
+  await expect(index).toBeVisible();
+  const indexGeometry = await index.evaluate((node) => ({
+    client: (node as HTMLElement).clientWidth,
+    scroll: (node as HTMLElement).scrollWidth,
+  }));
+  expect(indexGeometry.scroll, `${label}: Index overflow`).toBeLessThanOrEqual(indexGeometry.client + 1);
+  await index.screenshot({ path: `${prefix}-index.png` });
   await indexButton.click();
 
   await page.screenshot({ path: `${prefix}-global.png`, fullPage: false });
+  await expectNoHorizontalOverflow(page, label);
+}
+
+test('required viewport matrix has no page or Index overflow', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== canonical);
+
+  for (const viewport of matrix) {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await page.goto('/');
+    await expectNoHorizontalOverflow(page, viewport.label);
+
+    const indexButton = page.locator('button[aria-controls="key-plate"]');
+    await indexButton.click();
+    const index = page.locator('#key-plate');
+    await expect(index).toBeVisible();
+    const geometry = await index.evaluate((node) => ({
+      client: (node as HTMLElement).clientWidth,
+      scroll: (node as HTMLElement).scrollWidth,
+    }));
+    expect.soft(geometry.scroll, `${viewport.label}: Index overflow`).toBeLessThanOrEqual(geometry.client + 1);
+    await indexButton.click();
+  }
+});
+
+test('capture mandatory V8 visual QA at 1440, 1366 and 390', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== canonical);
+  const dir = 'test-results/visual-qa';
+  await mkdir(dir, { recursive: true });
+
+  for (const viewport of captures) {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await captureComposition(page, dir, viewport.label);
+  }
 });
