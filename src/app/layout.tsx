@@ -3,6 +3,7 @@ import '@fontsource-variable/bricolage-grotesque/wdth.css';
 import '@fontsource-variable/instrument-sans/index.css';
 import '@fontsource-variable/martian-mono/wdth.css';
 import './globals.css';
+import './v7.css';
 import { JourneyProvider } from '@/components/JourneySystem';
 import { ProductionFinale } from '@/components/ProductionFinale';
 import {
