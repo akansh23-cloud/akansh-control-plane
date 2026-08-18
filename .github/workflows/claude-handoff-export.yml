@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - handoff/claude-v8-source-2026-08-19
+  pull_request:
+    branches:
+      - main
 
 jobs:
   export:
