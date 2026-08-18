@@ -53,30 +53,18 @@ structurally true rather than decorative:
 | Rebuilding the works with water still in them | Platform modernisation |
 | The tideway | Production |
 
-The site is nine numbered plates, and the numbering carries information: it is
+The site is seven numbered plates, and the numbering carries information: it is
 the order in which software travels from source to sea.
 
 | Plate | Name | What it is |
 | --- | --- | --- |
 | 01 | Headwater | Identity. Drag the sluice; the water rises and the name is cut by the waterline — ink above it, chalk below. |
 | 02 | The Flight | Release engineering at Barclays. Send a release up nine chambers. Arm a fault and watch a gate refuse it. |
-| 03 | The Refit | Modernisation. Drive a refit front across five layers; each one swaps whole in place, and no word is ever cut. |
+| 03 | The Refit | Modernisation. Drag the seam between the old works and the rebuilt channel. |
 | 04 | The Basin | Migration Assurance Platform. Four views of one site; make the cluster drift and watch Argo CD pull it back. |
 | 05 | The Split | Career Autopilot. Extract services one at a time; take one out of service and watch the gateway fall back. |
-| 06 | Gauge House | Observability as relationships. Raise the load and see which signal moves first, and what each one makes move next. |
-| 07 | The Watch | The incident room. Read four signals, call it, and find out why readiness had already contained the fault. |
-| 08 | The Vault | Every strong claim, opened up: claim, context, what I did, stack, and what a reader can check. |
-| 09 | Tidewater | Certifications as lit beacons, and contact. |
-
-### Two readers, one application
-
-A recruiter with sixty seconds and an engineer who wants to know whether the
-person behind this can build things are both served by the same markup. The
-depth switch in the persistent bar sets one attribute on the document element;
-recruiter depth folds the simulations away and opens a gathered brief plus a
-two-line summary under every chapter. Nothing is duplicated, no fact exists in
-one depth and not the other, and the server renders the engineer view, so
-nothing is hidden on arrival.
+| 06 | Gauge House | Observability as relationships. Raise the load and see which signal moves first. |
+| 07 | Tidewater | Certifications as lit beacons, and contact. |
 
 ### Design system
 
@@ -129,17 +117,15 @@ the PDF and images.
 src/
   app/
     layout.tsx          metadata, JSON-LD, self-hosted fonts, skip link
-    page.tsx            composes the nine plates
+    page.tsx            composes the seven plates
     globals.css         the whole token system
     resume/             the HTML résumé
     not-found.tsx       404, as a chamber with no water in it
     robots.ts sitemap.ts
   components/
     Plate.tsx           the numbered chapter frame
-    Legend.tsx          the key plate — nav, the recruiter fast path, depth switch
-    Waterway.tsx        the route: one channel, six stations, measured from layout
-    Brief.tsx           the sixty-second brief, revealed in recruiter depth
-    plates/             the nine drawings
+    Legend.tsx          the key plate — nav plus the recruiter fast path
+    plates/             the seven drawings
   content/              ← every fact on the site lives here, and only here
   lib/
     motion.ts           reduced-motion aware hooks, drag, convergence, ticker
