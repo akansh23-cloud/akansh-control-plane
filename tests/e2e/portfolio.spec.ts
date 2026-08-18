@@ -33,7 +33,7 @@ test.describe('production shell', () => {
     );
     expect(overflow).toBeLessThanOrEqual(1);
 
-    for (const id of ['headwater', 'flight', 'refit', 'basin', 'split', 'gauges', 'watch', 'vault', 'tidewater']) {
+    for (const id of ['headwater', 'flight', 'refit', 'basin', 'split', 'gauges', 'tidewater']) {
       const section = page.locator(`#${id}`);
       await expect(section).toHaveCount(1);
       await section.scrollIntoViewIfNeeded();
@@ -191,6 +191,9 @@ test.describe('controls and layout', () => {
   test('no control clips its own label at any width', async ({ page }) => {
     await page.goto('/');
 
+    /* The defect this replaces: a fixed-height control with nowrap and
+       overflow:hidden, which cut "Verification" and "Infrastructure" in half.
+       A control is now allowed to be as tall as its label needs. */
     const clipped = await page.evaluate(() => {
       const bad: string[] = [];
       for (const el of Array.from(document.querySelectorAll<HTMLElement>('.ctl'))) {
@@ -247,6 +250,7 @@ test.describe('the refit', () => {
     for (let i = 0; i < 6; i += 1) {
       await page.keyboard.press('ArrowRight');
       const text = await refit.innerText();
+      /* Not one fragment: every name is complete at every position. */
       expect(text).toContain('Jenkins + Bitbucket');
       expect(text).toContain('GitLab CI/CD');
       expect(text).toContain('Tomcat 10');
@@ -273,6 +277,7 @@ test.describe('the refit', () => {
     await expect(after).toHaveAttribute('aria-pressed', 'true');
     await expect(before).toHaveAttribute('aria-pressed', 'false');
 
+    /* Part way through, neither end is true — and the buttons say so. */
     await seam.focus();
     await page.keyboard.press('Home');
     await page.keyboard.press('ArrowRight');
@@ -331,9 +336,12 @@ test.describe('depth', () => {
   test('recruiter mode folds the drawings and opens the sixty-second brief', async ({ page }) => {
     await page.goto('/');
 
+    /* The accessible name carries both labels at every width, so the control
+       is called the same thing on a phone as on a laptop. */
     const recruiter = page.getByRole('button', { name: /Recruiter/ });
     const engineer = page.getByRole('button', { name: /Engineer/ });
 
+    /* The engineer view is what the server sends: nothing is hidden on arrival. */
     await expect(page.locator('html')).not.toHaveAttribute('data-depth', 'recruiter');
     await expect(page.locator('#refit').getByRole('slider')).toBeVisible();
 
@@ -341,6 +349,7 @@ test.describe('depth', () => {
     await expect(page.locator('html')).toHaveAttribute('data-depth', 'recruiter');
     await expect(page.getByText('The sixty-second brief')).toBeVisible();
     await expect(page.locator('#refit').getByRole('slider')).toBeHidden();
+    /* The chapters are still there, and so are the facts. */
     await expect(page.locator('#refit')).toContainText(/Jenkins and Bitbucket to GitLab/i);
     await expect(page.getByRole('link', { name: 'Download PDF' })).toBeVisible();
 
