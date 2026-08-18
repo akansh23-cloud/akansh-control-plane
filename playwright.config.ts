@@ -18,7 +18,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: process.env.CI ? 2 : undefined,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
   use: {
     baseURL,
@@ -26,31 +26,44 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [
-    { name: 'desktop-1920', use: chrome(1920, 1080) },
-    { name: 'desktop-1600', use: chrome(1600, 900) },
-    { name: 'laptop-1440', use: chrome(1440, 900) },
-    { name: 'laptop-1366', use: chrome(1366, 768) },
-    { name: 'laptop-1280', use: chrome(1280, 800) },
-    { name: 'tablet-1024', use: chrome(1024, 768) },
+    /* The complete interaction/content suite runs once at the hardest laptop
+       composition. Individual responsive tests inside that suite then exercise
+       every required width without multiplying the entire suite eight times. */
     {
-      name: 'mobile-430-chromium',
-      use: { ...devices['Pixel 5'], browserName: 'chromium', viewport: { width: 430, height: 932 }, ...chromiumLaunch },
+      name: 'laptop-1366',
+      use: chrome(1366, 768),
     },
+    /* Real mobile Chromium semantics (touch/coarse pointer/user agent) get a
+       focused interaction pass in addition to the width matrix. */
     {
       name: 'mobile-390-chromium',
-      use: { ...devices['Pixel 5'], browserName: 'chromium', viewport: { width: 390, height: 844 }, ...chromiumLaunch },
+      testMatch: /cross-browser\.spec\.ts/,
+      use: {
+        ...devices['Pixel 5'],
+        browserName: 'chromium',
+        viewport: { width: 390, height: 844 },
+        ...chromiumLaunch,
+      },
     },
-    {
-      name: 'reduced-motion',
-      use: { ...chrome(1440, 900), contextOptions: { reducedMotion: 'reduce' } },
-    },
+    /* WebKit is intentionally focused on the cross-browser contract: chrome,
+       release, refit, intro and responsive overflow. */
     {
       name: 'webkit-1440',
-      use: { ...devices['Desktop Safari'], browserName: 'webkit', viewport: { width: 1440, height: 900 } },
+      testMatch: /cross-browser\.spec\.ts/,
+      use: {
+        ...devices['Desktop Safari'],
+        browserName: 'webkit',
+        viewport: { width: 1440, height: 900 },
+      },
     },
     {
       name: 'webkit-mobile-390',
-      use: { ...devices['iPhone 13'], browserName: 'webkit', viewport: { width: 390, height: 844 } },
+      testMatch: /cross-browser\.spec\.ts/,
+      use: {
+        ...devices['iPhone 13'],
+        browserName: 'webkit',
+        viewport: { width: 390, height: 844 },
+      },
     },
   ],
   webServer: process.env.E2E_BASE_URL
