@@ -2,7 +2,14 @@
 
 import { useCallback, useState } from 'react';
 import { Fold } from '@/components/Fold';
-import { gauges, observabilityChain, readAt } from '@/content';
+import {
+  causalAt,
+  causalChain,
+  decisionAt,
+  gauges,
+  observabilityChain,
+  readAt,
+} from '@/content';
 import {
   useAxisDrag,
   usePointerField,
@@ -32,6 +39,9 @@ export function Gauges() {
 
   const [load, setLoad] = useState(0.34);
   const reading = readAt(load);
+  /* The same load, read as a chain of causes rather than four dials. */
+  const chain = causalAt(load);
+  const decision = decisionAt(load);
 
   const rig = useRig({
     channels: {
@@ -149,6 +159,41 @@ export function Gauges() {
           </div>
         </div>
       </div>
+
+      {/* The causal sequence. The gauges say what each signal is; this says
+          what makes the next one move, which is where an alert belongs. */}
+      <section className={styles.causal} aria-labelledby="gauges-causal">
+        <div className={styles.causalHead}>
+          <p className="u-mark" id="gauges-causal">
+            What moves next, and why
+          </p>
+          <p className={styles.decision} aria-live="polite">
+            {decision}
+          </p>
+        </div>
+
+        <ol className={styles.links}>
+          {causalChain.map((link, i) => {
+            const state = chain[i];
+            return (
+              <li
+                key={link.id}
+                className={styles.link}
+                data-state={state.state}
+                style={{ '--intensity': state.intensity } as React.CSSProperties}
+              >
+                <span className={styles.linkPipe} aria-hidden="true" />
+                <span className={styles.linkNo}>{String(i + 1).padStart(2, '0')}</span>
+                <span className={styles.linkName}>{link.name}</span>
+                <span className={styles.linkValue}>{state.value}</span>
+                <span className={styles.linkWhat}>{link.what}</span>
+                <span className={styles.linkBecause}>{link.because}</span>
+                <span className={styles.linkSeen}>{link.seenIn}</span>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
 
       <Fold label="How a signal reaches you" hint={`${observabilityChain.length} hops`}>
         <ol className={styles.chain}>

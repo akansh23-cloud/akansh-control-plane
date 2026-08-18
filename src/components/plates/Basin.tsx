@@ -242,6 +242,23 @@ export function Basin() {
     [nodes, focus],
   );
 
+  /* What the selection is actually wired to, in the direction it is wired.
+     Selecting a node isolates it on the drawing; this is the same isolation
+     said in words, which is what a reader on a phone gets instead. */
+  const wiring = useMemo(() => {
+    if (!focus) return [];
+    const name = (id: string) =>
+      nodes.find((n) => n.id === id)?.label ?? id;
+    return edges
+      .filter((e) => e.from === focus || e.to === focus)
+      .map((e) => ({
+        id: `${e.from}-${e.to}`,
+        out: e.from === focus,
+        other: name(e.from === focus ? e.to : e.from),
+        kind: e.kind,
+      }));
+  }, [focus, edges, nodes]);
+
   /* Connected set, for dimming everything the selection does not touch. */
   const connected = useMemo(() => {
     if (!focus) return null;
@@ -469,6 +486,19 @@ export function Basin() {
           <>
             <p className={styles.detailName}>{focused.label}</p>
             {focused.note ? <p className={styles.detailNote}>{focused.note}</p> : null}
+            {wiring.length ? (
+              <ul className={styles.wiring}>
+                {wiring.map((w) => (
+                  <li key={w.id} data-kind={w.kind}>
+                    <span className={styles.wiringDir}>{w.out ? 'to' : 'from'}</span>
+                    <span className={styles.wiringName}>{w.other}</span>
+                    <span className={styles.wiringKind}>
+                      {KEY_LABELS[w.kind] ?? w.kind}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
             <button type="button" className={styles.clear} onClick={() => setFocus(null)}>
               Clear selection
             </button>

@@ -1,0 +1,147 @@
+/* The sixty-second brief. Hidden until the reader asks for that depth. */
+
+.brief {
+  display: none;
+  width: min(100% - var(--gutter) * 2, var(--shell));
+  margin-inline: auto;
+  margin-block: var(--s-7);
+  gap: var(--s-5);
+  padding: var(--s-5);
+  border: 1px solid var(--edge);
+  border-left: 3px solid var(--signal);
+  border-radius: 3px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--panel) 88%, transparent),
+    color-mix(in oklab, var(--void) 52%, transparent)
+  );
+}
+
+:global(html[data-depth='recruiter']) .brief { display: grid; }
+
+.head { display: grid; gap: var(--s-2); }
+
+.name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-stretch: 88%;
+  font-size: var(--step-3);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--bone);
+}
+
+.role {
+  font-family: var(--font-data);
+  font-size: var(--step--1);
+  font-stretch: 87.5%;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--signal);
+}
+
+.summary {
+  font-size: var(--step-0);
+  line-height: 1.55;
+  color: var(--bone-2);
+  max-width: 72ch;
+  text-wrap: pretty;
+}
+
+.block { display: grid; gap: var(--s-3); }
+
+.facts { display: grid; gap: var(--s-2); }
+
+.facts > div {
+  display: grid;
+  grid-template-columns: minmax(0, 8.5rem) minmax(0, 1fr);
+  gap: var(--s-3);
+  padding-bottom: var(--s-2);
+  border-bottom: 1px solid var(--rule-faint);
+}
+
+.facts dt {
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+
+.facts dd {
+  font-size: var(--step--1);
+  line-height: 1.45;
+  color: var(--bone-2);
+}
+
+.outcomes { display: grid; gap: var(--s-3); }
+
+.outcomes li,
+.creds li {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: var(--s-3);
+  font-size: var(--step-0);
+  line-height: 1.5;
+  color: var(--bone-2);
+  text-wrap: pretty;
+}
+
+.outcomes li::before,
+.creds li::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  margin-top: 0.55em;
+  background: var(--water-300);
+  transform: rotate(45deg);
+}
+
+.creds li::before { background: var(--live); }
+.creds { display: grid; gap: var(--s-2); }
+
+.projects { display: grid; gap: var(--s-4); }
+
+.projects li { display: grid; gap: 3px; }
+
+.projectName {
+  font-family: var(--font-display);
+  font-weight: 620;
+  font-stretch: 92%;
+  font-size: var(--step-1);
+  color: var(--bone);
+}
+
+.projectLine {
+  font-size: var(--step--1);
+  line-height: 1.5;
+  color: var(--muted);
+  max-width: 68ch;
+}
+
+.projects a {
+  justify-self: start;
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  letter-spacing: 0.06em;
+  color: var(--water-100);
+}
+
+.prep {
+  font-size: var(--step--1);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.actions { margin-top: var(--s-2); }
+
+@media (min-width: 720px) {
+  .brief {
+    padding: var(--s-6);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+  .head { grid-column: 1 / -1; }
+  .actions { grid-column: 1 / -1; }
+}

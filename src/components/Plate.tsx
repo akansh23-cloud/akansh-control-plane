@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { plateBriefs } from '@/content';
 import { useReveal } from '@/lib/motion';
 import styles from './Plate.module.css';
 
@@ -42,6 +43,10 @@ export function Plate({
   note,
 }: PlateProps) {
   const revealHead = useReveal<HTMLElement>();
+  /* The chapter in two lines, for the sixty-second reader. It is rendered on
+     the server in both modes and revealed by the depth attribute, so the
+     recruiter view is disclosure rather than a second application. */
+  const brief = plateBriefs[id];
 
   return (
     <section
@@ -65,6 +70,14 @@ export function Plate({
 
           {intro ? <div className={styles.intro}>{intro}</div> : null}
         </header>
+
+        {brief ? (
+          <ul className={styles.brief}>
+            {brief.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        ) : null}
 
         {aside ? <div className={styles.aside}>{aside}</div> : null}
 

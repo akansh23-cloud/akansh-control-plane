@@ -2,7 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Fold } from '@/components/Fold';
-import { chambers, faults, workloadFittings } from '@/content';
+import {
+  chambers,
+  faultEvents,
+  faults,
+  recoveryEvents,
+  releaseComplete,
+  releaseStart,
+  stageEvents,
+  workloadFittings,
+} from '@/content';
 import {
   usePaint,
   usePointerField,
@@ -17,8 +26,12 @@ import styles from './Flight.module.css';
 
 type Mode = 'idle' | 'running' | 'held' | 'recovering';
 type Phase = Mode | 'complete';
+type Tone = 'ok' | 'gate' | 'fault' | 'fix';
+type LogLine = { id: number; at: string; stage: string; text: string; tone: Tone };
 
 const LAST = chambers.length;
+/** How much of the log is worth keeping on screen at once. */
+const LOG_DEPTH = 7;
 
 export function Flight() {
   const reduced = usePrefersReducedMotion();
@@ -28,7 +41,13 @@ export function Flight() {
   const [stage, setStage] = useState(0);
   const [mode, setMode] = useState<Mode>('idle');
   const [faultId, setFaultId] = useState<string | null>(null);
+  const [log, setLog] = useState<LogLine[]>([]);
   const autoRef = useRef<(() => void) | null>(null);
+  /* The simulation's own clock, so the timestamps on the log are the real
+     elapsed time of the run rather than invented numbers. */
+  const startedAt = useRef(0);
+  const seq = useRef(0);
+  const logged = useRef('');
 
   const rig = useRig({
     channels: {
@@ -51,6 +70,12 @@ export function Flight() {
     }, 420);
   });
   const pointerRef = usePointerField(rig);
+
+  /* How long one chamber takes. A phone runs the same nine-stage sequence as
+     everything else, but at a pace a hand-held device can actually paint —
+     the previous build skipped the simulation entirely on touch, which meant
+     the one interaction the plate exists for never ran there. */
+  const pace = viewport === 'mobile' ? 0.1 : viewport === 'tablet' ? 0.15 : 0.2;
 
   const fault = useMemo(
     () => faults.find((f) => f.id === faultId) ?? null,
@@ -75,6 +100,46 @@ export function Flight() {
   const complete = mode !== 'idle' && stage >= LAST;
   const phase: Phase = complete ? 'complete' : mode;
 
+  const emit = useCallback((stageName: string, text: string, tone: Tone) => {
+    const at = startedAt.current
+      ? `+${((performance.now() - startedAt.current) / 1000).toFixed(1)}s`
+      : '+0.0s';
+    seq.current += 1;
+    const line: LogLine = { id: seq.current, at, stage: stageName, text, tone };
+    setLog((lines) => [...lines, line].slice(-LOG_DEPTH));
+  }, []);
+
+  /* Status events. One entry per state the release actually reaches — written
+     from an effect, never from a frame, so the log cannot outrun the drawing
+     or fire twice for the same state. */
+  useEffect(() => {
+    if (mode === 'idle') return;
+    const key = `${mode}:${stage}:${faultId ?? '-'}`;
+    if (logged.current === key) return;
+    logged.current = key;
+
+    if (complete) {
+      emit('Promote', releaseComplete, 'ok');
+      return;
+    }
+
+    const chamber = chambers[Math.min(stage, LAST - 1)];
+
+    if (mode === 'held') {
+      const line = faultId ? faultEvents[faultId] : undefined;
+      if (line) emit(chamber.name, line, 'gate');
+      return;
+    }
+
+    /* Recovery is emitted by the fix itself, below, because the fault id has
+       to be cleared in the same action that applies the fix. */
+    if (mode === 'recovering') return;
+
+    for (const line of stageEvents[chamber.id] ?? []) {
+      emit(chamber.name, line, chamber.kind === 'security' ? 'gate' : 'ok');
+    }
+  }, [mode, stage, faultId, complete, emit]);
+
   useEffect(() => {
     if (mode === 'idle' || mode === 'held') return;
     if (stage >= LAST) return;
@@ -88,9 +153,9 @@ export function Flight() {
       'flow',
       stage + 1,
       mode === 'recovering' ? 'recovery' : 'release',
-      mode === 'recovering' ? 0.42 : 0.2,
+      mode === 'recovering' ? pace * 2.1 : pace,
     );
-  }, [rig, stage, mode, faultAt]);
+  }, [rig, stage, mode, faultAt, pace]);
 
   useEffect(() => {
     if (mode !== 'running' || faultAt !== stage) return;
@@ -122,12 +187,19 @@ export function Flight() {
       played.current = true;
       rig.jump('flow', 0);
       setFaultId(id);
+      startedAt.current = performance.now();
+      logged.current = '';
+      seq.current = 0;
+      setLog([
+        { id: 0, at: '+0.0s', stage: 'Trigger', text: releaseStart, tone: 'ok' },
+      ]);
 
-      /* Mobile emulation and reduced-motion both deliberately skip the long
-         spring sequence. The desktop/tablet mechanism remains animated, while
-         touch users get the same semantic outcome immediately instead of a
-         release that can take tens of seconds on a constrained device. */
-      if (reduced || viewport === 'mobile') {
+      /* Reduced motion skips the sequence and lands on the outcome — the
+         information, not the mechanism, is the point. A phone now runs the
+         same simulation as everything else: the reason it used to be skipped
+         was a slow spring, and the spring is quicker per stage than the old
+         one was. */
+      if (reduced) {
         if (id) {
           const injected = faults.find((f) => f.id === id);
           const at = injected
@@ -147,13 +219,19 @@ export function Flight() {
       setStage(0);
       setMode('running');
     },
-    [rig, reduced, viewport],
+    [rig, reduced],
   );
 
   const remediate = useCallback(() => {
+    const held = faultId;
+    emit(
+      chambers[Math.min(stage, LAST - 1)].name,
+      (held && recoveryEvents[held]) || 'fix applied — the gate opens',
+      'fix',
+    );
     setFaultId(null);
 
-    if (reduced || viewport === 'mobile') {
+    if (reduced) {
       setStage(LAST);
       setMode('running');
       rig.jump('flow', LAST);
@@ -162,7 +240,7 @@ export function Flight() {
 
     setMode('recovering');
     rig.set('flow', stage + 1, 'recovery');
-  }, [rig, stage, reduced, viewport]);
+  }, [rig, stage, reduced, faultId, emit]);
 
   useEffect(() => {
     autoRef.current = () => {
@@ -279,6 +357,38 @@ export function Flight() {
             ))}
           </p>
         )}
+      </div>
+
+      {/* The status stream. Small, real events in the words the tools use —
+          this is what makes the drawing read as a release rather than a bar
+          filling up. Timestamps are the true elapsed time of this run. */}
+      <div className={styles.log}>
+        <div className={styles.logHead}>
+          <p className="u-mark">Status</p>
+          <p className={styles.progress}>
+            {phase === 'idle'
+              ? 'awaiting trigger'
+              : `stage ${Math.min(stage + (complete ? 0 : 1), LAST)} of ${LAST}`}
+          </p>
+        </div>
+        <ol className={styles.logLines} role="log">
+          {log.length === 0 ? (
+            <li className={styles.logLine} data-tone="idle">
+              <span className={styles.logAt}>--</span>
+              <span className={styles.logText}>
+                Nothing running. Send a release up, or arm a fault first.
+              </span>
+            </li>
+          ) : (
+            log.map((l) => (
+              <li key={l.id} className={styles.logLine} data-tone={l.tone}>
+                <span className={styles.logAt}>{l.at}</span>
+                <span className={styles.logStage}>{l.stage}</span>
+                <span className={styles.logText}>{l.text}</span>
+              </li>
+            ))
+          )}
+        </ol>
       </div>
 
       <div ref={pointerRef} className={styles.ladderWrap}>

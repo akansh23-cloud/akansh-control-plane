@@ -12,6 +12,15 @@ import { defineConfig, devices } from '@playwright/test';
 const PORT = Number(process.env.PORT ?? 3000);
 const baseURL = process.env.E2E_BASE_URL ?? `http://127.0.0.1:${PORT}`;
 
+/**
+ * Some environments already have a Chromium on disk and cannot reach the
+ * Playwright CDN to fetch the pinned one. `CHROMIUM_PATH` points the Chromium
+ * projects at it. On a normal machine it is unset and nothing changes.
+ */
+const chromiumLaunch = process.env.CHROMIUM_PATH
+  ? { launchOptions: { executablePath: process.env.CHROMIUM_PATH } }
+  : {};
+
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: true,
@@ -29,19 +38,37 @@ export default defineConfig({
   projects: [
     {
       name: 'desktop-1920',
-      use: { ...devices['Desktop Chrome'], viewport: { width: 1920, height: 1080 } },
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1920, height: 1080 }, ...chromiumLaunch },
     },
     {
       name: 'laptop-1440',
-      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 }, ...chromiumLaunch },
     },
     {
       name: 'tablet-1024',
-      use: { ...devices['Desktop Chrome'], viewport: { width: 1024, height: 768 } },
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1024, height: 768 }, ...chromiumLaunch },
     },
     {
       name: 'mobile-390',
       use: { ...devices['iPhone 13'] },
+    },
+    /* The two phone widths the brief names, on Chromium, so the responsive
+       gates still run where WebKit cannot be installed. */
+    {
+      name: 'mobile-390-chromium',
+      use: {
+        ...devices['Pixel 5'],
+        viewport: { width: 390, height: 844 },
+        ...chromiumLaunch,
+      },
+    },
+    {
+      name: 'mobile-430-chromium',
+      use: {
+        ...devices['Pixel 5'],
+        viewport: { width: 430, height: 932 },
+        ...chromiumLaunch,
+      },
     },
     {
       name: 'reduced-motion',
@@ -49,6 +76,7 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         viewport: { width: 1440, height: 900 },
         contextOptions: { reducedMotion: 'reduce' },
+        ...chromiumLaunch,
       },
     },
     {

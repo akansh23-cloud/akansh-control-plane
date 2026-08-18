@@ -1,0 +1,263 @@
+/* PLATE 07 — THE WATCH. The incident room: a board, four signals, a call. */
+
+.root {
+  display: grid;
+  gap: var(--s-5);
+  --alert: 1;
+}
+
+/* The board. It carries the alarm colour, which drains away when the incident
+   is understood — the only place on the site where red is allowed to sit still. */
+.board {
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  border: 1px solid var(--edge);
+  border-left: 3px solid
+    color-mix(in oklab, var(--fault) calc(var(--alert) * 100%), var(--live));
+  border-radius: 3px;
+  background:
+    radial-gradient(
+      120% 100% at calc(var(--px, 0.5) * 100%) calc(var(--py, 0.5) * 100%),
+      color-mix(
+        in oklab,
+        var(--fault) calc(var(--pin, 0) * var(--alert) * 9%),
+        transparent
+      ),
+      transparent 60%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--panel) 88%, transparent),
+      color-mix(in oklab, var(--void) 46%, transparent)
+    );
+}
+
+.title {
+  font-family: var(--font-display);
+  font-weight: 660;
+  font-stretch: 92%;
+  font-size: var(--step-2);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--bone);
+}
+
+.brief {
+  font-size: var(--step-0);
+  line-height: 1.5;
+  color: var(--bone-2);
+  max-width: 70ch;
+  text-wrap: pretty;
+}
+
+.step {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.hint {
+  font-size: var(--step--1);
+  color: var(--muted);
+  max-width: 64ch;
+}
+
+/* ---------------- signals ---------------- */
+
+.signals {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr));
+  gap: var(--s-3);
+  align-items: start;
+}
+
+.signal {
+  border: 1px solid var(--edge);
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--panel) 55%, transparent);
+  transition: border-color var(--t-quick) var(--ease-gear);
+}
+
+.signal[data-open] { border-color: color-mix(in oklab, var(--water-300) 55%, transparent); }
+
+.signalHead {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px var(--s-3);
+  width: 100%;
+  min-height: 56px;
+  padding: var(--s-3) var(--s-4);
+  text-align: left;
+  align-items: center;
+}
+
+.signalSource {
+  grid-column: 1;
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: 0.08em;
+  color: var(--water-100);
+  overflow-wrap: anywhere;
+}
+
+.signalLabel {
+  grid-column: 1;
+  font-size: var(--step-0);
+  font-weight: 560;
+  color: var(--bone);
+  line-height: 1.25;
+}
+
+.signalState {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+
+.signal[data-open] .signalState { color: var(--signal); }
+
+.readout {
+  display: grid;
+  gap: var(--s-3);
+  padding: 0 var(--s-4) var(--s-4);
+}
+
+/* A terminal readout, wrapped rather than scrolled — a clue you have to swipe
+   sideways to read is not a clue. */
+.lines {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  padding: var(--s-3);
+  border: 1px solid var(--rule-faint);
+  border-radius: 2px;
+  background: color-mix(in oklab, var(--void) 62%, transparent);
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  line-height: 1.5;
+  color: var(--bone-2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.reads {
+  font-size: var(--step--1);
+  line-height: 1.5;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+/* ---------------- the call ---------------- */
+
+.calls {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.call {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-family: var(--font-body);
+  font-size: var(--step-0);
+}
+
+.call[data-verdict='right'] {
+  border-color: var(--live);
+  background: color-mix(in oklab, var(--live) 20%, transparent);
+}
+
+.call[data-verdict='wrong'] {
+  border-color: var(--fault);
+  background: color-mix(in oklab, var(--fault) 16%, transparent);
+}
+
+.verdict {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-4);
+  border: 1px solid var(--edge);
+  border-left: 3px solid var(--fault);
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--panel) 52%, transparent);
+}
+
+.verdict[data-correct] { border-left-color: var(--live); }
+
+.verdictBody {
+  font-size: var(--step-0);
+  line-height: 1.5;
+  color: var(--bone-2);
+  max-width: 70ch;
+  text-wrap: pretty;
+}
+
+.again {
+  justify-self: start;
+  min-height: 40px;
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.again:hover { color: var(--bone); }
+
+/* ---------------- resolution ---------------- */
+
+.resolution {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.resolution li {
+  display: grid;
+  grid-template-columns: 2.6rem minmax(0, 1fr);
+  gap: var(--s-3);
+  font-size: var(--step-0);
+  line-height: 1.5;
+  color: var(--bone-2);
+  text-wrap: pretty;
+}
+
+.stepNo {
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: 0.08em;
+  color: var(--signal);
+  padding-top: 0.25em;
+}
+
+.lesson {
+  padding: var(--s-4);
+  border-left: 2px solid var(--water-300);
+  background: color-mix(in oklab, var(--water-900) 40%, transparent);
+  font-size: var(--step-0);
+  line-height: 1.55;
+  color: var(--bone);
+  max-width: 74ch;
+  text-wrap: pretty;
+}
+
+@media (min-width: 720px) {
+  .board { padding: var(--s-6); }
+  .title { font-size: var(--step-3); }
+  .calls { gap: var(--s-3); }
+}
+
+@media (min-width: 1180px) {
+  .calls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .resolution { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-4) var(--s-6); }
+}

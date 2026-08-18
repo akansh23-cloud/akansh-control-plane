@@ -15,7 +15,7 @@
   gap: var(--s-2);
 }
 
-.faults .ctl-row {
+.faults :global(.ctl-row) {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--s-2);
@@ -29,7 +29,7 @@
 .faultLong { display: none; }
 
 @media (min-width: 560px) {
-  .faults .ctl-row { display: flex; flex-wrap: wrap; }
+  .faults :global(.ctl-row) { display: flex; flex-wrap: wrap; }
   .faultBtn { flex: 1 1 auto; padding-inline: var(--s-4); }
   .faultShort { display: none; }
   .faultLong { display: inline; }
@@ -114,9 +114,77 @@
   max-width: 58ch;
 }
 
-.remedy .ctl {
+.remedy :global(.ctl) {
   justify-self: start;
 }
+
+/* ---------------- the status stream ---------------- */
+
+.log {
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  border: 1px solid var(--edge);
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--void) 46%, transparent);
+}
+
+.logHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}
+
+.progress {
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: 0.08em;
+  color: var(--water-100);
+}
+
+.logLines {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.logLine {
+  display: grid;
+  grid-template-columns: 3.4rem minmax(0, 1fr);
+  gap: 2px var(--s-3);
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  line-height: 1.45;
+  color: var(--muted);
+  padding-left: var(--s-3);
+  border-left: 2px solid var(--rule-faint);
+}
+
+.logAt {
+  grid-row: 1 / span 2;
+  color: var(--muted-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.logStage {
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bone-2);
+}
+
+.logText {
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+
+.logLine[data-tone='gate'] { border-left-color: color-mix(in oklab, var(--signal) 60%, transparent); }
+.logLine[data-tone='fault'] { border-left-color: var(--fault); color: var(--bone-2); }
+.logLine[data-tone='fix'] { border-left-color: var(--hold); }
+.logLine[data-tone='ok'] { border-left-color: color-mix(in oklab, var(--water-300) 55%, transparent); }
+.logLine[data-tone='idle'] { border-left-color: var(--rule-faint); }
 
 /* ---------------- the flight ---------------- */
 
@@ -444,6 +512,7 @@
     grid-template-areas:
       'controls ladder'
       'readout  ladder'
+      'log      ladder'
       'fittings fittings';
     gap: var(--s-6) var(--s-7);
     align-items: start;
@@ -451,6 +520,7 @@
 
   .controls { grid-area: controls; grid-template-columns: minmax(0, 1fr); align-items: start; }
   .readout { grid-area: readout; }
+  .log { grid-area: log; }
   .ladderWrap { grid-area: ladder; align-self: center; }
   .fittings { grid-area: fittings; }
 
