@@ -18,6 +18,7 @@ export function CommissioningIntro() {
   const reduced = usePrefersReducedMotion();
   const skipRef = useRef<HTMLButtonElement | null>(null);
   const [cycle, setCycle] = useState(0);
+  const [replaying, setReplaying] = useState(false);
 
   const finish = useCallback(() => {
     try {
@@ -25,13 +26,15 @@ export function CommissioningIntro() {
     } catch {
       // The experience still works when storage is unavailable.
     }
+    setReplaying(false);
     document.documentElement.dataset.opening = 'ready';
   }, []);
 
   useEffect(() => {
-    if (pathname !== '/' || document.documentElement.dataset.opening !== 'commissioning') {
-      return;
-    }
+    const opening =
+      pathname === '/' &&
+      (replaying || document.documentElement.dataset.opening === 'commissioning');
+    if (!opening) return;
 
     const focusTimer = window.setTimeout(() => skipRef.current?.focus(), 80);
     const exitTimer = window.setTimeout(finish, reduced ? 1200 : 3600);
@@ -45,7 +48,7 @@ export function CommissioningIntro() {
       window.clearTimeout(exitTimer);
       document.removeEventListener('keydown', onKey);
     };
-  }, [cycle, finish, pathname, reduced]);
+  }, [cycle, finish, pathname, reduced, replaying]);
 
   if (pathname !== '/') return null;
 
@@ -56,18 +59,21 @@ export function CommissioningIntro() {
       // Storage is only a convenience; replay does not depend on it.
     }
     document.documentElement.dataset.opening = 'commissioning';
+    setReplaying(true);
     setCycle((value) => value + 1);
   };
 
   return (
     <>
       <section
+        key={cycle}
         className={styles.root}
         role="dialog"
         aria-modal="true"
         aria-labelledby="lockworks-opening-title"
         aria-label="Commissioning the Lockworks"
         data-cycle={cycle}
+        data-replaying={replaying || undefined}
         data-reduced-motion={reduced || undefined}
         /* The moving gate leaves the actual Headwater underneath it. Do not
            fade the dialog root on an independent CSS clock: on a slow browser
