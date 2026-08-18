@@ -17,6 +17,7 @@ export function CommissioningIntro() {
   const pathname = usePathname();
   const reduced = usePrefersReducedMotion();
   const skipRef = useRef<HTMLButtonElement | null>(null);
+  const cycleRef = useRef(0);
   const [cycle, setCycle] = useState(0);
   const [replaying, setReplaying] = useState(false);
 
@@ -36,8 +37,16 @@ export function CommissioningIntro() {
       (replaying || document.documentElement.dataset.opening === 'commissioning');
     if (!opening) return;
 
-    const focusTimer = window.setTimeout(() => skipRef.current?.focus(), 80);
-    const exitTimer = window.setTimeout(finish, reduced ? 1200 : 3600);
+    const scheduledCycle = cycleRef.current;
+    const focusTimer = window.setTimeout(() => {
+      if (cycleRef.current === scheduledCycle) skipRef.current?.focus();
+    }, 80);
+    const exitTimer = window.setTimeout(() => {
+      /* A previous commissioning cycle may still have a queued timer when a
+         recruiter presses Replay at exactly the old cycle boundary. It must
+         never be allowed to dismiss the newly commissioned cycle. */
+      if (cycleRef.current === scheduledCycle) finish();
+    }, reduced ? 1200 : 3600);
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') finish();
     };
@@ -58,9 +67,10 @@ export function CommissioningIntro() {
     } catch {
       // Storage is only a convenience; replay does not depend on it.
     }
+    cycleRef.current += 1;
     document.documentElement.dataset.opening = 'commissioning';
     setReplaying(true);
-    setCycle((value) => value + 1);
+    setCycle(cycleRef.current);
   };
 
   return (
