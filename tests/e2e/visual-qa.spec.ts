@@ -42,6 +42,13 @@ async function captureComposition(page: Page, dir: string, label: string) {
   await refit.getByRole('button', { name: 'After' }).click();
   await expect(refit.getByText(/All five layers replaced/i)).toBeVisible();
   const refitField = page.locator('#refit div:has(> [role="slider"][aria-label^="Modernisation seam"])').first();
+  await expect.poll(async () =>
+    refitField.evaluate((node) => {
+      const value = Number.parseFloat(getComputedStyle(node).getPropertyValue('--seam'));
+      return Number.isFinite(value) ? value : 0;
+    }),
+    { timeout: 5_000 },
+  ).toBeGreaterThan(0.98);
   await refitField.screenshot({ path: `${prefix}-refit-after.png` });
 
   const indexButton = page.locator('button[aria-controls="key-plate"]');
