@@ -1,31 +1,34 @@
 'use client';
 
-import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useJourney } from '@/components/JourneySystem';
 import { usePrefersReducedMotion } from '@/lib/motion';
 import styles from './ProductionFinale.module.css';
 
 /**
- * The one deliberately theatrical moment in V7.
- *
- * The nine plates are working drawings; Tidewater is where the drawing stops
- * being a drawing. Once the visitor's release reaches the last plate, the lock
- * doors part, the artifact crosses the sill and the site returns a release
- * record. This is CSS choreography because the geometry is fixed; no second
- * animation loop is introduced.
- *
- * The finale is intentionally once-per-page-session after dismissal. Replaying
- * the portfolio should not repeatedly seize the viewport from someone who has
- * already seen the ending.
+ * Tidewater is once per semantic run, not once per mounted page. JourneySystem
+ * owns the lifecycle; this component only renders the receipt for a run that
+ * actually cleared The Flight and reached production.
  */
 export function ProductionFinale() {
   const pathname = usePathname();
   const reduced = usePrefersReducedMotion();
   const run = useJourney();
-  const [dismissed, setDismissed] = useState(false);
 
-  if (pathname !== '/' || !run.productionReached || dismissed) return null;
+  const runCompleted =
+    run.launched &&
+    run.runId > 0 &&
+    run.currentStage === 'tidewater' &&
+    run.releaseCleared &&
+    run.productionReached;
+
+  if (
+    pathname !== '/' ||
+    !runCompleted ||
+    run.finalePlayedForRunId === run.runId
+  ) {
+    return null;
+  }
 
   const gateResult = run.fault
     ? run.faultRemediated
@@ -46,8 +49,10 @@ export function ProductionFinale() {
       ? `${run.incidentAttempts} unresolved call${run.incidentAttempts === 1 ? '' : 's'}`
       : 'No diagnosis recorded';
 
+  const dismiss = () => run.markFinalePlayed();
+
   return (
-    <section className={styles.root} aria-labelledby="production-finale-title">
+    <section className={styles.root} aria-labelledby="production-finale-title" data-run-id={run.runId}>
       <p className={styles.live} aria-live="polite">
         Release {run.artifact} reached production.
       </p>
@@ -68,12 +73,10 @@ export function ProductionFinale() {
         <span className={styles.gateNumber}>PROD</span>
       </div>
 
-      <div className={styles.release} aria-hidden="true">
-        <span />
-      </div>
+      <div className={styles.release} aria-hidden="true"><span /></div>
 
       <div className={styles.receipt}>
-        <p className={styles.eyebrow}>TIDEWATER · RELEASE ACCEPTED</p>
+        <p className={styles.eyebrow}>TIDEWATER · RELEASE ACCEPTED · RUN {String(run.runId).padStart(2, '0')}</p>
         <h2 id="production-finale-title">The same artifact made it through.</h2>
         <p className={styles.artifact}>{run.artifact}</p>
         <p className={styles.summary}>
@@ -83,33 +86,21 @@ export function ProductionFinale() {
         </p>
 
         <dl className={styles.record}>
-          <div>
-            <dt>Release gate</dt>
-            <dd>{gateResult}</dd>
-          </div>
-          <div>
-            <dt>Declared state</dt>
-            <dd>{gitopsResult}</dd>
-          </div>
-          <div>
-            <dt>Service path</dt>
-            <dd>{serviceResult}</dd>
-          </div>
-          <div>
-            <dt>Incident room</dt>
-            <dd>{incidentResult}</dd>
-          </div>
+          <div><dt>Release gate</dt><dd>{gateResult}</dd></div>
+          <div><dt>Declared state</dt><dd>{gitopsResult}</dd></div>
+          <div><dt>Service path</dt><dd>{serviceResult}</dd></div>
+          <div><dt>Incident room</dt><dd>{incidentResult}</dd></div>
         </dl>
 
         <div className={styles.actions}>
-          <button type="button" className={styles.primary} onClick={() => setDismissed(true)}>
+          <button type="button" className={styles.primary} onClick={dismiss}>
             Open Tidewater
           </button>
           <button
             type="button"
             className={styles.secondary}
             onClick={() => {
-              setDismissed(true);
+              dismiss();
               run.reset();
               document.getElementById('headwater')?.scrollIntoView({
                 behavior: reduced ? 'auto' : 'smooth',

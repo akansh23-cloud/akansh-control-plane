@@ -48,6 +48,11 @@ export function Flight() {
   const startedAt = useRef(0);
   const seq = useRef(0);
   const logged = useRef('');
+  /* WebKit can report a stale IntersectionObserver sample immediately after a
+     programmatic section jump. Once the operator has explicitly started the
+     mechanism, that stale sample must not turn its shared rig off underneath
+     the running release. */
+  const operatorActive = useRef(false);
 
   const rig = useRig({
     channels: {
@@ -63,7 +68,11 @@ export function Flight() {
   const played = useRef(false);
 
   const rootRef = useRigRoot<HTMLDivElement>(rig, (visible) => {
-    if (!visible || played.current) return;
+    if (!visible) {
+      if (operatorActive.current) rig.setVisible(true);
+      return;
+    }
+    if (played.current) return;
     played.current = true;
     window.setTimeout(() => {
       if (autoRef.current) autoRef.current();
@@ -74,8 +83,7 @@ export function Flight() {
   /* A clean release should read as nine distinct checks, not as nine waits.
      Keep phones fastest because their paint budget is smallest, while every
      viewport still spends long enough in each chamber for the log and gate
-     state to be readable. The previous 0.20 desktop spring made the sequence
-     exceed the established 15s browser contract on slower engines. */
+     state to be readable. */
   const pace = viewport === 'mobile' ? 0.08 : viewport === 'tablet' ? 0.1 : 0.12;
 
   const fault = useMemo(
@@ -120,6 +128,7 @@ export function Flight() {
     logged.current = key;
 
     if (complete) {
+      operatorActive.current = false;
       emit('Promote', releaseComplete, 'ok');
       return;
     }
@@ -177,15 +186,47 @@ export function Flight() {
       at: stage + 0.96,
       dir: 'up',
       fire: () => {
-        setStage((s) => Math.min(LAST, s + 1));
+        setStage((s) => (s === stage ? Math.min(LAST, s + 1) : s));
         setMode('running');
       },
     });
   }, [rig, stage, mode]);
 
+  /* Semantic progress must not depend on a compositor receiving every frame.
+     Safari/WebKit may aggressively throttle rAF under CI, low-power or tab
+     scheduling pressure. The shared rig remains the normal source of motion;
+     this once-per-stage watchdog only settles the semantic checkpoint if the
+     visual threshold has not arrived within a generous wall-clock window. */
+  useEffect(() => {
+    if (reduced || stage >= LAST) return;
+    if (mode !== 'running' && mode !== 'recovering') return;
+
+    const currentStage = stage;
+    const faultPending = mode === 'running' && faultAt === currentStage;
+    const delay = mode === 'recovering' ? 1450 : 1050;
+    const timer = window.setTimeout(() => {
+      if (faultPending) {
+        rig.jump('flow', currentStage + 0.42);
+        setMode('held');
+        return;
+      }
+
+      rig.jump('flow', currentStage + 1);
+      setStage((s) => (s === currentStage ? Math.min(LAST, s + 1) : s));
+      setMode('running');
+    }, delay);
+
+    return () => window.clearTimeout(timer);
+  }, [rig, reduced, stage, mode, faultAt]);
+
   const run = useCallback(
     (id: string | null) => {
       played.current = true;
+      operatorActive.current = true;
+      /* A direct interaction proves the mechanism is on-screen. Re-arm the
+         existing global rig here; the visibility callback above prevents a
+         stale WebKit IO sample from immediately undoing the operator action. */
+      rig.setVisible(true);
       rig.jump('flow', 0);
       setFaultId(id);
       startedAt.current = performance.now();
@@ -196,10 +237,7 @@ export function Flight() {
       ]);
 
       /* Reduced motion skips the sequence and lands on the outcome — the
-         information, not the mechanism, is the point. A phone now runs the
-         same simulation as everything else: the reason it used to be skipped
-         was a slow spring, and the spring is quicker per stage than the old
-         one was. */
+         information, not the mechanism, is the point. */
       if (reduced) {
         if (id) {
           const injected = faults.find((f) => f.id === id);
@@ -224,6 +262,8 @@ export function Flight() {
   );
 
   const remediate = useCallback(() => {
+    operatorActive.current = true;
+    rig.setVisible(true);
     const held = faultId;
     emit(
       chambers[Math.min(stage, LAST - 1)].name,
@@ -250,6 +290,7 @@ export function Flight() {
   }, [mode, run]);
 
   const reset = useCallback(() => {
+    operatorActive.current = false;
     rig.jump('flow', 0);
     setFaultId(null);
     setStage(0);
@@ -360,9 +401,6 @@ export function Flight() {
         )}
       </div>
 
-      {/* The status stream. Small, real events in the words the tools use —
-          this is what makes the drawing read as a release rather than a bar
-          filling up. Timestamps are the true elapsed time of this run. */}
       <div className={styles.log}>
         <div className={styles.logHead}>
           <p className="u-mark">Status</p>

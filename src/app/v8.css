@@ -1,0 +1,486 @@
+/* =====================================================================
+   LOCKWORKS V8 — EXPERIENCE DENSITY + CHROME CONTRACT
+
+   V7 component modules remain responsible for each engineering drawing. This
+   layer owns the cross-cutting contract the finished application needs:
+   responsive density, persistent chrome, viewport composition and the few
+   structural corrections that only become visible when all plates coexist.
+   ===================================================================== */
+
+:root {
+  --rail: 56px;
+  --chrome-h: calc(var(--rail) + env(safe-area-inset-bottom, 0px));
+  --chrome-gap: clamp(14px, 2.2vw, 28px);
+  --band: clamp(34px, 4.8vw, 72px);
+  --gutter: clamp(16px, 4vw, 62px);
+
+  /* A calmer display scale. Body/data floors are unchanged; only the display
+     end stops behaving as though every laptop were a 4K exhibition wall. */
+  --step-2: clamp(1.28rem, 1.17rem + 0.45vw, 1.62rem);
+  --step-3: clamp(1.62rem, 1.38rem + 0.95vw, 2.34rem);
+  --step-4: clamp(2.12rem, 1.66rem + 1.9vw, 3.55rem);
+  --step-5: clamp(2.72rem, 1.9rem + 3.6vw, 5.45rem);
+}
+
+html {
+  scroll-padding-top: clamp(18px, 3vh, 34px);
+  scroll-padding-bottom: calc(var(--chrome-h) + var(--chrome-gap));
+}
+
+body {
+  padding-bottom: calc(var(--chrome-h) + var(--chrome-gap));
+}
+
+#headwater,
+#flight,
+#refit,
+#basin,
+#split,
+#gauges,
+#watch,
+#vault,
+#tidewater {
+  scroll-margin-top: clamp(18px, 3vh, 34px);
+  scroll-margin-bottom: calc(var(--chrome-h) + var(--chrome-gap));
+}
+
+/* ---------------------------------------------------------------------
+   Persistent lower key / index
+   --------------------------------------------------------------------- */
+
+#key-plate {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: var(--rail);
+  max-height: min(72dvh, calc(100dvh - var(--rail) - 14px));
+  overflow-x: clip;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  contain: layout paint;
+}
+
+#key-plate > div,
+#key-plate > div > *,
+#key-plate dl,
+#key-plate dl > div,
+#key-plate nav,
+#key-plate nav ol,
+#key-plate nav li,
+#key-plate nav a {
+  min-width: 0;
+}
+
+#key-plate dd,
+#key-plate nav a > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+#key-plate + div {
+  min-width: 0;
+  height: var(--rail);
+  gap: clamp(4px, 0.8vw, 10px);
+}
+
+#key-plate + div > * {
+  min-width: 0;
+}
+
+button[aria-controls='key-plate'] {
+  min-width: 0 !important;
+}
+
+/* The Index is itself the command surface. Floating operator launchers become
+   inert while it is open instead of stacking on top of navigation rows. */
+body:has(#key-plate:not([hidden])) aside[aria-label='Living release run'],
+body:has(#key-plate:not([hidden])) aside[aria-label='Optional operator challenge'],
+body:has(#key-plate:not([hidden])) aside[aria-label='Blackwater operator challenge'] {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+@media (min-width: 720px) and (max-width: 1199px) {
+  #key-plate > div {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 14px !important;
+    padding-block: 16px 20px !important;
+  }
+
+  #key-plate > div > * {
+    grid-column: 1 !important;
+    grid-row: auto !important;
+  }
+
+  #key-plate dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px 18px !important;
+    padding-block: 12px !important;
+  }
+
+  #key-plate dl > div {
+    grid-template-columns: minmax(90px, 0.62fr) minmax(0, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  #key-plate nav ol a {
+    grid-template-columns: 30px minmax(112px, 0.55fr) minmax(0, 1fr) !important;
+    min-height: 40px !important;
+    padding-block: 6px !important;
+  }
+}
+
+@media (max-width: 719px) {
+  :root {
+    --rail: 54px;
+    --band: clamp(30px, 8vw, 48px);
+  }
+
+  #key-plate {
+    bottom: var(--rail);
+    max-height: calc(100dvh - var(--rail) - 8px);
+  }
+
+  #key-plate > div {
+    width: calc(100% - 24px) !important;
+    gap: 12px !important;
+    padding-block: 12px 16px !important;
+  }
+
+  #key-plate dl {
+    padding-block: 10px !important;
+  }
+
+  #key-plate dl > div {
+    grid-template-columns: minmax(88px, 0.58fr) minmax(0, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  #key-plate nav ol a {
+    grid-template-columns: 28px minmax(0, 1fr) !important;
+    gap: 2px 9px !important;
+    min-height: 42px !important;
+    padding-block: 6px !important;
+  }
+
+  #key-plate nav ol a > :last-child {
+    grid-column: 2;
+    white-space: normal !important;
+  }
+
+  #key-plate + div {
+    padding-inline: 6px !important;
+  }
+
+  #key-plate + div > :last-child {
+    display: none !important;
+  }
+
+  button[aria-controls='key-plate'] {
+    padding-inline: 4px !important;
+  }
+}
+
+@media (max-width: 430px) {
+  button[aria-controls='key-plate'] > span:nth-child(2) {
+    max-width: 84px;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Global operator chrome. The work gets the viewport; controls dock around it.
+   --------------------------------------------------------------------- */
+
+body aside[aria-label='Living release run'] {
+  top: max(10px, env(safe-area-inset-top)) !important;
+  right: 10px !important;
+  width: min(304px, calc(100vw - 20px)) !important;
+}
+
+body aside[aria-label='Living release run'] > button {
+  min-height: 48px !important;
+}
+
+body aside[aria-label='Optional operator challenge'],
+body aside[aria-label='Blackwater operator challenge'] {
+  left: 10px !important;
+  bottom: calc(var(--rail) + 10px + env(safe-area-inset-bottom, 0px)) !important;
+  width: min(286px, calc(100vw - 20px)) !important;
+}
+
+body aside[aria-label='Optional operator challenge'] > button,
+body aside[aria-label='Blackwater operator challenge'] > button {
+  min-height: 46px !important;
+}
+
+@media (max-width: 719px) {
+  body aside[aria-label='Living release run'] {
+    width: min(248px, calc(100vw - 18px)) !important;
+    right: 9px !important;
+  }
+
+  body aside[aria-label='Living release run']:has(> button[aria-expanded='false']) {
+    width: min(168px, calc(100vw - 18px)) !important;
+  }
+
+  body aside[aria-label='Living release run'] > button[aria-expanded='false'] > :last-child {
+    display: none !important;
+  }
+
+  body aside[aria-label='Living release run']:has(#living-release-panel:not([hidden])) {
+    width: min(330px, calc(100vw - 18px)) !important;
+  }
+
+  body aside[aria-label='Optional operator challenge'] {
+    width: min(176px, calc(100vw - 18px)) !important;
+    left: 9px !important;
+  }
+
+  body aside[aria-label='Optional operator challenge'] > button > span:last-child > small {
+    display: none !important;
+  }
+
+  body aside[aria-label='Blackwater operator challenge'] {
+    width: min(214px, calc(100vw - 18px)) !important;
+    left: 9px !important;
+  }
+
+  body aside[aria-label='Blackwater operator challenge']:has(> button[aria-expanded='false']) {
+    width: min(184px, calc(100vw - 18px)) !important;
+  }
+
+  body aside[aria-label='Blackwater operator challenge'] > button[aria-expanded='false'] > :nth-child(2) > strong {
+    display: none !important;
+  }
+
+  body aside[aria-label='Blackwater operator challenge']:has(#blackwater-drill-panel:not([hidden])) {
+    width: min(330px, calc(100vw - 18px)) !important;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   PLATE 02 — THE FLIGHT
+
+   Keep the lock metaphor, remove the exhibition-scale staircase. The release
+   now sits in a single instrument frame: controls/readout/log above, nine
+   compact chambers below. Stage state remains entirely owned by Flight.tsx.
+   --------------------------------------------------------------------- */
+
+#flight [data-phase]:has(> :nth-child(4) > ol) {
+  gap: clamp(12px, 1.6vw, 20px) !important;
+}
+
+#flight [data-phase]:has(> :nth-child(4) > ol) > :nth-child(2) {
+  padding: clamp(12px, 1.4vw, 16px) !important;
+  gap: 8px !important;
+}
+
+#flight [data-phase]:has(> :nth-child(4) > ol) > :nth-child(3) {
+  padding: 10px 12px !important;
+  gap: 8px !important;
+  max-height: 156px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+#flight [data-phase]:has(> :nth-child(4) > ol) > :nth-child(3) ol {
+  gap: 4px !important;
+}
+
+#flight [data-phase]:has(> :nth-child(4) > ol) > :nth-child(4) {
+  min-width: 0;
+  padding-top: 10px;
+}
+
+@media (min-width: 720px) {
+  #flight [data-phase]:has(> :nth-child(4) > ol) > :nth-child(4) > ol {
+    align-items: end !important;
+    gap: 4px !important;
+  }
+
+  #flight [data-phase]:has(> :nth-child(4) > ol) > :nth-child(4) > ol > li {
+    height: clamp(112px, 15vh, 138px) !important;
+    min-width: 0;
+    padding: 9px 7px 11px !important;
+    gap: 6px !important;
+    transform: translateY(calc((var(--i, 4) - 4) * -2px));
+  }
+
+  #flight [data-phase]:has(> :nth-child(4) > ol) > :nth-child(4) > ol > li > span:nth-child(5) {
+    font-size: clamp(11px, 0.82vw, 13px) !important;
+    line-height: 1.08 !important;
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+    hyphens: none !important;
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1179px) {
+  #flight [data-phase]:has(> :nth-child(4) > ol) {
+    grid-template-columns: minmax(240px, 0.8fr) minmax(0, 1.2fr) !important;
+    grid-template-areas:
+      'controls readout'
+      'log log'
+      'ladder ladder'
+      'fittings fittings' !important;
+    align-items: start !important;
+  }
+
+  #flight [data-phase]:has(> :nth-child(4) > ol) > :nth-child(1) { grid-area: controls !important; }
+  #flight [data-phase]:has(> :nth-child(4) > ol) > :nth-child(2) { grid-area: readout !important; }
+  #flight [data-phase]:has(> :nth-child(4) > ol) > :nth-child(3) { grid-area: log !important; }
+  #flight [data-phase]:has(> :nth-child(4) > ol) > :nth-child(4) { grid-area: ladder !important; }
+  #flight [data-phase]:has(> :nth-child(4) > ol) > :nth-child(5) { grid-area: fittings !important; }
+}
+
+@media (min-width: 1180px) {
+  #flight [data-phase]:has(> :nth-child(4) > ol) {
+    grid-template-columns: minmax(244px, 0.78fr) minmax(282px, 0.92fr) minmax(320px, 1.2fr) !important;
+    grid-template-areas:
+      'controls readout log'
+      'ladder ladder ladder'
+      'fittings fittings fittings' !important;
+    column-gap: clamp(14px, 1.6vw, 24px) !important;
+    row-gap: 14px !important;
+    align-items: start !important;
+  }
+
+  #flight [data-phase]:has(> :nth-child(4) > ol) > :nth-child(1) {
+    grid-area: controls !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  #flight [data-phase]:has(> :nth-child(4) > ol) > :nth-child(2) { grid-area: readout !important; }
+  #flight [data-phase]:has(> :nth-child(4) > ol) > :nth-child(3) { grid-area: log !important; }
+  #flight [data-phase]:has(> :nth-child(4) > ol) > :nth-child(4) { grid-area: ladder !important; align-self: start !important; }
+  #flight [data-phase]:has(> :nth-child(4) > ol) > :nth-child(5) { grid-area: fittings !important; }
+
+  #flight [data-phase]:has(> :nth-child(4) > ol) > :nth-child(1) .ctl {
+    min-height: 40px !important;
+    padding-block: 8px !important;
+  }
+}
+
+@media (min-width: 1180px) and (max-height: 820px) {
+  #flight [data-phase]:has(> :nth-child(4) > ol) > :nth-child(4) > ol > li {
+    height: clamp(98px, 14vh, 116px) !important;
+  }
+
+  #flight [data-phase]:has(> :nth-child(4) > ol) > :nth-child(3) {
+    max-height: 132px;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   PLATE 03 — THE REFIT
+   --------------------------------------------------------------------- */
+
+#refit div:has(> [role='slider'][aria-label^='Modernisation seam']) {
+  padding-block: 10px !important;
+}
+
+#refit div:has(> [role='slider'][aria-label^='Modernisation seam']) > div:first-child {
+  margin-bottom: 8px !important;
+  padding-inline: 12px !important;
+  line-height: 1.35 !important;
+}
+
+#refit div:has(> [role='slider'][aria-label^='Modernisation seam']) > ol > li {
+  min-height: 58px;
+  padding: 8px 12px !important;
+  gap: 10px !important;
+}
+
+#refit div:has(> [role='slider'][aria-label^='Modernisation seam']) > ol > li > span:nth-child(2) > span[data-face] {
+  padding: 7px 10px !important;
+}
+
+#refit div:has(> [role='slider'][aria-label^='Modernisation seam']) > ol > li > span:nth-child(2) > span[data-face] > span:last-child {
+  font-size: clamp(15px, 1.18vw, 18px) !important;
+  line-height: 1.08 !important;
+  overflow-wrap: normal !important;
+}
+
+#refit div:has(> [role='slider'][aria-label^='Modernisation seam']) > ol > li > span:nth-child(3) {
+  font-size: clamp(12px, 0.92vw, 14px) !important;
+  line-height: 1.32 !important;
+}
+
+@media (min-width: 720px) {
+  #refit div:has(> [role='slider'][aria-label^='Modernisation seam']) > ol > li {
+    grid-template-columns: minmax(100px, 0.48fr) minmax(178px, 0.9fr) minmax(0, 1.12fr) !important;
+  }
+}
+
+@media (min-width: 1180px) {
+  #refit div:has(> [role='slider'][aria-label^='Modernisation seam']) > ol > li {
+    grid-template-columns: minmax(108px, 0.46fr) minmax(196px, 0.88fr) minmax(220px, 1.18fr) !important;
+    padding: 8px 14px !important;
+  }
+
+  #refit table {
+    font-size: 12px !important;
+  }
+
+  #refit table th,
+  #refit table td {
+    padding-block: 6px !important;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Laptop density: composition changes because height is scarce, not because
+   someone globally zoomed the page.
+   --------------------------------------------------------------------- */
+
+@media (min-width: 900px) and (max-height: 820px) {
+  :root {
+    --rail: 52px;
+    --band: clamp(28px, 3.5vw, 48px);
+    --gutter: clamp(18px, 3.4vw, 48px);
+  }
+
+  .u-prose {
+    font-size: var(--step-0) !important;
+    line-height: 1.45 !important;
+  }
+
+  body aside[aria-label='Living release run'] {
+    width: min(276px, calc(100vw - 20px)) !important;
+  }
+
+  body aside[aria-label='Optional operator challenge'],
+  body aside[aria-label='Blackwater operator challenge'] {
+    width: min(252px, calc(100vw - 20px)) !important;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Motion narrative: semantic state changes the engineering atmosphere. These
+   are CSS state transitions, not new animation loops and not decorative noise.
+   --------------------------------------------------------------------- */
+
+html[data-run-drift='true'] #basin {
+  background-image: linear-gradient(90deg, color-mix(in oklab, var(--hold) 4%, transparent), transparent 34%);
+}
+
+html[data-run-service-down='true'] #split {
+  background-image: linear-gradient(90deg, transparent 0 48%, color-mix(in oklab, var(--hold) 5%, transparent) 48% 52%, transparent 52%);
+}
+
+html[data-run-telemetry='critical'] #gauges,
+html[data-run-phase='degraded'] #watch {
+  background-image: radial-gradient(80% 42% at 50% 20%, color-mix(in oklab, var(--fault) 5%, transparent), transparent 72%);
+}
+
+html[data-run-phase='production'] #tidewater {
+  background-image: radial-gradient(110% 62% at 50% 8%, color-mix(in oklab, var(--water-300) 9%, transparent), transparent 72%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #flight [data-phase]:has(> :nth-child(4) > ol) > :nth-child(4) > ol > li {
+    transform: none !important;
+  }
+}

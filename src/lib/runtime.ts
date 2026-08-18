@@ -411,11 +411,25 @@ function schedule(rig: Rig) {
 
 function loop(now: number) {
   frame = 0;
-  const dt = previous ? Math.min(0.05, (now - previous) / 1000) : 0.016;
+
+  /* A browser is allowed to delay rAF under load. The old implementation
+     clamped the entire delayed frame to 50ms, silently throwing away elapsed
+     time; WebKit therefore made the same hydraulic release take several times
+     longer than Chromium. Keep the stable 50ms integration ceiling, but catch
+     up the bounded real elapsed time in substeps inside this one scheduler. */
+  const elapsed = previous
+    ? Math.min(0.25, Math.max(0.001, (now - previous) / 1000))
+    : 0.016;
   previous = now;
+  const steps = Math.max(1, Math.ceil(elapsed / 0.05));
+  const dt = elapsed / steps;
 
   for (const rig of active) {
-    if (!rig.advance(dt)) active.delete(rig);
+    let running = true;
+    for (let step = 0; step < steps && running; step += 1) {
+      running = rig.advance(dt);
+    }
+    if (!running) active.delete(rig);
   }
 
   if (active.size > 0) frame = requestAnimationFrame(loop);
@@ -522,7 +536,6 @@ export function useRigRoot<T extends Element>(
     },
     [rig],
   );
-
 
   useEffect(() => {
     const node = nodeRef.current;

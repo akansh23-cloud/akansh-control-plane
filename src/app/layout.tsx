@@ -4,6 +4,8 @@ import '@fontsource-variable/instrument-sans/index.css';
 import '@fontsource-variable/martian-mono/wdth.css';
 import './globals.css';
 import './v7.css';
+import './v8.css';
+import { CommissioningIntro } from '@/components/CommissioningIntro';
 import { JourneyProvider } from '@/components/JourneySystem';
 import { OperatorChallenge } from '@/components/OperatorChallenge';
 import { ProductionFinale } from '@/components/ProductionFinale';
@@ -17,26 +19,14 @@ import {
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
-  title: {
-    default: site.title,
-    template: '%s — Akansh Mowar',
-  },
+  title: { default: site.title, template: '%s — Akansh Mowar' },
   description: site.description,
   applicationName: 'The Lockworks',
   authors: [{ name: profile.name, url: site.url }],
   creator: profile.name,
   keywords: [
-    'DevOps Engineer',
-    'Platform Engineer',
-    'Cloud Engineer',
-    'Kubernetes',
-    'OpenShift',
-    'Helm',
-    'GitLab CI/CD',
-    'Terraform',
-    'Argo CD',
-    'AWS',
-    'Pune',
+    'DevOps Engineer', 'Platform Engineer', 'Cloud Engineer', 'Kubernetes',
+    'OpenShift', 'Helm', 'GitLab CI/CD', 'Terraform', 'Argo CD', 'AWS', 'Pune',
   ],
   alternates: { canonical: '/' },
   openGraph: {
@@ -48,14 +38,12 @@ export const metadata: Metadata = {
     locale: 'en_IN',
     firstName: profile.givenName,
     lastName: profile.familyName,
-    images: [
-      {
-        url: site.ogImage,
-        width: 1200,
-        height: 630,
-        alt: 'The Lockworks — Akansh Mowar, DevOps / Platform / Cloud Engineer',
-      },
-    ],
+    images: [{
+      url: site.ogImage,
+      width: 1200,
+      height: 630,
+      alt: 'The Lockworks — Akansh Mowar, DevOps / Platform / Cloud Engineer',
+    }],
   },
   twitter: {
     card: 'summary_large_image',
@@ -111,30 +99,16 @@ const personSchema = {
   },
   sameAs: [contact.linkedin, contact.github],
   knowsAbout: [
-    'DevOps',
-    'Platform engineering',
-    'Kubernetes',
-    'Red Hat OpenShift',
-    'Helm',
-    'GitLab CI/CD',
-    'Docker',
-    'Terraform',
-    'Argo CD',
-    'GitOps',
-    'Amazon Web Services',
-    'Microsoft Azure',
-    'Release engineering',
-    'Observability',
+    'DevOps', 'Platform engineering', 'Kubernetes', 'Red Hat OpenShift', 'Helm',
+    'GitLab CI/CD', 'Docker', 'Terraform', 'Argo CD', 'GitOps',
+    'Amazon Web Services', 'Microsoft Azure', 'Release engineering', 'Observability',
   ],
   hasCredential: [
     {
       '@type': 'EducationalOccupationalCredential',
       name: `${primaryEducation.degree} — ${primaryEducation.field}`,
       credentialCategory: 'degree',
-      recognizedBy: {
-        '@type': 'CollegeOrUniversity',
-        name: primaryEducation.institution,
-      },
+      recognizedBy: { '@type': 'CollegeOrUniversity', name: primaryEducation.institution },
     },
     ...completedCredentials.map((c) => ({
       '@type': 'EducationalOccupationalCredential',
@@ -145,19 +119,32 @@ const personSchema = {
   ],
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+const openingBootstrap = `
+(() => {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const forced = params.get('intro') === '1';
+    const automationBypass = navigator.webdriver === true && !forced;
+    const seen = sessionStorage.getItem('lockworks:opening:v8') === 'seen';
+    document.documentElement.dataset.opening = forced || (!seen && !automationBypass)
+      ? 'commissioning'
+      : 'ready';
+  } catch {
+    document.documentElement.dataset.opening = 'ready';
+  }
+})();`;
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   const commit = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? 'local';
 
   return (
     <html lang="en">
+      <head>
+        <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: openingBootstrap }} />
+      </head>
       <body>
-        <a className="skip-link" href="#main">
-          Skip to content
-        </a>
+        <a className="skip-link" href="#main">Skip to content</a>
+        <CommissioningIntro />
         <JourneyProvider commit={commit}>
           {children}
           <OperatorChallenge />

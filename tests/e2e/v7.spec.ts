@@ -53,13 +53,12 @@ test.describe('V7 living release', () => {
     await expect(gauges.getByText(/not production telemetry/i)).toBeVisible();
   });
 
-  test('opens Tidewater with a production finale and factual run receipt', async ({ page }) => {
+  test('opens Tidewater only after a real release clears The Flight', async ({ page }) => {
     await page.goto('/');
-
-    const consoleButton = page.locator('button[aria-controls="living-release-panel"]');
-    await consoleButton.click();
-    await page.locator('#living-release-panel').getByRole('button', { name: 'Operate the works' }).click();
-    await expect(page.locator('html')).toHaveAttribute('data-run-launched', 'true');
+    const flight = page.locator('#flight');
+    await flight.scrollIntoViewIfNeeded();
+    await flight.getByRole('button', { name: 'Run a release' }).click();
+    await expect(flight.getByText('Promoted', { exact: true })).toBeVisible({ timeout: 15_000 });
 
     await page.locator('#tidewater').evaluate((element) =>
       element.scrollIntoView({ block: 'center', behavior: 'auto' }),
@@ -77,7 +76,7 @@ test.describe('V7 living release', () => {
   });
 
   test('Blackwater Drill advances only after a real recovery', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop-1920', 'One canonical drill path is enough; the global layout matrix covers the launcher elsewhere.');
+    test.skip(testInfo.project.name !== 'laptop-1366', 'One canonical drill path is enough; the responsive matrix covers the launcher elsewhere.');
 
     await page.goto('/');
     await page.getByRole('button', { name: /Blackwater Drill/i }).click();
