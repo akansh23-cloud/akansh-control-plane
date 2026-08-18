@@ -74,7 +74,7 @@ export function Gauges() {
     const seeded = readAt(seed).state;
     journey.telemetryChanged(
       seed,
-      seeded === 'critical' ? 'critical' : seeded === 'degrading' ? 'degrading' : 'healthy',
+      seeded === 'shedding' ? 'critical' : seeded === 'degrading' ? 'degrading' : 'healthy',
     );
   }, [journey, load, rig]);
 
@@ -95,7 +95,7 @@ export function Gauges() {
       const state = readAt(value).state;
       journey.telemetryChanged(
         value,
-        state === 'critical' ? 'critical' : state === 'degrading' ? 'degrading' : 'healthy',
+        state === 'shedding' ? 'critical' : state === 'degrading' ? 'degrading' : 'healthy',
       );
     },
   });
