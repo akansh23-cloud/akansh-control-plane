@@ -1,0 +1,13 @@
+/* V7 cross-cutting responsive corrections.
+
+   Component modules still own their drawings. These rules are intentionally
+   limited to semantics that span the finished application and were exposed by
+   the full browser matrix. */
+
+/* At the tablet/laptop transition the Basin control grid gives its longest
+   label a 151px content box while Martian Mono needs ~158px with the module's
+   12px side padding. Keep the same type and hit target; reclaim 8px from
+   padding instead of truncating, shrinking type, or allowing overflow. */
+#basin [role='tab'] {
+  padding-inline: 8px;
+}
