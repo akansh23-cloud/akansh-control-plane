@@ -75,11 +75,14 @@ export function CommissioningIntro() {
         data-cycle={cycle}
         data-replaying={replaying || undefined}
         data-reduced-motion={reduced || undefined}
-        /* The moving gate leaves the actual Headwater underneath it. Do not
-           fade the dialog root on an independent CSS clock: on a slow browser
-           that could finish before hydration starts the semantic dismiss
-           timer and leave an invisible full-screen blocker. */
-        style={{ background: 'transparent', animation: 'none' }}
+        /* First paint is controlled by the bootstrap/CSS contract. Replay is
+           additionally owned by React so a DOM attribute race can never hide
+           a recruiter-triggered encore. */
+        style={{
+          background: 'transparent',
+          animation: 'none',
+          display: replaying ? 'grid' : undefined,
+        }}
       >
         <div className={styles.grid} aria-hidden="true">
           <svg viewBox="0 0 1200 700" preserveAspectRatio="none">
