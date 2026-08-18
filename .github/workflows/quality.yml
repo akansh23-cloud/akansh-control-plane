@@ -23,7 +23,7 @@ jobs:
 
   browser:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 45
     container:
       image: mcr.microsoft.com/playwright:v1.62.1-noble
       options: --user 1001
@@ -37,6 +37,14 @@ jobs:
       - run: npm run test:e2e
         env:
           CI: 'true'
+      - name: Upload visual QA captures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lockworks-visual-qa
+          path: test-results/visual-qa/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Upload Playwright report on failure
         if: failure()
         uses: actions/upload-artifact@v4

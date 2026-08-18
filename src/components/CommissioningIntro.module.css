@@ -1,0 +1,315 @@
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: none;
+  place-items: center;
+  overflow: hidden;
+  isolation: isolate;
+  background: #04090b;
+  color: var(--bone);
+  animation: shell 3.6s linear both;
+}
+
+:global(html[data-opening='commissioning']) .root { display: grid; }
+
+.grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.62;
+  background-image:
+    linear-gradient(color-mix(in oklab, var(--water-300) 8%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in oklab, var(--water-300) 8%, transparent) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: radial-gradient(circle at center, #000 0 42%, transparent 86%);
+}
+
+.grid svg { width: 100%; height: 100%; }
+
+.surveyLine,
+.surveyLineSlow,
+.lockTrace,
+.dimension {
+  fill: none;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  vector-effect: non-scaling-stroke;
+}
+
+.surveyLine,
+.surveyLineSlow,
+.dimension {
+  stroke: color-mix(in oklab, var(--water-100) 46%, transparent);
+  stroke-width: 1;
+  stroke-dasharray: 1200;
+  stroke-dashoffset: 1200;
+  animation: draw 900ms var(--ease-gear) 120ms forwards;
+}
+
+.surveyLineSlow { animation-delay: 300ms; }
+.dimension { stroke: color-mix(in oklab, var(--signal) 52%, transparent); animation-delay: 480ms; }
+
+.lockTrace {
+  stroke: var(--water-100);
+  stroke-width: 2;
+  stroke-dasharray: 1600;
+  stroke-dashoffset: 1600;
+  filter: drop-shadow(0 0 8px color-mix(in oklab, var(--water-300) 36%, transparent));
+  animation: draw 1250ms var(--ease-release) 450ms forwards;
+}
+
+.pressure {
+  position: absolute;
+  left: 0;
+  right: 50%;
+  bottom: 0;
+  height: 46%;
+  z-index: -1;
+  transform-origin: bottom;
+  transform: scaleY(0.03);
+  background:
+    linear-gradient(180deg, color-mix(in oklab, var(--water-300) 26%, transparent), transparent 12%),
+    linear-gradient(180deg, var(--water-700), var(--water-900));
+  box-shadow: inset 0 2px 0 var(--water-100), 0 -10px 40px color-mix(in oklab, var(--water-300) 24%, transparent);
+  animation: charge 1.35s var(--ease-water) 620ms forwards;
+}
+
+.gate {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  width: 50.4%;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 44px, color-mix(in oklab, var(--bone) 5%, transparent) 44px 45px),
+    linear-gradient(180deg, #0b171a, #071013);
+  border-color: color-mix(in oklab, var(--bone) 14%, transparent);
+  border-style: solid;
+  box-shadow: 0 0 80px rgb(0 0 0 / 0.62);
+}
+
+.gate::before,
+.gate::after {
+  content: '';
+  position: absolute;
+  left: 9%;
+  right: 9%;
+  height: 1px;
+  background: color-mix(in oklab, var(--bone) 14%, transparent);
+}
+
+.gate::before { top: 28%; }
+.gate::after { bottom: 28%; }
+.gate span {
+  position: absolute;
+  inset: 11% 15%;
+  border: 1px solid color-mix(in oklab, var(--bone) 9%, transparent);
+  transform: skewY(-7deg);
+}
+
+.gateLeft {
+  left: 0;
+  border-width: 0 1px 0 0;
+  transform-origin: left center;
+  animation: gateLeft 780ms var(--ease-release) 2.36s forwards;
+}
+
+.gateRight {
+  right: 0;
+  border-width: 0 0 0 1px;
+  transform-origin: right center;
+  animation: gateRight 780ms var(--ease-release) 2.36s forwards;
+}
+
+.artifact {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  top: 47%;
+  width: 74px;
+  height: 74px;
+  margin: -37px 0 0 -37px;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transform: scale(1.55) rotate(45deg);
+  animation: register 980ms var(--ease-gear) 1.05s forwards, discharge 720ms var(--ease-release) 2.42s forwards;
+}
+
+.artifactCore {
+  position: absolute;
+  inset: 12px;
+  border: 2px solid var(--signal);
+  background: color-mix(in oklab, var(--signal) 8%, #071013);
+  box-shadow: 0 0 0 8px color-mix(in oklab, var(--signal) 7%, transparent), 0 0 30px color-mix(in oklab, var(--signal) 30%, transparent);
+}
+
+.artifactStamp {
+  position: relative;
+  z-index: 1;
+  transform: rotate(-45deg);
+  font-family: var(--font-data);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--signal);
+}
+
+.plaque {
+  position: relative;
+  z-index: 6;
+  width: min(640px, calc(100vw - 40px));
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  text-align: center;
+  transform: translateY(116px);
+  opacity: 0;
+  animation: plaque 600ms var(--ease-release) 1.62s forwards, plaqueOut 420ms var(--ease-gear) 2.62s forwards;
+}
+
+.eyebrow,
+.role,
+.ready,
+.datum,
+.skip,
+.replay {
+  font-family: var(--font-data);
+  font-stretch: 87.5%;
+  text-transform: uppercase;
+}
+
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.19em;
+  color: var(--muted);
+}
+
+.owner {
+  font-family: var(--font-display);
+  font-size: clamp(14px, 1.35vw, 18px);
+  font-weight: 610;
+  letter-spacing: 0.08em;
+  color: var(--bone-2);
+}
+
+.plaque h2 {
+  font-family: var(--font-display);
+  font-size: clamp(38px, 6.8vw, 92px);
+  line-height: 0.86;
+  letter-spacing: -0.05em;
+  font-stretch: 86%;
+  color: var(--bone);
+}
+
+.role {
+  margin-top: 5px;
+  font-size: clamp(9px, 1vw, 12px);
+  letter-spacing: 0.13em;
+  color: var(--water-100);
+}
+
+.ready {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 6px 9px;
+  border: 1px solid color-mix(in oklab, var(--live) 42%, transparent);
+  font-size: 9px;
+  letter-spacing: 0.11em;
+  color: var(--live);
+}
+
+.ready span {
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+  box-shadow: 0 0 0 4px color-mix(in oklab, currentColor 13%, transparent);
+}
+
+.datum {
+  position: absolute;
+  left: 18px;
+  bottom: 18px;
+  z-index: 7;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--muted-2);
+}
+
+.skip {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
+  z-index: 8;
+  min-height: 40px;
+  padding: 8px 11px;
+  border: 1px solid var(--rule-strong);
+  background: color-mix(in oklab, var(--ground) 84%, transparent);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--bone-2);
+}
+
+.replay {
+  position: fixed;
+  z-index: 138;
+  left: 12px;
+  top: max(12px, env(safe-area-inset-top));
+  min-height: 34px;
+  padding: 6px 8px;
+  border: 1px solid color-mix(in oklab, var(--bone) 14%, transparent);
+  background: color-mix(in oklab, var(--ground) 88%, transparent);
+  font-size: 8px;
+  letter-spacing: 0.09em;
+  color: var(--muted-2);
+  opacity: 0.56;
+  transition: opacity var(--t-tap) var(--ease-gear), border-color var(--t-tap) var(--ease-gear);
+}
+
+.replay:hover,
+.replay:focus-visible { opacity: 1; border-color: var(--water-300); color: var(--bone); }
+:global(html[data-opening='commissioning']) .replay { display: none; }
+
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes charge { to { transform: scaleY(1); } }
+@keyframes register { 0% { opacity: 0; transform: scale(1.55) rotate(45deg); } 58% { opacity: 1; transform: scale(0.94) rotate(45deg); } 100% { opacity: 1; transform: scale(1) rotate(45deg); } }
+@keyframes discharge { to { opacity: 0; transform: translate3d(0, 34vh, 0) scale(0.72) rotate(45deg); } }
+@keyframes plaque { to { opacity: 1; transform: translateY(108px); } }
+@keyframes plaqueOut { to { opacity: 0; transform: translateY(92px) scale(0.98); } }
+@keyframes gateLeft { to { transform: translateX(-101%); } }
+@keyframes gateRight { to { transform: translateX(101%); } }
+@keyframes shell { 0%, 88% { opacity: 1; } 100% { opacity: 0; } }
+
+@media (max-width: 719px) {
+  .grid { background-size: 26px 26px; }
+  .plaque { transform: translateY(92px); }
+  .datum { left: 10px; bottom: 10px; }
+  .replay { left: 9px; top: max(9px, env(safe-area-inset-top)); }
+  @keyframes plaque { to { opacity: 1; transform: translateY(86px); } }
+  @keyframes plaqueOut { to { opacity: 0; transform: translateY(76px) scale(0.98); } }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root,
+  .surveyLine,
+  .surveyLineSlow,
+  .lockTrace,
+  .dimension,
+  .pressure,
+  .gateLeft,
+  .gateRight,
+  .artifact,
+  .plaque {
+    animation: none !important;
+  }
+
+  .surveyLine,
+  .surveyLineSlow,
+  .lockTrace,
+  .dimension { stroke-dashoffset: 0; }
+  .pressure { transform: scaleY(0.35); opacity: 0.55; }
+  .artifact { opacity: 1; transform: scale(1) rotate(45deg); }
+  .plaque { opacity: 1; transform: translateY(108px); }
+}
