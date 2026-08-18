@@ -1,0 +1,468 @@
+/* V7 — The Living Release.
+
+   This is deliberately a thin layer over the existing Lockworks drawings. The
+   simulations remain the source of semantic truth; this layer makes their
+   consequences persistent and gives the visitor one artifact to carry through
+   the whole site. */
+
+.system {
+  --journey-progress: 0;
+  --journey-pressure: 0.08;
+  --journey-health: 0.6;
+}
+
+.console {
+  position: fixed;
+  z-index: 125;
+  top: max(16px, env(safe-area-inset-top));
+  right: clamp(14px, 2vw, 30px);
+  width: min(360px, calc(100vw - 28px));
+  font-family: var(--font-body);
+  pointer-events: auto;
+}
+
+.statusButton {
+  width: 100%;
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border: 1px solid color-mix(in oklab, var(--bone) 18%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in oklab, var(--panel-2) 93%, transparent), color-mix(in oklab, var(--ground) 96%, transparent));
+  box-shadow:
+    0 12px 40px color-mix(in oklab, var(--void) 68%, transparent),
+    inset 0 1px 0 color-mix(in oklab, var(--bone) 7%, transparent);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  text-align: left;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.statusButton::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 2px;
+  transform-origin: left;
+  transform: scaleX(var(--journey-progress));
+  background: linear-gradient(90deg, var(--water-500), var(--water-100), var(--signal));
+  box-shadow: 0 0 16px color-mix(in oklab, var(--water-100) 45%, transparent);
+}
+
+.artifact {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid color-mix(in oklab, var(--bone) 18%, transparent);
+  background: color-mix(in oklab, var(--water-900) 86%, transparent);
+  overflow: hidden;
+}
+
+.artifact::before,
+.artifact::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  height: 1px;
+  background: var(--water-300);
+  opacity: calc(0.2 + var(--journey-pressure) * 0.75);
+}
+
+.artifact::before {
+  top: 8px;
+  transform: translateX(calc(var(--journey-pressure) * -3px));
+}
+
+.artifact::after {
+  bottom: 8px;
+  transform: translateX(calc(var(--journey-pressure) * 3px));
+}
+
+.artifactCore {
+  position: relative;
+  z-index: 1;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--signal);
+  background: color-mix(in oklab, var(--signal) 18%, var(--ground));
+  transform: rotate(45deg) scale(calc(0.84 + var(--journey-health) * 0.16));
+  box-shadow: 0 0 calc(6px + var(--journey-pressure) * 14px)
+    color-mix(in oklab, var(--signal) 48%, transparent);
+  transition: border-color var(--t-quick) var(--ease-gear);
+}
+
+.system[data-phase='held'] .artifactCore,
+.system[data-phase='degraded'] .artifactCore {
+  border-color: var(--fault);
+  box-shadow: 0 0 calc(8px + var(--journey-pressure) * 20px)
+    color-mix(in oklab, var(--fault) 52%, transparent);
+}
+
+.system[data-phase='recovering'] .artifactCore {
+  border-color: var(--hold);
+}
+
+.statusCopy {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+}
+
+.kicker {
+  font-family: var(--font-data);
+  font-size: 10px;
+  font-stretch: 87.5%;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+
+.statusLine {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  color: var(--bone);
+}
+
+.phase {
+  justify-self: end;
+  max-width: 118px;
+  padding: 4px 6px;
+  border: 1px solid var(--rule);
+  font-family: var(--font-data);
+  font-size: 9px;
+  line-height: 1.25;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: right;
+}
+
+.phase[data-tone='ok'] { color: var(--live); border-color: color-mix(in oklab, var(--live) 34%, transparent); }
+.phase[data-tone='hold'] { color: var(--hold); border-color: color-mix(in oklab, var(--hold) 34%, transparent); }
+.phase[data-tone='fault'] { color: var(--fault); border-color: color-mix(in oklab, var(--fault) 34%, transparent); }
+
+.panel {
+  margin-top: 7px;
+  max-height: min(70vh, 650px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid color-mix(in oklab, var(--bone) 16%, transparent);
+  background: color-mix(in oklab, var(--ground-2) 96%, transparent);
+  box-shadow: 0 20px 60px color-mix(in oklab, var(--void) 78%, transparent);
+  padding: 15px;
+}
+
+.panelHead {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.panelTitle {
+  margin-top: 2px;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 620;
+  line-height: 1;
+}
+
+.stageReadout {
+  font-family: var(--font-data);
+  font-size: 10px;
+  color: var(--water-100);
+  text-align: right;
+}
+
+.route {
+  position: relative;
+  height: 18px;
+  margin: 13px 3px 15px;
+}
+
+.route::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 8px;
+  height: 1px;
+  background: var(--rule-strong);
+}
+
+.routeFill {
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: calc(var(--journey-progress) * 100%);
+  height: 3px;
+  background: linear-gradient(90deg, var(--water-500), var(--water-100));
+  box-shadow: 0 0 12px color-mix(in oklab, var(--water-300) 42%, transparent);
+}
+
+.routeMark {
+  position: absolute;
+  top: 5px;
+  width: 7px;
+  height: 7px;
+  margin-left: -3px;
+  border: 1px solid var(--muted-2);
+  background: var(--ground-2);
+  transform: rotate(45deg);
+}
+
+.routeMark[data-passed] {
+  border-color: var(--water-100);
+  background: var(--water-700);
+}
+
+.start {
+  display: grid;
+  gap: 14px;
+  color: var(--bone-2);
+  font-size: 14px;
+}
+
+.primary,
+.secondary,
+.reset {
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid var(--rule-strong);
+  font-family: var(--font-data);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  transition:
+    background var(--t-quick) var(--ease-gear),
+    border-color var(--t-quick) var(--ease-gear),
+    color var(--t-quick) var(--ease-gear);
+}
+
+.primary {
+  justify-self: start;
+  background: var(--signal);
+  border-color: var(--signal);
+  color: var(--void);
+  font-weight: 700;
+}
+
+.primary:hover { background: color-mix(in oklab, var(--signal) 84%, white); }
+.secondary:hover { border-color: var(--water-100); color: var(--water-100); }
+.reset:hover { border-color: var(--fault); color: var(--fault); }
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+}
+
+.metrics > div {
+  min-width: 0;
+  padding: 9px 10px;
+  background: var(--ground-2);
+}
+
+.metrics dt {
+  font-family: var(--font-data);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+
+.metrics dd {
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12px;
+  color: var(--bone-2);
+  white-space: nowrap;
+}
+
+.events {
+  margin-top: 15px;
+}
+
+.events ol {
+  display: grid;
+  gap: 0;
+  margin-top: 7px;
+  border-top: 1px solid var(--rule);
+}
+
+.events li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 9px;
+  padding: 7px 0 7px 10px;
+  border-bottom: 1px solid var(--rule-faint);
+}
+
+.events li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  width: 3px;
+  height: 14px;
+  background: var(--muted-2);
+}
+
+.events li[data-tone='ok']::before { background: var(--live); }
+.events li[data-tone='hold']::before { background: var(--hold); }
+.events li[data-tone='fault']::before { background: var(--fault); }
+
+.events li span {
+  font-family: var(--font-data);
+  font-size: 9px;
+  line-height: 1.4;
+  color: var(--muted-2);
+}
+
+.events li strong {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--bone-2);
+  font-weight: 500;
+}
+
+.empty {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.pressureRail {
+  position: fixed;
+  z-index: 39;
+  left: calc(var(--gutter) * 0.34 - 13px);
+  top: 12vh;
+  bottom: calc(var(--rail) + 8vh);
+  width: 30px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--t-move) var(--ease-water);
+}
+
+:global(html[data-run-launched='true']) .pressureRail { opacity: 1; }
+
+.pressureWake,
+.pressureFront {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--journey-progress) * 100%);
+  pointer-events: none;
+}
+
+.pressureWake {
+  height: clamp(22px, calc(20px + var(--journey-pressure) * 56px), 76px);
+  transform: translateY(-50%);
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--water-300) calc(8% + var(--journey-pressure) * 34%), transparent),
+    transparent 68%
+  );
+  filter: blur(calc(2px + var(--journey-pressure) * 4px));
+}
+
+.pressureFront {
+  height: 1px;
+  transform: translateY(-1px) scaleX(calc(0.25 + var(--journey-pressure) * 0.75));
+  background: color-mix(
+    in oklab,
+    var(--water-100) calc(78% - var(--journey-pressure) * 18%),
+    var(--fault)
+  );
+  box-shadow: 0 0 calc(8px + var(--journey-pressure) * 20px)
+    color-mix(in oklab, var(--water-100) 48%, transparent);
+}
+
+/* Cross-plate consequence language. No shake, no arbitrary parallax: the
+   system reacts by pressure, arrest and recovery, matching the Motion Bible. */
+:global(html[data-run-launched='true'] main section[data-current]) {
+  box-shadow: inset 2px 0 0 color-mix(in oklab, var(--water-300) 18%, transparent);
+}
+
+:global(html[data-run-phase='held'] #flight) {
+  box-shadow:
+    inset 3px 0 0 color-mix(in oklab, var(--fault) 74%, transparent),
+    inset 0 24px 80px color-mix(in oklab, var(--fault) 5%, transparent);
+}
+
+:global(html[data-run-drift='true'] #basin) {
+  box-shadow: inset 3px 0 0 color-mix(in oklab, var(--hold) 68%, transparent);
+}
+
+:global(html[data-run-service-down='true'] #split) {
+  box-shadow: inset 3px 0 0 color-mix(in oklab, var(--hold) 62%, transparent);
+}
+
+:global(html[data-run-phase='production'] #tidewater) {
+  box-shadow:
+    inset 3px 0 0 color-mix(in oklab, var(--live) 72%, transparent),
+    inset 0 42px 120px color-mix(in oklab, var(--water-300) 6%, transparent);
+}
+
+@media (max-width: 899px) {
+  .console {
+    top: max(9px, env(safe-area-inset-top));
+    right: 9px;
+    width: min(330px, calc(100vw - 18px));
+  }
+
+  .statusButton {
+    min-height: 50px;
+    grid-template-columns: 30px minmax(0, 1fr) auto;
+    padding: 7px 8px;
+  }
+
+  .artifact { width: 28px; height: 28px; }
+  .phase { max-width: 88px; font-size: 8px; }
+  .pressureRail { display: none; }
+  .panel { max-height: min(64vh, 560px); padding: 12px; }
+}
+
+@media (max-width: 460px) {
+  .console { width: calc(100vw - 18px); }
+  .phase { display: none; }
+  .statusButton { grid-template-columns: 30px minmax(0, 1fr); }
+  .metrics { grid-template-columns: 1fr 1fr; }
+  .events li { grid-template-columns: 72px minmax(0, 1fr); }
+  .actions { grid-template-columns: 1fr; }
+  .reset { justify-self: start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .statusButton::after,
+  .artifactCore,
+  .primary,
+  .secondary,
+  .reset,
+  .pressureRail {
+    transition: none;
+  }
+}
