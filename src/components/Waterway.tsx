@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useJourney } from '@/components/JourneySystem';
 import { journey } from '@/content';
 import {
   usePrefersReducedMotion,
@@ -13,21 +14,15 @@ import styles from './Waterway.module.css';
 /**
  * THE CONTINUOUS SYSTEM JOURNEY.
  *
- * Every chapter of this site is one station on a single route, and until now
- * that was only true in the prose. This is the route itself: one channel down
- * the left of the document, filled to the point the reader has reached, with
- * the six stations software actually passes through cut into the wall beside
- * it — source, build, gates, registry, production, observability.
- *
- * Station positions are measured from where the browser actually put the
- * plates, so the route cannot disagree with the page. The fill is a rig
- * channel written by a passive scroll listener, so it costs one number per
- * frame and no React render. Under reduced motion the fill still tracks the
- * reader; it simply arrives instead of easing.
+ * Every chapter of this site is one station on a single route. V7 makes the
+ * craft on that route the same release artifact recorded by JourneySystem:
+ * scroll still decides where the craft physically is, while the shared run
+ * decides whether it is healthy, held, recovering or carrying degraded state.
  */
 export function Waterway() {
   const reduced = usePrefersReducedMotion();
   const tier = useTier();
+  const run = useJourney();
 
   const rig = useRig({
     channels: { flow: { value: 0, family: 'hydraulic', tau: 0.3 } },
@@ -107,10 +102,14 @@ export function Waterway() {
       aria-hidden="true"
       data-route="journey"
       data-station={journey[active]?.id}
+      data-run-launched={run.launched ? 'true' : 'false'}
+      data-run-phase={run.phase}
     >
       <span className={styles.channel} />
       <span className={styles.fill} />
-      <span className={styles.craft} />
+      <span className={styles.backPressure} />
+      <span className={styles.craft} data-artifact={run.artifact} />
+      <span className={styles.artifactTag}>{run.artifact}</span>
 
       <ol className={styles.stations}>
         {journey.map((s, i) => (

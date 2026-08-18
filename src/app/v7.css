@@ -1,0 +1,87 @@
+/* V7 cross-cutting responsive corrections.
+
+   Component modules still own their drawings. These rules are intentionally
+   limited to semantics that span the finished application and were exposed by
+   the full browser matrix. */
+
+/* At the tablet/laptop transition the Basin control grid gives its longest
+   label a 151px content box while Martian Mono needs ~158px with the module's
+   12px side padding. Keep the same type and hit target; reclaim 8px from
+   padding instead of truncating, shrinking type, or allowing overflow. */
+#basin [role='tab'] {
+  padding-inline: 8px;
+}
+
+/* Mobile Safari pays heavily for multiple large fixed backdrop-filter surfaces.
+   More importantly, collapsed operator controls should not cover the work they
+   are meant to help someone inspect. Keep the controls opaque and compact until
+   the visitor explicitly opens them; an open panel may use the full safe width. */
+@media (max-width: 899px) {
+  body aside[aria-label='Living release run'] {
+    width: auto;
+    max-width: calc(100vw - 18px);
+  }
+
+  body aside[aria-label='Living release run']:has(#living-release-panel:not([hidden])) {
+    width: min(330px, calc(100vw - 18px));
+  }
+
+  body aside[aria-label='Living release run'] > button {
+    width: min(228px, calc(100vw - 18px));
+    min-height: 46px;
+    grid-template-columns: 30px minmax(0, 1fr);
+    background: #0a171a;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: 0 8px 22px rgb(0 0 0 / 0.34);
+  }
+
+  body aside[aria-label='Living release run']:has(#living-release-panel:not([hidden])) > button {
+    width: 100%;
+  }
+
+  body aside[aria-label='Living release run'] > button > :last-child {
+    display: none;
+  }
+
+  #living-release-panel {
+    background: #071114;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: 0 14px 36px rgb(0 0 0 / 0.42);
+  }
+
+  body aside[aria-label='Optional operator challenge'] {
+    width: auto;
+    max-width: calc(100vw - 18px);
+  }
+
+  body aside[aria-label='Optional operator challenge'] > button {
+    width: auto;
+    min-width: 178px;
+    min-height: 44px;
+    grid-template-columns: 30px auto;
+    gap: 8px;
+    padding: 6px 9px;
+    background: #071114;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: 0 8px 22px rgb(0 0 0 / 0.34);
+  }
+
+  body aside[aria-label='Optional operator challenge'] > button small {
+    display: none;
+  }
+
+  body aside[aria-label='Blackwater operator challenge'] {
+    width: min(330px, calc(100vw - 18px));
+  }
+
+  body aside[aria-label='Blackwater operator challenge'] > button,
+  #blackwater-drill-panel {
+    background: #071114;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: 0 12px 32px rgb(0 0 0 / 0.4);
+  }
+}

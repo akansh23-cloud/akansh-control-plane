@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Fold } from '@/components/Fold';
+import { useJourney } from '@/components/JourneySystem';
 import {
   causalAt,
   causalChain,
@@ -25,23 +26,27 @@ import styles from './Gauges.module.css';
 /**
  * PLATE 06 — GAUGE HOUSE. Observability as relationships, not a dashboard.
  *
- * The reading is derived from the load the visitor sets, using a deliberately
- * simple model: latency curves upward as saturation approaches the limit,
- * errors stay at zero until latency crosses the timeout budget, and readiness
- * drops once errors are sustained — which takes pods out of rotation instead
- * of serving failures. It is labelled as a model on screen, because it is one.
+ * V7 keeps the deterministic model, but its starting point can now inherit
+ * stress from the visitor's own upstream run. That is narrative state, not
+ * production telemetry, and the UI says so explicitly. Once the visitor moves
+ * the load control, their hand owns the model again.
  */
 
 export function Gauges() {
   const reduced = usePrefersReducedMotion();
   const tier = useTier();
   const viewport = useViewport();
+  const journey = useJourney();
 
   const [load, setLoad] = useState(0.34);
-  const reading = readAt(load);
+  const [controlled, setControlled] = useState(false);
+  /* Inherited load is derived state, not state copied by an effect. This keeps
+     the React layer semantic and lets upstream actions remain the source. */
+  const effectiveLoad = controlled || !journey.launched ? load : journey.signalSeed;
+  const reading = readAt(effectiveLoad);
   /* The same load, read as a chain of causes rather than four dials. */
-  const chain = causalAt(load);
-  const decision = decisionAt(load);
+  const chain = causalAt(effectiveLoad);
+  const decision = decisionAt(effectiveLoad);
 
   const rig = useRig({
     channels: {
@@ -60,18 +65,33 @@ export function Gauges() {
     '--load': (r) => r.get('load'),
   });
 
+  /* The physical marker follows whichever semantic source currently owns the
+     model. This effect only writes to the motion runtime; it never copies React
+     state into more React state. */
+  useEffect(() => {
+    rig.set('load', effectiveLoad, 'hydraulic');
+  }, [effectiveLoad, rig]);
+
   const move = useCallback(
     (next: number) => {
+      setControlled(true);
       setLoad(next);
       rig.set('load', next, 'hydraulic');
     },
     [rig],
   );
 
-  const { trackRef, dragging, handlers } = useAxisDrag('x', load, move, {
+  const { trackRef, dragging, handlers } = useAxisDrag('x', effectiveLoad, move, {
     step: 0.06,
     detents: [0, 0.5, 0.75, 1],
     snap: 0.035,
+    onCommit: (value) => {
+      const state = readAt(value).state;
+      journey.telemetryChanged(
+        value,
+        state === 'shedding' ? 'critical' : state === 'degrading' ? 'degrading' : 'healthy',
+      );
+    },
   });
 
   /* A tablet drops to two gauge columns rather than four — four columns at
@@ -85,8 +105,18 @@ export function Gauges() {
     readiness: { display: `${reading.readiness} / 3`, fill: reading.readiness / 3 },
   };
 
+  const inherited = journey.launched && !controlled && journey.signalSeed > 0.345;
+
   return (
     <div ref={rootRef} className={styles.root} data-state={reading.state}>
+      {inherited ? (
+        <p className="u-note">
+          Run context · Earlier operator actions seeded this simulation at{' '}
+          {Math.round(journey.signalSeed * 100)}% of the modeled limit. This is
+          narrative carry-over, not production telemetry; move the control to take over.
+        </p>
+      ) : null}
+
       <div
         ref={(node) => {
           pointerRef(node);
@@ -129,8 +159,6 @@ export function Gauges() {
           ))}
         </dl>
 
-        {/* The load control. A designed track with a 48px grip, not a default
-            range input squeezed into a drawing. */}
         <div className={styles.control}>
           <p className="u-mark">Load against the limit</p>
           <div
@@ -151,8 +179,8 @@ export function Gauges() {
               aria-label="Load against the resource limit"
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-valuenow={Math.round(load * 100)}
-              aria-valuetext={`${Math.round(load * 100)} percent of limit — ${reading.state}`}
+              aria-valuenow={Math.round(effectiveLoad * 100)}
+              aria-valuetext={`${Math.round(effectiveLoad * 100)} percent of limit — ${reading.state}`}
               style={{ left: `calc(var(--load, 0.34) * 100%)` }}
               {...handlers}
             />
@@ -160,8 +188,6 @@ export function Gauges() {
         </div>
       </div>
 
-      {/* The causal sequence. The gauges say what each signal is; this says
-          what makes the next one move, which is where an alert belongs. */}
       <section className={styles.causal} aria-labelledby="gauges-causal">
         <div className={styles.causalHead}>
           <p className="u-mark" id="gauges-causal">

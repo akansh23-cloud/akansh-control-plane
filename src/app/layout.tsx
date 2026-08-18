@@ -3,6 +3,10 @@ import '@fontsource-variable/bricolage-grotesque/wdth.css';
 import '@fontsource-variable/instrument-sans/index.css';
 import '@fontsource-variable/martian-mono/wdth.css';
 import './globals.css';
+import './v7.css';
+import { JourneyProvider } from '@/components/JourneySystem';
+import { OperatorChallenge } from '@/components/OperatorChallenge';
+import { ProductionFinale } from '@/components/ProductionFinale';
 import {
   completedCredentials,
   contact,
@@ -146,13 +150,19 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const commit = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? 'local';
+
   return (
     <html lang="en">
       <body>
         <a className="skip-link" href="#main">
           Skip to content
         </a>
-        {children}
+        <JourneyProvider commit={commit}>
+          {children}
+          <OperatorChallenge />
+          <ProductionFinale />
+        </JourneyProvider>
         <div className="paper-grain" aria-hidden="true" />
         <script
           type="application/ld+json"
