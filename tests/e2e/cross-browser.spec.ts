@@ -5,6 +5,7 @@ test.describe('Cross-browser Lockworks contract', () => {
     await page.goto('/');
     const html = page.locator('html');
     const indexButton = page.locator('button[aria-controls="key-plate"]');
+    const lowerBar = indexButton.locator('..');
 
     for (let i = 0; i < 3; i += 1) {
       await indexButton.click();
@@ -13,9 +14,9 @@ test.describe('Cross-browser Lockworks contract', () => {
       await expect(page.locator('#key-plate')).toBeHidden();
     }
 
-    await page.getByRole('button', { name: 'Recruiter' }).click();
+    await lowerBar.getByRole('button', { name: /^Recruiter\b/i }).click();
     await expect(html).toHaveAttribute('data-depth', 'recruiter');
-    await page.getByRole('button', { name: 'Engineer' }).click();
+    await lowerBar.getByRole('button', { name: /^Engineer\b/i }).click();
     await expect(html).toHaveAttribute('data-depth', 'engineer');
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
@@ -37,7 +38,7 @@ test.describe('Cross-browser Lockworks contract', () => {
   });
 
   test('forced commissioning opening can be skipped and page remains usable', async ({ page }) => {
-    await page.goto('/?intro=1');
+    await page.goto('/?intro=1', { waitUntil: 'domcontentloaded' });
     const opening = page.getByRole('dialog', { name: 'Commissioning the Lockworks' });
     await expect(opening).toBeVisible();
     await page.getByRole('button', { name: 'Skip opening' }).click();
