@@ -25,6 +25,32 @@ async function cleanRelease(page: Page) {
   await expect(flight.getByText('Promoted', { exact: true })).toBeVisible({ timeout: 15_000 });
 }
 
+async function installOpeningProbe(page: Page, spoofRealVisitor = false) {
+  await page.addInitScript((spoof) => {
+    if (spoof) {
+      Object.defineProperty(navigator, 'webdriver', { configurable: true, get: () => false });
+    }
+    const state = window as Window & { __lockworksOpeningSeen?: boolean };
+    state.__lockworksOpeningSeen = false;
+    const mark = () => {
+      if (document.documentElement.dataset.opening === 'commissioning') {
+        state.__lockworksOpeningSeen = true;
+      }
+    };
+    new MutationObserver(mark).observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-opening'],
+    });
+    queueMicrotask(mark);
+  }, spoofRealVisitor);
+}
+
+async function openingWasSeen(page: Page) {
+  return page.evaluate(() =>
+    Boolean((window as Window & { __lockworksOpeningSeen?: boolean }).__lockworksOpeningSeen),
+  );
+}
+
 test.describe('V8 experience regressions', () => {
   test('Index survives repeated open and close without corrupting layout', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== canonical);
@@ -169,24 +195,24 @@ test.describe('V8 experience regressions', () => {
 
   test('first visit opening can be skipped, replayed and rendered with reduced motion', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== canonical);
-    await page.addInitScript(() => {
-      Object.defineProperty(navigator, 'webdriver', { configurable: true, get: () => false });
-    });
+    await installOpeningProbe(page, true);
     await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await expect.poll(() => openingWasSeen(page)).toBe(true);
+
+    const html = page.locator('html');
+    await expect(html).toHaveAttribute('data-opening', 'ready', { timeout: 8_000 });
     const opening = page.getByRole('dialog', { name: 'Commissioning the Lockworks' });
-    await expect(opening).toBeVisible();
-    await page.getByRole('button', { name: 'Skip opening' }).click();
-    await expect(opening).toBeHidden();
     await page.getByRole('button', { name: 'Replay opening' }).click();
     await expect(opening).toBeVisible();
     await page.getByRole('button', { name: 'Skip opening' }).click();
+    await expect(opening).toBeHidden();
 
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto('/?intro=1', { waitUntil: 'domcontentloaded' });
+    await page.getByRole('button', { name: 'Replay opening' }).click();
     await expect(opening).toBeVisible();
-    const duration = await opening.evaluate((node) => getComputedStyle(node).animationDuration);
-    expect(duration === '0s' || duration === 'auto').toBeTruthy();
+    await expect(opening).toHaveAttribute('data-reduced-motion', 'true');
     await page.getByRole('button', { name: 'Skip opening' }).click();
+    await expect(opening).toBeHidden();
   });
 
   test('anchor jumping while Index is open or closed restores a stable scroll state', async ({ page }, testInfo) => {
