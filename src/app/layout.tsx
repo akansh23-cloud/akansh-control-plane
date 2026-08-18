@@ -5,6 +5,7 @@ import '@fontsource-variable/martian-mono/wdth.css';
 import './globals.css';
 import './v7.css';
 import { JourneyProvider } from '@/components/JourneySystem';
+import { OperatorChallenge } from '@/components/OperatorChallenge';
 import { ProductionFinale } from '@/components/ProductionFinale';
 import {
   completedCredentials,
@@ -159,6 +160,7 @@ export default function RootLayout({
         </a>
         <JourneyProvider commit={commit}>
           {children}
+          <OperatorChallenge />
           <ProductionFinale />
         </JourneyProvider>
         <div className="paper-grain" aria-hidden="true" />
