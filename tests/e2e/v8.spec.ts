@@ -14,6 +14,10 @@ async function openIndex(page: Page) {
   return button;
 }
 
+function lowerBar(page: Page) {
+  return page.locator('button[aria-controls="key-plate"]').locator('..');
+}
+
 async function cleanRelease(page: Page) {
   const flight = page.locator('#flight');
   await flight.scrollIntoViewIfNeeded();
@@ -44,9 +48,12 @@ test.describe('V8 experience regressions', () => {
       await page.locator('#key-plate nav').getByRole('link', { name: new RegExp(name, 'i') }).first().click();
       await expect(page).toHaveURL(new RegExp(`#${id}$`));
       await expect(page.locator('#key-plate')).toBeHidden();
-      const box = await page.locator(`#${id}`).boundingBox();
-      expect(box).not.toBeNull();
-      expect((box?.y ?? 9999) < page.viewportSize()!.height).toBeTruthy();
+      await expect.poll(async () =>
+        page.locator(`#${id}`).evaluate((node) => {
+          const rect = node.getBoundingClientRect();
+          return rect.top < window.innerHeight && rect.bottom > 0;
+        }),
+      ).toBe(true);
     }
   });
 
@@ -71,14 +78,15 @@ test.describe('V8 experience regressions', () => {
     test.skip(testInfo.project.name !== canonical);
     await page.goto('/');
     const control = page.locator('#tidewater a, #tidewater button').last();
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     await control.scrollIntoViewIfNeeded();
-    const controlBox = await control.boundingBox();
-    const barBox = await page.locator('button[aria-controls="key-plate"]').evaluate((node) =>
-      node.parentElement?.getBoundingClientRect().toJSON(),
-    );
-    expect(controlBox).not.toBeNull();
-    expect(barBox).toBeTruthy();
-    expect(controlBox!.bottom).toBeLessThanOrEqual((barBox as DOMRect).top + 1);
+    await expect.poll(async () => {
+      const controlBottom = await control.evaluate((node) => node.getBoundingClientRect().bottom);
+      const barTop = await page.locator('button[aria-controls="key-plate"]').evaluate((node) =>
+        node.parentElement?.getBoundingClientRect().top ?? window.innerHeight,
+      );
+      return controlBottom <= barTop + 1;
+    }).toBe(true);
   });
 
   test('Flight clean release and fault recovery both complete', async ({ page }, testInfo) => {
@@ -113,9 +121,10 @@ test.describe('V8 experience regressions', () => {
     await page.locator('#flight').scrollIntoViewIfNeeded();
     await page.locator('#basin').scrollIntoViewIfNeeded();
     await expect(page.locator('html')).toHaveAttribute('data-run-launched', 'true');
-    await page.getByRole('button', { name: 'Recruiter' }).click();
+    const bar = lowerBar(page);
+    await bar.getByRole('button', { name: /^Recruiter\b/i }).click();
     await expect(page.locator('html')).toHaveAttribute('data-depth', 'recruiter');
-    await page.getByRole('button', { name: 'Engineer' }).click();
+    await bar.getByRole('button', { name: /^Engineer\b/i }).click();
     await expect(page.locator('html')).toHaveAttribute('data-depth', 'engineer');
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(1);
@@ -158,9 +167,12 @@ test.describe('V8 experience regressions', () => {
     await expect(finale).toBeHidden();
   });
 
-  test('opening can be skipped, replayed and rendered with reduced motion', async ({ page }, testInfo) => {
+  test('first visit opening can be skipped, replayed and rendered with reduced motion', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== canonical);
-    await page.goto('/?intro=1');
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'webdriver', { configurable: true, get: () => false });
+    });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     const opening = page.getByRole('dialog', { name: 'Commissioning the Lockworks' });
     await expect(opening).toBeVisible();
     await page.getByRole('button', { name: 'Skip opening' }).click();
@@ -170,10 +182,11 @@ test.describe('V8 experience regressions', () => {
     await page.getByRole('button', { name: 'Skip opening' }).click();
 
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto('/?intro=1');
+    await page.goto('/?intro=1', { waitUntil: 'domcontentloaded' });
     await expect(opening).toBeVisible();
     const duration = await opening.evaluate((node) => getComputedStyle(node).animationDuration);
     expect(duration === '0s' || duration === 'auto').toBeTruthy();
+    await page.getByRole('button', { name: 'Skip opening' }).click();
   });
 
   test('anchor jumping while Index is open or closed restores a stable scroll state', async ({ page }, testInfo) => {
@@ -183,6 +196,10 @@ test.describe('V8 experience regressions', () => {
     await page.locator('#key-plate nav').getByRole('link', { name: /The Basin/i }).first().click();
     await expect(page.locator('#key-plate')).toBeHidden();
     await expect(page).toHaveURL(/#basin$/);
+    await expect.poll(async () => page.locator('#basin').evaluate((node) => {
+      const rect = node.getBoundingClientRect();
+      return rect.top < window.innerHeight && rect.bottom > 0;
+    })).toBe(true);
     await page.locator('button[aria-controls="key-plate"]').click();
     await page.locator('button[aria-controls="key-plate"]').click();
     await page.locator('#watch').scrollIntoViewIfNeeded();
