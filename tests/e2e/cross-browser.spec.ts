@@ -1,0 +1,50 @@
+import { expect, test } from '@playwright/test';
+
+test.describe('Cross-browser Lockworks contract', () => {
+  test('chrome, Index and depth controls remain stable', async ({ page }) => {
+    await page.goto('/');
+    const html = page.locator('html');
+    const indexButton = page.locator('button[aria-controls="key-plate"]');
+
+    for (let i = 0; i < 3; i += 1) {
+      await indexButton.click();
+      await expect(page.locator('#key-plate')).toBeVisible();
+      await indexButton.click();
+      await expect(page.locator('#key-plate')).toBeHidden();
+    }
+
+    await page.getByRole('button', { name: 'Recruiter' }).click();
+    await expect(html).toHaveAttribute('data-depth', 'recruiter');
+    await page.getByRole('button', { name: 'Engineer' }).click();
+    await expect(html).toHaveAttribute('data-depth', 'engineer');
+
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(overflow).toBeLessThanOrEqual(1);
+  });
+
+  test('Flight release and Refit mechanism work outside desktop Chromium', async ({ page }) => {
+    await page.goto('/');
+    const flight = page.locator('#flight');
+    await flight.scrollIntoViewIfNeeded();
+    await flight.getByRole('button', { name: 'Run a release' }).click();
+    await expect(flight.getByText('Promoted', { exact: true })).toBeVisible({ timeout: 15_000 });
+
+    const refit = page.locator('#refit');
+    await refit.scrollIntoViewIfNeeded();
+    await refit.getByRole('button', { name: 'After' }).click();
+    await expect(refit.getByRole('slider', { name: /Modernisation seam/i })).toHaveAttribute('aria-valuenow', '100');
+    await expect(refit.getByText(/All five layers replaced/i)).toBeVisible();
+  });
+
+  test('forced commissioning opening can be skipped and page remains usable', async ({ page }) => {
+    await page.goto('/?intro=1');
+    const opening = page.getByRole('dialog', { name: 'Commissioning the Lockworks' });
+    await expect(opening).toBeVisible();
+    await page.getByRole('button', { name: 'Skip opening' }).click();
+    await expect(opening).toBeHidden();
+    await expect(page.locator('#headwater')).toBeVisible();
+
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(overflow).toBeLessThanOrEqual(1);
+  });
+});
