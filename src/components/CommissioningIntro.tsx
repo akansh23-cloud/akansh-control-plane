@@ -68,6 +68,7 @@ export function CommissioningIntro() {
         aria-labelledby="lockworks-opening-title"
         aria-label="Commissioning the Lockworks"
         data-cycle={cycle}
+        data-reduced-motion={reduced || undefined}
         /* The moving gate leaves the actual Headwater underneath it. Do not
            fade the dialog root on an independent CSS clock: on a slow browser
            that could finish before hydration starts the semantic dismiss
