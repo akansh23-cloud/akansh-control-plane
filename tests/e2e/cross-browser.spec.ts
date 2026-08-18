@@ -1,4 +1,21 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+
+async function installOpeningProbe(page: Page) {
+  await page.addInitScript(() => {
+    const state = window as Window & { __lockworksOpeningSeen?: boolean };
+    state.__lockworksOpeningSeen = false;
+    const mark = () => {
+      if (document.documentElement.dataset.opening === 'commissioning') {
+        state.__lockworksOpeningSeen = true;
+      }
+    };
+    new MutationObserver(mark).observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-opening'],
+    });
+    queueMicrotask(mark);
+  });
+}
 
 test.describe('Cross-browser Lockworks contract', () => {
   test('chrome, Index and depth controls remain stable', async ({ page }) => {
@@ -37,9 +54,19 @@ test.describe('Cross-browser Lockworks contract', () => {
     await expect(refit.getByText(/All five layers replaced/i)).toBeVisible();
   });
 
-  test('forced commissioning opening can be skipped and page remains usable', async ({ page }) => {
+  test('forced commissioning opening is registered, replayable and skippable', async ({ page }) => {
+    await installOpeningProbe(page);
     await page.goto('/?intro=1', { waitUntil: 'domcontentloaded' });
+    await expect.poll(() =>
+      page.evaluate(() =>
+        Boolean((window as Window & { __lockworksOpeningSeen?: boolean }).__lockworksOpeningSeen),
+      ),
+    ).toBe(true);
+
+    const html = page.locator('html');
+    await expect(html).toHaveAttribute('data-opening', 'ready', { timeout: 8_000 });
     const opening = page.getByRole('dialog', { name: 'Commissioning the Lockworks' });
+    await page.getByRole('button', { name: 'Replay opening' }).click();
     await expect(opening).toBeVisible();
     await page.getByRole('button', { name: 'Skip opening' }).click();
     await expect(opening).toBeHidden();
