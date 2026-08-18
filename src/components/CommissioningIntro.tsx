@@ -80,7 +80,6 @@ export function CommissioningIntro() {
         className={styles.root}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="lockworks-opening-title"
         aria-label="Commissioning the Lockworks"
         data-cycle={cycle}
         data-replaying={replaying || undefined}
