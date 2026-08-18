@@ -54,7 +54,10 @@ type RunEvent = {
 
 type JourneyState = {
   artifact: string;
+  runId: number;
   launched: boolean;
+  releaseCleared: boolean;
+  finalePlayedForRunId: number | null;
   phase: RunPhase;
   currentStage: StageId;
   fault: string | null;
@@ -76,6 +79,7 @@ type JourneyContextValue = JourneyState & {
   signalSeed: number;
   launch: () => void;
   reset: () => void;
+  markFinalePlayed: () => void;
   releaseStarted: (fault?: string | null) => void;
   releaseHeld: (fault?: string | null) => void;
   releaseRecovering: () => void;
@@ -113,10 +117,18 @@ function artifactName(commit: string) {
   return clean && clean !== 'local' ? `AM-${clean.toUpperCase()}` : 'AM-V7-WORKING';
 }
 
-function initialState(commit: string, currentStage: StageId = 'headwater'): JourneyState {
+function initialState(
+  commit: string,
+  currentStage: StageId = 'headwater',
+  runId = 0,
+  finalePlayedForRunId: number | null = null,
+): JourneyState {
   return {
     artifact: artifactName(commit),
+    runId,
     launched: false,
+    releaseCleared: false,
+    finalePlayedForRunId,
     phase: 'ready',
     currentStage,
     fault: null,
@@ -131,6 +143,13 @@ function initialState(commit: string, currentStage: StageId = 'headwater'): Jour
     incidentSolved: false,
     productionReached: false,
     events: [],
+  };
+}
+
+function startIfNeeded(current: JourneyState) {
+  return {
+    launched: true,
+    runId: current.launched ? current.runId : current.runId + 1,
   };
 }
 
@@ -179,7 +198,12 @@ export function JourneyProvider({
       (current) =>
         current.launched
           ? {}
-          : { launched: true, phase: 'running', productionReached: false },
+          : {
+              ...startIfNeeded(current),
+              phase: 'running',
+              releaseCleared: false,
+              productionReached: false,
+            },
       {
         key: 'launch',
         stage: '01 · Headwater',
@@ -193,11 +217,12 @@ export function JourneyProvider({
     (fault: string | null = null) => {
       armedFault.current = fault;
       mutate(
-        () => ({
-          launched: true,
+        (current) => ({
+          ...startIfNeeded(current),
           phase: 'running',
           fault,
           faultRemediated: false,
+          releaseCleared: false,
           productionReached: false,
         }),
         {
@@ -215,7 +240,7 @@ export function JourneyProvider({
     (fault: string | null = null) => {
       const label = fault ?? armedFault.current ?? 'Policy gate';
       mutate(
-        () => ({ phase: 'held', fault: label }),
+        () => ({ phase: 'held', fault: label, releaseCleared: false }),
         {
           key: `release-held:${label}`,
           stage: '02 · The Flight',
@@ -229,7 +254,7 @@ export function JourneyProvider({
 
   const releaseRecovering = useCallback(() => {
     mutate(
-      () => ({ phase: 'recovering', faultRemediated: true }),
+      () => ({ phase: 'recovering', faultRemediated: true, releaseCleared: false }),
       {
         key: 'release-recovery',
         stage: '02 · The Flight',
@@ -241,7 +266,7 @@ export function JourneyProvider({
 
   const releaseComplete = useCallback(() => {
     mutate(
-      () => ({ phase: 'healthy' }),
+      () => ({ phase: 'healthy', releaseCleared: true }),
       {
         key: 'release-complete',
         stage: '02 · The Flight',
@@ -255,7 +280,7 @@ export function JourneyProvider({
     (drifted: boolean) => {
       mutate(
         (current) => ({
-          launched: current.launched || drifted,
+          ...(drifted ? startIfNeeded(current) : {}),
           drifted,
           reconciled: drifted ? false : true,
           phase: drifted
@@ -282,7 +307,7 @@ export function JourneyProvider({
       const safe = Math.max(0, extracted);
       mutate(
         (current) => ({
-          launched: true,
+          ...startIfNeeded(current),
           extracted: safe,
           serviceDown: down,
           phase: down ? 'degraded' : current.phase === 'held' ? current.phase : 'healthy',
@@ -337,14 +362,18 @@ export function JourneyProvider({
     [mutate],
   );
 
+  const markFinalePlayed = useCallback(() => {
+    mutate((current) => ({ finalePlayedForRunId: current.runId }));
+  }, [mutate]);
+
   const reset = useCallback(() => {
     armedFault.current = null;
     sequence.current = 0;
-    setState((current) => initialState(commit, current.currentStage));
+    setState((current) =>
+      initialState(commit, current.currentStage, current.runId, current.finalePlayedForRunId),
+    );
   }, [commit]);
 
-  /* One observer owns the narrative position. The existing Legend still owns
-     navigation; this observer only records where the persistent artifact is. */
   useEffect(() => {
     if (pathname !== '/' || typeof IntersectionObserver === 'undefined') return;
     const sections = STAGES.map((stage) => document.getElementById(stage.id)).filter(
@@ -370,10 +399,13 @@ export function JourneyProvider({
     return () => observer.disconnect();
   }, [pathname]);
 
+  /* Production is a semantic gate. Tidewater position alone is not enough: the
+     current run must have actually cleared The Flight first. */
   useEffect(() => {
     if (
       pathname !== '/' ||
       !state.launched ||
+      !state.releaseCleared ||
       state.currentStage !== 'tidewater' ||
       state.productionReached
     ) {
@@ -388,11 +420,18 @@ export function JourneyProvider({
         tone: 'ok',
       },
     );
-  }, [mutate, pathname, state.currentStage, state.launched, state.productionReached]);
+  }, [
+    mutate,
+    pathname,
+    state.currentStage,
+    state.launched,
+    state.productionReached,
+    state.releaseCleared,
+  ]);
 
   /* Read the existing simulations as instruments instead of rewriting them.
-     Their semantic DOM is already tested and accessible, so V7 listens to the
-     same state a keyboard or screen-reader user sees. */
+     Their semantic DOM remains the contract shared by mouse, keyboard and the
+     global run. */
   useEffect(() => {
     if (pathname !== '/') return;
 
@@ -502,10 +541,6 @@ export function JourneyProvider({
     return index < 0 ? 0 : index / (STAGES.length - 1);
   }, [state.currentStage]);
 
-  /* Upstream actions seed the observability chapter. This is intentionally a
-     recommendation, not an invented production metric. A later V7 pass can
-     let Gauge House consume it directly without changing the deterministic
-     model that already exists there. */
   const signalSeed = clamp(
     0.34 +
       (state.fault ? 0.1 : 0) +
@@ -518,6 +553,12 @@ export function JourneyProvider({
   useEffect(() => {
     if (pathname !== '/') return;
     const html = document.documentElement;
+    html.dataset.runId = String(state.runId);
+    html.dataset.runStarted = String(state.launched);
+    html.dataset.runCompleted = String(state.productionReached && state.releaseCleared);
+    html.dataset.runReleaseCleared = String(state.releaseCleared);
+    html.dataset.finalePlayedForRunId =
+      state.finalePlayedForRunId === null ? '' : String(state.finalePlayedForRunId);
     html.dataset.runLaunched = String(state.launched);
     html.dataset.runPhase = state.phase;
     html.dataset.runStage = state.currentStage;
@@ -525,6 +566,11 @@ export function JourneyProvider({
     html.dataset.runServiceDown = String(state.serviceDown);
     html.dataset.runTelemetry = state.telemetry;
     return () => {
+      delete html.dataset.runId;
+      delete html.dataset.runStarted;
+      delete html.dataset.runCompleted;
+      delete html.dataset.runReleaseCleared;
+      delete html.dataset.finalePlayedForRunId;
       delete html.dataset.runLaunched;
       delete html.dataset.runPhase;
       delete html.dataset.runStage;
@@ -536,8 +582,12 @@ export function JourneyProvider({
     pathname,
     state.currentStage,
     state.drifted,
+    state.finalePlayedForRunId,
     state.launched,
     state.phase,
+    state.productionReached,
+    state.releaseCleared,
+    state.runId,
     state.serviceDown,
     state.telemetry,
   ]);
@@ -549,6 +599,7 @@ export function JourneyProvider({
       signalSeed,
       launch,
       reset,
+      markFinalePlayed,
       releaseStarted,
       releaseHeld,
       releaseRecovering,
@@ -562,6 +613,7 @@ export function JourneyProvider({
       clusterDrift,
       incidentCalled,
       launch,
+      markFinalePlayed,
       progress,
       releaseComplete,
       releaseHeld,
@@ -697,7 +749,7 @@ function JourneyConsole({
         >
           <div className={styles.panelHead}>
             <div>
-              <p className={styles.kicker}>Operator record</p>
+              <p className={styles.kicker}>Operator record · run {String(Math.max(1, value.runId)).padStart(2, '0')}</p>
               <p className={styles.panelTitle}>{value.artifact}</p>
             </div>
             <p className={styles.stageReadout}>
@@ -732,7 +784,7 @@ function JourneyConsole({
               <dl className={styles.metrics}>
                 <div>
                   <dt>Gate</dt>
-                  <dd>{value.fault ? (value.faultRemediated ? 'Remediated' : value.phase === 'held' ? 'Held' : 'Armed') : 'Clean'}</dd>
+                  <dd>{value.fault ? (value.faultRemediated ? 'Remediated' : value.phase === 'held' ? 'Held' : 'Armed') : value.releaseCleared ? 'Cleared' : 'Clean'}</dd>
                 </div>
                 <div>
                   <dt>GitOps</dt>
