@@ -186,11 +186,38 @@ export function Flight() {
       at: stage + 0.96,
       dir: 'up',
       fire: () => {
-        setStage((s) => Math.min(LAST, s + 1));
+        setStage((s) => (s === stage ? Math.min(LAST, s + 1) : s));
         setMode('running');
       },
     });
   }, [rig, stage, mode]);
+
+  /* Semantic progress must not depend on a compositor receiving every frame.
+     Safari/WebKit may aggressively throttle rAF under CI, low-power or tab
+     scheduling pressure. The shared rig remains the normal source of motion;
+     this once-per-stage watchdog only settles the semantic checkpoint if the
+     visual threshold has not arrived within a generous wall-clock window. */
+  useEffect(() => {
+    if (reduced || stage >= LAST) return;
+    if (mode !== 'running' && mode !== 'recovering') return;
+
+    const currentStage = stage;
+    const faultPending = mode === 'running' && faultAt === currentStage;
+    const delay = mode === 'recovering' ? 1450 : 1050;
+    const timer = window.setTimeout(() => {
+      if (faultPending) {
+        rig.jump('flow', currentStage + 0.42);
+        setMode('held');
+        return;
+      }
+
+      rig.jump('flow', currentStage + 1);
+      setStage((s) => (s === currentStage ? Math.min(LAST, s + 1) : s));
+      setMode('running');
+    }, delay);
+
+    return () => window.clearTimeout(timer);
+  }, [rig, reduced, stage, mode, faultAt]);
 
   const run = useCallback(
     (id: string | null) => {
