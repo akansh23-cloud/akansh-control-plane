@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useJourney } from '@/components/JourneySystem';
 import { usePrefersReducedMotion } from '@/lib/motion';
@@ -14,16 +14,16 @@ import styles from './ProductionFinale.module.css';
  * doors part, the artifact crosses the sill and the site returns a release
  * record. This is CSS choreography because the geometry is fixed; no second
  * animation loop is introduced.
+ *
+ * The finale is intentionally once-per-page-session after dismissal. Replaying
+ * the portfolio should not repeatedly seize the viewport from someone who has
+ * already seen the ending.
  */
 export function ProductionFinale() {
   const pathname = usePathname();
   const reduced = usePrefersReducedMotion();
   const run = useJourney();
   const [dismissed, setDismissed] = useState(false);
-
-  useEffect(() => {
-    if (!run.productionReached) setDismissed(false);
-  }, [run.productionReached]);
 
   if (pathname !== '/' || !run.productionReached || dismissed) return null;
 
