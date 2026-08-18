@@ -1,0 +1,154 @@
+/* =====================================================================
+   LOCKWORKS V9 — THE CHROME CONTRACT
+
+   V8 had four fixed layers competing for the foot of the screen and a Flight
+   composition that grew its own scrollbar. V9 states the contract once:
+
+   · exactly one fixed operator layer, `--rail` tall, and the document
+     reserves that height so no control can ever be covered;
+   · only one drawer is open at a time, and the drawer that is open sits
+     directly on top of the bar rather than floating beside it;
+   · the opening and the finale own the viewport while they are on it, and
+     everything else gets out of the way;
+   · 1366x768 is a first-class composition, not a scaled 1920.
+   ===================================================================== */
+
+:root {
+  /* Total height of the operator chrome. Everything else is measured from it. */
+  --rail: 60px;
+  --chrome-h: calc(var(--rail) + env(safe-area-inset-bottom, 0px));
+  --chrome-gap: clamp(12px, 1.8vw, 24px);
+}
+
+html {
+  scroll-padding-top: clamp(16px, 3vh, 32px);
+  scroll-padding-bottom: calc(var(--chrome-h) + var(--chrome-gap));
+}
+
+body {
+  /* The reserved band. This is why the bar can never hide the last line of
+     the page — the page is simply that much shorter than the viewport. */
+  padding-bottom: calc(var(--chrome-h) + var(--chrome-gap));
+}
+
+#headwater,
+#flight,
+#refit,
+#basin,
+#split,
+#gauges,
+#watch,
+#vault,
+#tidewater {
+  scroll-margin-top: clamp(16px, 3vh, 32px);
+  scroll-margin-bottom: calc(var(--chrome-h) + var(--chrome-gap));
+}
+
+/* ---------------------------------------------------------------------
+   Lifecycle: who owns the screen
+   --------------------------------------------------------------------- */
+
+/* While the works are being commissioned the page behind is held still, but
+   it is never removed — the gates open onto it. */
+html[data-opening='commissioning'] body {
+  overflow: hidden;
+}
+
+/* First paint, before React exists.
+
+   The bootstrap in layout.tsx decides whether this visit is commissioned; this
+   rule is what makes that decision visible immediately, so the page cannot
+   flash its content and then be covered. It is deliberately inert to the
+   pointer, and the bootstrap's own timeout clears the attribute if hydration
+   never arrives — a delayed hydration can never lock the visitor out. */
+html[data-opening='commissioning'] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 199;
+  pointer-events: none;
+  background: radial-gradient(120% 80% at 50% 58%, #0A171B 0%, #050B0D 62%, #03080A 100%);
+}
+
+/* The finale is a payoff, not a toast: nothing else may sit on top of it. */
+body:has([role='dialog'][aria-labelledby='production-finale-title']) [data-drawer],
+body:has([role='dialog'][aria-labelledby='production-finale-title']) .paper-grain {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------------
+   Responsive rail
+   --------------------------------------------------------------------- */
+
+@media (max-width: 719px) {
+  :root {
+    /* Two rows: 44px of state, 48px of primary action. */
+    --rail: 92px;
+    --band: clamp(28px, 7vw, 46px);
+  }
+}
+
+/* Short laptops — 1366x768 and 1280x800 — get a compact bar rather than a
+   compressed page. */
+@media (min-width: 720px) and (max-height: 780px) {
+  :root {
+    --rail: 54px;
+    --band: clamp(30px, 4.4vw, 60px);
+  }
+}
+
+@media (min-width: 720px) and (max-height: 620px) {
+  :root { --rail: 48px; }
+}
+
+/* ---------------------------------------------------------------------
+   Density at laptop widths
+
+   The display scale from V8 still assumed an exhibition wall. At 1366 the
+   plate headers were eating a third of the viewport before any mechanism was
+   visible, which is what made the Flight feel like an afterthought.
+   --------------------------------------------------------------------- */
+
+@media (min-width: 1180px) and (max-width: 1500px) {
+  :root {
+    --step-3: clamp(1.5rem, 1.3rem + 0.7vw, 1.95rem);
+    --step-4: clamp(1.95rem, 1.6rem + 1.2vw, 2.7rem);
+    --step-5: clamp(2.4rem, 1.9rem + 2.2vw, 3.9rem);
+    --band: clamp(32px, 3.6vw, 62px);
+    --gutter: clamp(24px, 3.4vw, 54px);
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Overflow safety
+
+   Nothing in the experience is allowed to widen the document. This is a
+   guard, not a layout: any component that trips it is a defect.
+   --------------------------------------------------------------------- */
+
+html,
+body {
+  max-width: 100%;
+}
+
+main {
+  overflow-x: clip;
+}
+
+/* ---------------------------------------------------------------------
+   Focus
+
+   Cinematic and keyboard-operable are not in tension. Every interactive
+   element in the works shows where it is.
+   --------------------------------------------------------------------- */
+
+:where(a, button, [role='slider'], [tabindex]):focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}

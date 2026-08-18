@@ -1,5 +1,5 @@
 import { Brief } from '@/components/Brief';
-import { Legend } from '@/components/Legend';
+import { Operation } from '@/components/Operation';
 import { Plate } from '@/components/Plate';
 import { Waterway } from '@/components/Waterway';
 import { Basin } from '@/components/plates/Basin';
@@ -68,6 +68,13 @@ export default function Home() {
           }
           note={flightNote}
         >
+          <Operation
+            objective="release"
+            doing="Send one immutable image through the delivery gates."
+            matters="The artifact that was scanned is the artifact that runs. Nothing is rebuilt on the way up."
+            action="Run a release — then break it at a gate and recover it."
+            next="refit"
+          />
           <Flight />
         </Plate>
 
@@ -85,6 +92,12 @@ export default function Home() {
             </p>
           }
         >
+          <Operation
+            doing="Replace five layers of a platform underneath a running service."
+            matters="Modernisation is only credible if it can be done without taking the service away."
+            action="Drag the seam, or jump to Before and After."
+            next="basin"
+          />
           <Refit />
         </Plate>
 
@@ -115,6 +128,13 @@ export default function Home() {
           }
           note="Simulation. The drift and reconciliation you can trigger here are a model of how Argo CD behaves, drawn in the browser — not a live cluster."
         >
+          <Operation
+            objective="gitops"
+            doing="Break the cluster by hand, then let Git put it back."
+            matters="Declared state is what makes a platform recoverable instead of merely documented."
+            action="Edit the cluster, then reconcile."
+            next="split"
+          />
           <Basin />
         </Plate>
 
@@ -135,6 +155,13 @@ export default function Home() {
           }
           note="Simulation. Numbered units stand in for the services; the count, the routing behaviour and the fallback are real."
         >
+          <Operation
+            objective="fallback"
+            doing="Take an extracted service out and watch where the request goes."
+            matters="A decomposition is only safe if the gateway has somewhere to fall back to."
+            action="Extract services, then take one out of service."
+            next="gauges"
+          />
           <Split />
         </Plate>
 
@@ -153,6 +180,12 @@ export default function Home() {
           }
           note={observabilityNote}
         >
+          <Operation
+            doing="Raise the load and watch which signal moves first."
+            matters="The signal that moves first is the one worth alerting on; errors are the last to appear."
+            action="Drag the load against the resource limit."
+            next="watch"
+          />
           <Gauges />
         </Plate>
 
@@ -178,6 +211,13 @@ export default function Home() {
           }
           note={incident.simulated}
         >
+          <Operation
+            objective="incident"
+            doing="Read the evidence in the order it arrived, then call the fault."
+            matters="Most of incident response is deciding what the platform has already contained for you."
+            action="Work the signals, then name the cause."
+            next="vault"
+          />
           <Watch />
         </Plate>
 
@@ -227,7 +267,6 @@ export default function Home() {
       </main>
 
       <Waterway />
-      <Legend />
     </>
   );
 }

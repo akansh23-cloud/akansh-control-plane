@@ -1,315 +1,334 @@
+/* =====================================================================
+   COMMISSIONING THE LOCKWORKS
+
+   Every visual state is keyed off `data-step`, which the component advances
+   on a timer ladder. Nothing here is an infinite animation and nothing here
+   is a fake progress bar: each step is a real stage of bringing a works into
+   service, and the last one opens the gates onto the page behind.
+   ===================================================================== */
+
 .root {
   position: fixed;
   inset: 0;
-  z-index: 400;
-  display: none;
+  z-index: 200;
+  display: grid;
   place-items: center;
   overflow: hidden;
-  isolation: isolate;
-  background: #04090b;
+  background: radial-gradient(120% 80% at 50% 58%, #0A171B 0%, #050B0D 62%, #03080A 100%);
   color: var(--bone);
-  animation: shell 3.6s linear both;
+  isolation: isolate;
 }
 
-:global(html[data-opening='commissioning']) .root { display: grid; }
+/* --- the drafting field ------------------------------------------------ */
 
-.grid {
+.field {
   position: absolute;
   inset: 0;
-  opacity: 0.62;
-  background-image:
-    linear-gradient(color-mix(in oklab, var(--water-300) 8%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in oklab, var(--water-300) 8%, transparent) 1px, transparent 1px);
-  background-size: 36px 36px;
-  mask-image: radial-gradient(circle at center, #000 0 42%, transparent 86%);
+  opacity: 0;
+  transition: opacity 620ms var(--ease-water);
 }
 
-.grid svg { width: 100%; height: 100%; }
+.field svg { width: 100%; height: 100%; display: block; }
 
-.surveyLine,
-.surveyLineSlow,
-.lockTrace,
-.dimension {
+.survey path {
   fill: none;
-  stroke-linecap: square;
-  stroke-linejoin: miter;
-  vector-effect: non-scaling-stroke;
+  stroke: color-mix(in oklab, var(--water-300) 30%, transparent);
+  stroke-width: 0.6;
+  stroke-dasharray: 3 9;
+  opacity: 0;
+  transition: opacity 700ms var(--ease-water);
 }
-
-.surveyLine,
-.surveyLineSlow,
-.dimension {
-  stroke: color-mix(in oklab, var(--water-100) 46%, transparent);
-  stroke-width: 1;
-  stroke-dasharray: 1200;
-  stroke-dashoffset: 1200;
-  animation: draw 900ms var(--ease-gear) 120ms forwards;
-}
-
-.surveyLineSlow { animation-delay: 300ms; }
-.dimension { stroke: color-mix(in oklab, var(--signal) 52%, transparent); animation-delay: 480ms; }
 
 .lockTrace {
-  stroke: var(--water-100);
-  stroke-width: 2;
-  stroke-dasharray: 1600;
-  stroke-dashoffset: 1600;
-  filter: drop-shadow(0 0 8px color-mix(in oklab, var(--water-300) 36%, transparent));
-  animation: draw 1250ms var(--ease-release) 450ms forwards;
+  fill: none;
+  stroke: var(--water-300);
+  stroke-width: 2.2;
+  stroke-linejoin: round;
+  stroke-dasharray: 1900;
+  stroke-dashoffset: 1900;
+  transition: stroke-dashoffset 1500ms var(--ease-gear);
 }
+
+.chambers rect {
+  fill: color-mix(in oklab, var(--water-900) 60%, transparent);
+  stroke: color-mix(in oklab, var(--water-300) 46%, transparent);
+  stroke-width: 1;
+  opacity: 0;
+  transition: opacity 520ms var(--ease-water);
+}
+
+.chambers rect:nth-child(2) { transition-delay: 90ms; }
+.chambers rect:nth-child(3) { transition-delay: 180ms; }
+.chambers rect:nth-child(4) { transition-delay: 270ms; }
+
+.datumLine {
+  fill: none;
+  stroke: color-mix(in oklab, var(--signal) 60%, transparent);
+  stroke-width: 1;
+  opacity: 0;
+  transition: opacity 500ms var(--ease-water);
+}
+
+/* --- pressure entering the channel ------------------------------------ */
 
 .pressure {
   position: absolute;
-  left: 0;
-  right: 50%;
-  bottom: 0;
+  inset: auto 0 0 0;
   height: 46%;
-  z-index: -1;
-  transform-origin: bottom;
-  transform: scaleY(0.03);
-  background:
-    linear-gradient(180deg, color-mix(in oklab, var(--water-300) 26%, transparent), transparent 12%),
-    linear-gradient(180deg, var(--water-700), var(--water-900));
-  box-shadow: inset 0 2px 0 var(--water-100), 0 -10px 40px color-mix(in oklab, var(--water-300) 24%, transparent);
-  animation: charge 1.35s var(--ease-water) 620ms forwards;
+  background: linear-gradient(180deg, transparent, color-mix(in oklab, var(--water-700) 52%, transparent));
+  transform: translateY(100%);
+  transition: transform 1100ms var(--ease-water);
 }
+
+/* --- the artifact ------------------------------------------------------ */
+
+.artifact {
+  position: absolute;
+  left: 12%;
+  bottom: 16%;
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  opacity: 0;
+  transform: scale(0.7);
+  transition:
+    opacity 460ms var(--ease-water),
+    transform 1500ms var(--ease-gear),
+    left 1500ms var(--ease-gear),
+    bottom 1500ms var(--ease-gear);
+}
+
+.artifactCore {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(150deg, var(--signal), var(--signal-2));
+  clip-path: polygon(50% 0%, 100% 26%, 100% 74%, 50% 100%, 0% 74%, 0% 26%);
+  box-shadow: 0 0 40px color-mix(in oklab, var(--signal) 40%, transparent);
+}
+
+.artifactStamp {
+  position: relative;
+  font-family: var(--font-data);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--void);
+}
+
+/* --- the channel legend ------------------------------------------------ */
+
+.channel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: clamp(84px, 13vh, 138px);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: clamp(8px, 1.6vw, 22px);
+  margin: 0;
+  padding: 0 var(--gutter);
+  list-style: none;
+  font-family: var(--font-data);
+  font-size: clamp(0.58rem, 1.1vw, 0.72rem);
+  letter-spacing: 0.2em;
+  color: var(--water-100);
+}
+
+.channel li {
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 420ms var(--ease-water), transform 420ms var(--ease-water);
+  transition-delay: calc(var(--i) * 90ms);
+}
+
+/* --- the plaque -------------------------------------------------------- */
+
+.plaque {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  justify-items: center;
+  gap: clamp(4px, 0.8vh, 10px);
+  padding: 0 var(--gutter);
+  text-align: center;
+}
+
+.eyebrow, .owner, .mark, .role, .premise {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 620ms var(--ease-release), transform 620ms var(--ease-release);
+}
+
+.eyebrow {
+  font-family: var(--font-data);
+  font-size: clamp(0.58rem, 1vw, 0.7rem);
+  letter-spacing: 0.34em;
+  color: var(--signal);
+}
+
+.owner {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 6.4vw, 4.4rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  transition-delay: 90ms;
+}
+
+.mark {
+  font-family: var(--font-data);
+  font-size: clamp(0.68rem, 1.5vw, 0.95rem);
+  letter-spacing: 0.42em;
+  color: var(--water-100);
+  transition-delay: 160ms;
+}
+
+.role {
+  font-family: var(--font-data);
+  font-size: clamp(0.6rem, 1.2vw, 0.78rem);
+  letter-spacing: 0.2em;
+  color: var(--bone-2);
+  transition-delay: 230ms;
+}
+
+.premise {
+  max-width: 36ch;
+  font-size: clamp(0.85rem, 1.6vw, 1rem);
+  color: var(--muted);
+  transition-delay: 300ms;
+}
+
+/* --- the gates --------------------------------------------------------- */
 
 .gate {
   position: absolute;
   top: 0;
   bottom: 0;
-  z-index: 2;
-  width: 50.4%;
-  background:
-    repeating-linear-gradient(90deg, transparent 0 44px, color-mix(in oklab, var(--bone) 5%, transparent) 44px 45px),
-    linear-gradient(180deg, #0b171a, #071013);
-  border-color: color-mix(in oklab, var(--bone) 14%, transparent);
-  border-style: solid;
-  box-shadow: 0 0 80px rgb(0 0 0 / 0.62);
+  width: 50.5%;
+  z-index: 4;
+  background: linear-gradient(180deg, #0B171A, #060E10);
+  transition: transform 1250ms var(--ease-gear);
+  pointer-events: none;
 }
 
-.gate::before,
-.gate::after {
-  content: '';
-  position: absolute;
-  left: 9%;
-  right: 9%;
-  height: 1px;
-  background: color-mix(in oklab, var(--bone) 14%, transparent);
-}
-
-.gate::before { top: 28%; }
-.gate::after { bottom: 28%; }
 .gate span {
   position: absolute;
-  inset: 11% 15%;
-  border: 1px solid color-mix(in oklab, var(--bone) 9%, transparent);
-  transform: skewY(-7deg);
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, transparent, var(--signal), transparent);
+  opacity: 0.55;
 }
 
-.gateLeft {
-  left: 0;
-  border-width: 0 1px 0 0;
-  transform-origin: left center;
-  animation: gateLeft 780ms var(--ease-release) 2.36s forwards;
-}
+.gateLeft { left: 0; transform: translateX(-101%); }
+.gateLeft span { right: 0; }
+.gateRight { right: 0; transform: translateX(101%); }
+.gateRight span { left: 0; }
 
-.gateRight {
-  right: 0;
-  border-width: 0 0 0 1px;
-  transform-origin: right center;
-  animation: gateRight 780ms var(--ease-release) 2.36s forwards;
-}
-
-.artifact {
-  position: absolute;
-  z-index: 5;
-  left: 50%;
-  top: 47%;
-  width: 74px;
-  height: 74px;
-  margin: -37px 0 0 -37px;
-  display: grid;
-  place-items: center;
-  opacity: 0;
-  transform: scale(1.55) rotate(45deg);
-  animation: register 980ms var(--ease-gear) 1.05s forwards, discharge 720ms var(--ease-release) 2.42s forwards;
-}
-
-.artifactCore {
-  position: absolute;
-  inset: 12px;
-  border: 2px solid var(--signal);
-  background: color-mix(in oklab, var(--signal) 8%, #071013);
-  box-shadow: 0 0 0 8px color-mix(in oklab, var(--signal) 7%, transparent), 0 0 30px color-mix(in oklab, var(--signal) 30%, transparent);
-}
-
-.artifactStamp {
-  position: relative;
-  z-index: 1;
-  transform: rotate(-45deg);
-  font-family: var(--font-data);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  color: var(--signal);
-}
-
-.plaque {
-  position: relative;
-  z-index: 6;
-  width: min(640px, calc(100vw - 40px));
-  display: grid;
-  justify-items: center;
-  gap: 7px;
-  text-align: center;
-  transform: translateY(116px);
-  opacity: 0;
-  animation: plaque 600ms var(--ease-release) 1.62s forwards, plaqueOut 420ms var(--ease-gear) 2.62s forwards;
-}
-
-.eyebrow,
-.role,
-.ready,
-.datum,
-.skip,
-.replay {
-  font-family: var(--font-data);
-  font-stretch: 87.5%;
-  text-transform: uppercase;
-}
-
-.eyebrow {
-  font-size: 10px;
-  letter-spacing: 0.19em;
-  color: var(--muted);
-}
-
-.owner {
-  font-family: var(--font-display);
-  font-size: clamp(14px, 1.35vw, 18px);
-  font-weight: 610;
-  letter-spacing: 0.08em;
-  color: var(--bone-2);
-}
-
-.plaque h2 {
-  font-family: var(--font-display);
-  font-size: clamp(38px, 6.8vw, 92px);
-  line-height: 0.86;
-  letter-spacing: -0.05em;
-  font-stretch: 86%;
-  color: var(--bone);
-}
-
-.role {
-  margin-top: 5px;
-  font-size: clamp(9px, 1vw, 12px);
-  letter-spacing: 0.13em;
-  color: var(--water-100);
-}
-
-.ready {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 10px;
-  padding: 6px 9px;
-  border: 1px solid color-mix(in oklab, var(--live) 42%, transparent);
-  font-size: 9px;
-  letter-spacing: 0.11em;
-  color: var(--live);
-}
-
-.ready span {
-  width: 6px;
-  height: 6px;
-  background: currentColor;
-  box-shadow: 0 0 0 4px color-mix(in oklab, currentColor 13%, transparent);
-}
+/* --- chrome ------------------------------------------------------------ */
 
 .datum {
   position: absolute;
-  left: 18px;
-  bottom: 18px;
-  z-index: 7;
-  font-size: 9px;
-  letter-spacing: 0.14em;
+  left: var(--gutter);
+  top: clamp(18px, 3vh, 32px);
+  font-family: var(--font-data);
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
   color: var(--muted-2);
+  opacity: 0;
+  transition: opacity 500ms var(--ease-water);
 }
 
 .skip {
   position: absolute;
-  top: max(16px, env(safe-area-inset-top));
-  right: max(16px, env(safe-area-inset-right));
-  z-index: 8;
-  min-height: 40px;
-  padding: 8px 11px;
+  right: var(--gutter);
+  top: clamp(14px, 3vh, 28px);
+  z-index: 6;
+  min-height: 44px;
+  padding: 0 var(--s-4);
+  background: color-mix(in oklab, var(--bone) 8%, transparent);
   border: 1px solid var(--rule-strong);
-  background: color-mix(in oklab, var(--ground) 84%, transparent);
-  font-size: 9px;
-  letter-spacing: 0.1em;
+  border-radius: 3px;
   color: var(--bone-2);
+  font-family: var(--font-data);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
 }
 
-.replay {
-  position: fixed;
-  z-index: 138;
-  left: 12px;
-  top: max(12px, env(safe-area-inset-top));
-  min-height: 34px;
-  padding: 6px 8px;
-  border: 1px solid color-mix(in oklab, var(--bone) 14%, transparent);
-  background: color-mix(in oklab, var(--ground) 88%, transparent);
-  font-size: 8px;
-  letter-spacing: 0.09em;
-  color: var(--muted-2);
-  opacity: 0.56;
-  transition: opacity var(--t-tap) var(--ease-gear), border-color var(--t-tap) var(--ease-gear);
+.skip:hover { border-color: var(--signal); color: var(--signal); }
+.skip:focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; }
+
+/* =====================================================================
+   THE LADDER
+   ===================================================================== */
+
+.root:is([data-step='1'], [data-step='2'], [data-step='3'], [data-step='4'], [data-step='5'], [data-step='6'], [data-step='7']) .field { opacity: 1; }
+.root:is([data-step='1'], [data-step='2'], [data-step='3'], [data-step='4'], [data-step='5'], [data-step='6'], [data-step='7']) .survey path { opacity: 1; }
+.root:is([data-step='1'], [data-step='2'], [data-step='3'], [data-step='4'], [data-step='5'], [data-step='6'], [data-step='7']) .datum { opacity: 1; }
+
+.root:is([data-step='2'], [data-step='3'], [data-step='4'], [data-step='5'], [data-step='6'], [data-step='7']) .lockTrace { stroke-dashoffset: 0; }
+.root:is([data-step='2'], [data-step='3'], [data-step='4'], [data-step='5'], [data-step='6'], [data-step='7']) .chambers rect { opacity: 1; }
+.root:is([data-step='2'], [data-step='3'], [data-step='4'], [data-step='5'], [data-step='6'], [data-step='7']) .datumLine { opacity: 1; }
+
+.root:is([data-step='3'], [data-step='4'], [data-step='5'], [data-step='6'], [data-step='7']) .artifact { opacity: 1; transform: scale(1); }
+
+.root:is([data-step='4'], [data-step='5'], [data-step='6'], [data-step='7']) .pressure { transform: translateY(0); }
+.root:is([data-step='4'], [data-step='5'], [data-step='6'], [data-step='7']) .channel li { opacity: 1; transform: translateY(0); }
+
+.root:is([data-step='5'], [data-step='6'], [data-step='7']) .artifact { left: 82%; bottom: 74%; }
+
+.root:is([data-step='6'], [data-step='7']) .eyebrow,
+.root:is([data-step='6'], [data-step='7']) .owner,
+.root:is([data-step='6'], [data-step='7']) .mark,
+.root:is([data-step='6'], [data-step='7']) .role,
+.root:is([data-step='6'], [data-step='7']) .premise { opacity: 1; transform: translateY(0); }
+
+.root[data-step='7'] .gateLeft { transform: translateX(0); }
+.root[data-step='7'] .gateRight { transform: translateX(0); }
+.root[data-step='7'] .plaque,
+.root[data-step='7'] .channel,
+.root[data-step='7'] .artifact,
+.root[data-step='7'] .field,
+.root[data-step='7'] .pressure,
+.root[data-step='7'] .datum { opacity: 0; transition-duration: 420ms; }
+
+/* =====================================================================
+   REDUCED MOTION — the same information, arriving at once.
+   ===================================================================== */
+
+.root[data-reduced-motion] .field,
+.root[data-reduced-motion] .survey path,
+.root[data-reduced-motion] .lockTrace,
+.root[data-reduced-motion] .chambers rect,
+.root[data-reduced-motion] .datumLine,
+.root[data-reduced-motion] .pressure,
+.root[data-reduced-motion] .artifact,
+.root[data-reduced-motion] .channel li,
+.root[data-reduced-motion] .eyebrow,
+.root[data-reduced-motion] .owner,
+.root[data-reduced-motion] .mark,
+.root[data-reduced-motion] .role,
+.root[data-reduced-motion] .premise {
+  transition-duration: 1ms;
+  transition-delay: 0ms;
 }
 
-.replay:hover,
-.replay:focus-visible { opacity: 1; border-color: var(--water-300); color: var(--bone); }
-:global(html[data-opening='commissioning']) .replay { display: none; }
-
-@keyframes draw { to { stroke-dashoffset: 0; } }
-@keyframes charge { to { transform: scaleY(1); } }
-@keyframes register { 0% { opacity: 0; transform: scale(1.55) rotate(45deg); } 58% { opacity: 1; transform: scale(0.94) rotate(45deg); } 100% { opacity: 1; transform: scale(1) rotate(45deg); } }
-@keyframes discharge { to { opacity: 0; transform: translate3d(0, 34vh, 0) scale(0.72) rotate(45deg); } }
-@keyframes plaque { to { opacity: 1; transform: translateY(108px); } }
-@keyframes plaqueOut { to { opacity: 0; transform: translateY(92px) scale(0.98); } }
-@keyframes gateLeft { to { transform: translateX(-101%); } }
-@keyframes gateRight { to { transform: translateX(101%); } }
-@keyframes shell { 0%, 88% { opacity: 1; } 100% { opacity: 0; } }
+.root[data-reduced-motion] .artifact { left: 12%; bottom: 16%; }
+.root[data-reduced-motion] .gate { display: none; }
 
 @media (max-width: 719px) {
-  .grid { background-size: 26px 26px; }
-  .plaque { transform: translateY(92px); }
-  .datum { left: 10px; bottom: 10px; }
-  .replay { left: 9px; top: max(9px, env(safe-area-inset-top)); }
-  @keyframes plaque { to { opacity: 1; transform: translateY(86px); } }
-  @keyframes plaqueOut { to { opacity: 0; transform: translateY(76px) scale(0.98); } }
+  .artifact { width: 48px; height: 48px; left: 10%; bottom: 14%; }
+  .root:is([data-step='5'], [data-step='6'], [data-step='7']) .artifact { left: 74%; bottom: 70%; }
+  .channel { bottom: clamp(70px, 11vh, 110px); letter-spacing: 0.14em; }
+  .skip { right: var(--s-4); }
+  .datum { display: none; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .root,
-  .surveyLine,
-  .surveyLineSlow,
-  .lockTrace,
-  .dimension,
-  .pressure,
-  .gateLeft,
-  .gateRight,
-  .artifact,
-  .plaque {
-    animation: none !important;
-  }
-
-  .surveyLine,
-  .surveyLineSlow,
-  .lockTrace,
-  .dimension { stroke-dashoffset: 0; }
-  .pressure { transform: scaleY(0.35); opacity: 0.55; }
-  .artifact { opacity: 1; transform: scale(1) rotate(45deg); }
-  .plaque { opacity: 1; transform: translateY(108px); }
+@media (max-height: 700px) {
+  .channel { bottom: clamp(58px, 9vh, 88px); }
+  .premise { display: none; }
 }

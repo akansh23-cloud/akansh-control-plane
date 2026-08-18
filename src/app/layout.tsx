@@ -5,9 +5,10 @@ import '@fontsource-variable/martian-mono/wdth.css';
 import './globals.css';
 import './v7.css';
 import './v8.css';
+import './v9.css';
 import { CommissioningIntro } from '@/components/CommissioningIntro';
 import { JourneyProvider } from '@/components/JourneySystem';
-import { OperatorChallenge } from '@/components/OperatorChallenge';
+import { OperatorChrome } from '@/components/OperatorChrome';
 import { ProductionFinale } from '@/components/ProductionFinale';
 import {
   completedCredentials,
@@ -121,17 +122,28 @@ const personSchema = {
 
 const openingBootstrap = `
 (() => {
+  const ready = () => { document.documentElement.dataset.opening = 'ready'; };
   try {
+    /* The opening belongs to the works, not to every route. */
+    if (window.location.pathname !== '/') { ready(); return; }
     const params = new URLSearchParams(window.location.search);
     const forced = params.get('intro') === '1';
     const automationBypass = navigator.webdriver === true && !forced;
-    const seen = sessionStorage.getItem('lockworks:opening:v8') === 'seen';
+    const seen = sessionStorage.getItem('lockworks:opening:v9') === 'seen';
     document.documentElement.dataset.opening = forced || (!seen && !automationBypass)
       ? 'commissioning'
       : 'ready';
   } catch {
-    document.documentElement.dataset.opening = 'ready';
+    ready();
   }
+  /* Hydration is not allowed to hold the page hostage. If React has not
+     adopted the opening within eight seconds, the works open anyway. */
+  setTimeout(() => {
+    if (document.documentElement.dataset.opening === 'commissioning'
+      && !document.querySelector('[role="dialog"][aria-label="Commissioning the Lockworks"]')) {
+      ready();
+    }
+  }, 8000);
 })();`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -144,10 +156,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <a className="skip-link" href="#main">Skip to content</a>
-        <CommissioningIntro />
         <JourneyProvider commit={commit}>
+          <CommissioningIntro />
           {children}
-          <OperatorChallenge />
+          <OperatorChrome />
           <ProductionFinale />
         </JourneyProvider>
         <div className="paper-grain" aria-hidden="true" />

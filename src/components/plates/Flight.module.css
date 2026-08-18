@@ -1,84 +1,341 @@
-/* PLATE 02 — THE FLIGHT. Nine chambers, sized by their own content. */
+/* =====================================================================
+   THE FLIGHT — release engineering drawn as a staircase of locks.
+
+   Composition contract:
+   · the mechanism owns the middle of the plate at every viewport;
+   · the status region has a fixed number of slots and therefore can never
+     grow a nested scrollbar — the full run lives behind an explicit drawer;
+   · desktop climbs left to right, mobile climbs bottom to top. Neither is a
+     squeezed copy of the other.
+   ===================================================================== */
 
 .root {
   display: grid;
-  gap: var(--s-5);
+  grid-template-columns: minmax(220px, 0.82fr) minmax(0, 1.7fr) minmax(240px, 1fr);
+  grid-template-areas:
+    'operator mechanism context'
+    'fittings fittings  fittings';
+  gap: clamp(18px, 2.2vw, 34px);
+  align-items: start;
 }
 
-.controls {
+/* ---------------------------------------------------------------------
+   Operator
+   --------------------------------------------------------------------- */
+
+.operator {
+  grid-area: operator;
   display: grid;
   gap: var(--s-4);
+  align-content: start;
+}
+
+.task {
+  display: grid;
+  gap: 4px;
+  font-size: var(--step--1);
+  color: var(--bone-2);
+  max-width: 40ch;
+}
+
+.primaryRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
 }
 
 .faults {
   display: grid;
   gap: var(--s-2);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--rule);
 }
 
-.faults :global(.ctl-row) {
+.faultList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--s-2);
 }
 
 .faultBtn {
-  min-width: 0;
-  padding-inline: var(--s-2);
+  width: 100%;
+  min-height: 52px;
+  display: grid;
+  gap: 2px;
+  padding: var(--s-2) var(--s-3);
+  background: transparent;
+  border: 1px solid var(--rule-strong);
+  border-radius: 3px;
+  color: var(--bone-2);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--t-tap), color var(--t-tap), background var(--t-tap);
 }
 
-.faultLong { display: none; }
-
-@media (min-width: 560px) {
-  .faults :global(.ctl-row) { display: flex; flex-wrap: wrap; }
-  .faultBtn { flex: 1 1 auto; padding-inline: var(--s-4); }
-  .faultShort { display: none; }
-  .faultLong { display: inline; }
-}
+.faultBtn:hover { border-color: var(--fault); color: var(--bone); }
+.faultBtn:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
 
 .faultBtn[aria-pressed='true'] {
-  background: color-mix(in oklab, var(--fault) 30%, transparent);
   border-color: var(--fault);
+  background: color-mix(in oklab, var(--fault) 14%, transparent);
   color: var(--bone);
 }
 
-/* ---------------- readout ---------------- */
-
-.readout {
-  display: grid;
-  gap: var(--s-3);
-  padding: var(--s-5);
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--panel) 94%, var(--bone) 3%),
-    var(--panel)
-  );
-  border: 1px solid var(--edge);
-  border-left: 3px solid var(--water-500);
-  border-radius: 3px;
-  transition: border-color var(--t-quick) var(--ease-gear);
+.faultLabel {
+  font-size: var(--step--1);
+  font-weight: 500;
 }
 
-.readout[data-phase='held'] { border-left-color: var(--fault); }
-.readout[data-phase='recovering'] { border-left-color: var(--hold); }
-.readout[data-phase='complete'] { border-left-color: var(--live); }
+.faultGate {
+  font-family: var(--font-data);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.promise {
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--rule);
+  font-size: 0.82rem;
+  color: var(--muted);
+  max-width: 44ch;
+}
+
+/* ---------------------------------------------------------------------
+   Mechanism
+   --------------------------------------------------------------------- */
+
+.mechanism {
+  grid-area: mechanism;
+  display: grid;
+  gap: var(--s-3);
+  min-width: 0;
+}
+
+.works {
+  --n: 9;
+  --h: 36%;
+  --rise: calc((100% - var(--h)) / 8);
+  --flow: 0;
+  position: relative;
+  aspect-ratio: 1.68;
+  min-height: 260px;
+  max-height: 44vh;
+  background:
+    linear-gradient(180deg, color-mix(in oklab, var(--void) 60%, transparent), var(--water-900));
+  border: 1px solid var(--rule);
+  overflow: hidden;
+}
+
+/* Inspection light. Follows a fine pointer across the works and fades out
+   the moment the hand leaves; it never becomes a cursor. */
+.works::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  opacity: calc(var(--pointer-in, 0) * 0.5);
+  background: radial-gradient(
+    260px circle at calc(var(--pointer-x, 0.5) * 100%) calc(var(--pointer-y, 0.5) * 100%),
+    color-mix(in oklab, var(--water-100) 16%, transparent),
+    transparent 68%
+  );
+  transition: opacity 260ms var(--ease-water);
+}
+
+/* The sill line the chambers step up from. */
+.works::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 1px;
+  background: var(--rule-strong);
+}
+
+.ladder {
+  position: absolute;
+  inset: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.chamber {
+  position: absolute;
+  left: calc(var(--i) * 100% / var(--n));
+  width: calc(100% / var(--n) - 2px);
+  bottom: calc(var(--i) * var(--rise));
+  height: var(--h);
+  border: 1px solid color-mix(in oklab, var(--water-300) 34%, transparent);
+  border-bottom-color: color-mix(in oklab, var(--water-300) 60%, transparent);
+  background: color-mix(in oklab, var(--void) 34%, transparent);
+  overflow: hidden;
+}
+
+.chamber[data-kind='security'] {
+  border-color: color-mix(in oklab, var(--signal) 40%, transparent);
+}
+
+.chamber[data-armed] {
+  border-color: var(--fault);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--fault) 40%, transparent);
+}
+
+.water {
+  position: absolute;
+  inset: 0;
+  transform: scaleY(0);
+  transform-origin: bottom;
+  background: linear-gradient(180deg, var(--water-500), var(--water-700));
+  transition: transform var(--t-fill) var(--ease-water), background var(--t-move);
+}
+
+.chamber[data-state='filling'] .water { transform: scaleY(0.62); }
+.chamber[data-state='full'] .water { transform: scaleY(1); }
+.chamber[data-state='recovering'] .water {
+  transform: scaleY(0.8);
+  background: linear-gradient(180deg, var(--hold), var(--water-700));
+}
+.chamber[data-state='refused'] .water {
+  transform: scaleY(0.42);
+  background: linear-gradient(180deg, var(--fault), var(--water-900));
+}
+
+/* The upper gate: closed is a full-height mitre, open retracts upward. */
+.gate {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 4px;
+  transform-origin: top;
+  background: linear-gradient(180deg, var(--signal), var(--signal-2));
+  opacity: 0.75;
+  transition: transform var(--t-move) var(--ease-gear), background var(--t-move), opacity var(--t-move);
+}
+
+.chamber[data-state='full'] .gate { transform: scaleY(0.06); opacity: 0.4; }
+.chamber[data-state='refused'] .gate {
+  background: var(--fault);
+  opacity: 1;
+  width: 6px;
+}
+.chamber[data-state='recovering'] .gate { background: var(--hold); }
+
+.chamberLabel {
+  position: absolute;
+  inset: auto 0 6px 0;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  padding: 0 2px 4px;
+}
+
+.no {
+  font-family: var(--font-data);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: var(--muted-2);
+}
+
+.name {
+  font-family: var(--font-data);
+  font-size: 0.66rem;
+  letter-spacing: 0.04em;
+  color: var(--bone-2);
+  white-space: nowrap;
+}
+
+.chamber[data-state='full'] .name,
+.chamber[data-state='filling'] .name { color: var(--bone); }
+.chamber[data-state='refused'] .name { color: var(--fault); }
+
+/* The artifact. One token, one run. */
+.token {
+  position: absolute;
+  left: calc((var(--flow) + 0.5) * 100% / var(--n));
+  bottom: calc(var(--flow) * var(--rise) + var(--h) / 2);
+  width: 30px;
+  height: 30px;
+  margin: 0 0 -15px -15px;
+  display: grid;
+  place-items: center;
+  z-index: 3;
+  filter: drop-shadow(0 0 14px color-mix(in oklab, var(--signal) 46%, transparent));
+}
+
+.tokenCore {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(150deg, var(--signal), var(--signal-2));
+  clip-path: polygon(50% 0%, 100% 26%, 100% 74%, 50% 100%, 0% 74%, 0% 26%);
+}
+
+.tokenStamp {
+  position: relative;
+  font-family: var(--font-data);
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--void);
+}
+
+.works[data-phase='idle'] .token { opacity: 0.55; }
+.works[data-phase='held'] .tokenCore { background: linear-gradient(150deg, var(--fault), #8E2E20); }
+
+.scaleNote {
+  font-family: var(--font-data);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: var(--muted-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------------
+   Context
+   --------------------------------------------------------------------- */
+
+.context {
+  grid-area: context;
+  display: grid;
+  gap: var(--s-4);
+  align-content: start;
+  min-width: 0;
+}
+
+.readout { display: grid; gap: var(--s-2); }
 
 .headline {
   font-family: var(--font-display);
+  font-size: var(--step-1);
   font-weight: 640;
-  font-stretch: 90%;
-  font-size: var(--step-2);
-  line-height: 1.08;
-  letter-spacing: -0.018em;
-  color: var(--bone);
-  text-transform: none;
+  letter-spacing: -0.01em;
 }
 
 .body {
-  font-size: var(--step-0);
-  line-height: 1.5;
+  font-size: var(--step--1);
   color: var(--bone-2);
-  max-width: 60ch;
-  text-wrap: pretty;
+  max-width: 44ch;
+}
+
+.gateNote {
+  display: grid;
+  gap: var(--s-2);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--rule);
+}
+
+.gateWhy {
+  font-size: 0.86rem;
+  color: var(--muted);
+  max-width: 46ch;
 }
 
 .tools {
@@ -88,442 +345,355 @@
 }
 
 .tool {
-  font-family: var(--font-data);
-  font-size: var(--step--2);
-  font-stretch: 87.5%;
-  letter-spacing: 0.08em;
-  color: var(--water-100);
-  border: 1px solid color-mix(in oklab, var(--water-300) 44%, transparent);
+  padding: 3px 8px;
+  border: 1px solid var(--rule);
   border-radius: 2px;
-  padding: 5px 9px;
+  font-family: var(--font-data);
+  font-size: 0.66rem;
+  color: var(--muted);
 }
 
-.remedy {
+/* --- refusal --------------------------------------------------------- */
+
+.refusal {
   display: grid;
   gap: var(--s-3);
+  padding: var(--s-4);
+  border: 1px solid color-mix(in oklab, var(--fault) 55%, transparent);
+  background: color-mix(in oklab, var(--fault) 9%, transparent);
+}
+
+.refusalTitle {
+  font-family: var(--font-data);
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--fault);
+}
+
+.refusalGrid {
+  display: grid;
+  gap: var(--s-2);
+  margin: 0;
+}
+
+.refusalGrid > div {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: var(--s-3);
+}
+
+.refusalGrid dt {
+  font-family: var(--font-data);
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.refusalGrid dd {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--bone-2);
+}
+
+.fix {
+  display: grid;
+  gap: 3px;
+  font-size: 0.86rem;
+  color: var(--bone-2);
+}
+
+.refusalActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  align-items: center;
+}
+
+.whyBtn {
+  min-height: 44px;
+  padding: 0 var(--s-3);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--rule-strong);
+  color: var(--muted);
+  font-family: var(--font-data);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.whyBtn:hover { color: var(--signal); border-bottom-color: var(--signal); }
+.whyBtn:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+
+.whyBody {
+  font-size: 0.84rem;
+  color: var(--muted);
+  max-width: 48ch;
+}
+
+/* --- events ---------------------------------------------------------- */
+
+.events {
+  display: grid;
+  gap: var(--s-2);
   padding-top: var(--s-3);
   border-top: 1px solid var(--rule);
 }
 
-.remedyLine {
-  display: grid;
-  gap: 3px;
-  font-size: var(--step--1);
-  line-height: 1.45;
-  color: var(--bone-2);
-  max-width: 58ch;
-}
-
-.remedy :global(.ctl) {
-  justify-self: start;
-}
-
-/* ---------------- the status stream ---------------- */
-
-.log {
-  display: grid;
-  gap: var(--s-3);
-  padding: var(--s-4);
-  border: 1px solid var(--edge);
-  border-radius: 3px;
-  background: color-mix(in oklab, var(--void) 46%, transparent);
-}
-
-.logHead {
+.eventsHead {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--s-3);
-  flex-wrap: wrap;
 }
 
 .progress {
   font-family: var(--font-data);
-  font-size: var(--step--2);
-  font-stretch: 87.5%;
-  letter-spacing: 0.08em;
-  color: var(--water-100);
+  font-size: 0.66rem;
+  color: var(--muted-2);
 }
 
-.logLines {
+.eventList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: grid;
   gap: var(--s-2);
+  /* Exactly three slots. There is nothing here to scroll. */
 }
 
-.logLine {
+.event {
   display: grid;
-  grid-template-columns: 3.4rem minmax(0, 1fr);
-  gap: 2px var(--s-3);
-  font-family: var(--font-data);
-  font-size: var(--step--2);
-  font-stretch: 87.5%;
-  line-height: 1.45;
-  color: var(--muted);
+  grid-template-columns: 46px minmax(0, 1fr);
+  grid-template-areas: 'at stage' 'at text';
+  column-gap: var(--s-3);
   padding-left: var(--s-3);
-  border-left: 2px solid var(--rule-faint);
+  border-left: 2px solid var(--edge);
 }
 
-.logAt {
-  grid-row: 1 / span 2;
+.event[data-tone='ok'] { border-left-color: var(--live); }
+.event[data-tone='gate'] { border-left-color: var(--signal); }
+.event[data-tone='fault'] { border-left-color: var(--fault); }
+.event[data-tone='fix'] { border-left-color: var(--hold); }
+
+.eventAt {
+  grid-area: at;
+  font-family: var(--font-data);
+  font-size: 0.64rem;
   color: var(--muted-2);
-  font-variant-numeric: tabular-nums;
 }
 
-.logStage {
+.eventStage {
+  grid-area: stage;
+  font-family: var(--font-data);
+  font-size: 0.64rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  color: var(--signal);
+}
+
+.eventText {
+  grid-area: text;
+  font-size: 0.82rem;
   color: var(--bone-2);
 }
 
-.logText {
-  overflow-wrap: anywhere;
-  text-wrap: pretty;
-}
-
-.logLine[data-tone='gate'] { border-left-color: color-mix(in oklab, var(--signal) 60%, transparent); }
-.logLine[data-tone='fault'] { border-left-color: var(--fault); color: var(--bone-2); }
-.logLine[data-tone='fix'] { border-left-color: var(--hold); }
-.logLine[data-tone='ok'] { border-left-color: color-mix(in oklab, var(--water-300) 55%, transparent); }
-.logLine[data-tone='idle'] { border-left-color: var(--rule-faint); }
-
-/* ---------------- the flight ---------------- */
-
-.ladderWrap {
-  position: relative;
-}
-
-.ladder {
-  display: grid;
-  gap: 3px;
-  counter-reset: chamber;
-}
-
-.chamber {
-  position: relative;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--s-3);
-  min-height: 46px;
-  padding: 0 var(--s-4);
-  background: color-mix(in oklab, var(--panel) 60%, transparent);
-  border: 1px solid var(--edge);
-  border-radius: 2px;
-  overflow: hidden;
-  isolation: isolate;
-}
-
-/* Water. Its extent is derived from one channel: how far the release has
-   climbed, minus this chamber's index. */
-.water {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  z-index: -1;
-  width: clamp(0%, calc((var(--flow, 0) - var(--i)) * 100%), 100%);
-  background: linear-gradient(
-    90deg,
-    color-mix(in oklab, var(--water-700) 92%, transparent),
-    color-mix(in oklab, var(--water-500) 78%, transparent)
-  );
-  border-right: 2px solid var(--water-100);
-}
-
-/* The vessel. It is positioned by the same expression that sizes the water,
-   so it cannot drift off the surface it is supposed to be floating on. */
-.vessel {
-  position: absolute;
-  top: 50%;
-  left: clamp(0%, calc((var(--flow, 0) - var(--i)) * 100%), 100%);
-  width: 13px;
-  height: 13px;
-  margin-left: -7px;
-  margin-top: -7px;
-  border-radius: 2px;
-  background: var(--signal);
-  box-shadow:
-    0 0 0 4px color-mix(in oklab, var(--signal) 22%, transparent),
-    0 4px 14px color-mix(in oklab, var(--void) 74%, transparent);
-  transform: rotate(45deg);
-  opacity: 0;
-  transition: opacity var(--t-quick) var(--ease-water);
-}
-
-/* Only ever one vessel on the flight at a time. */
-.chamber[data-state='filling'] .vessel,
-.chamber[data-state='refused'] .vessel,
-.chamber[data-state='recovering'] .vessel {
-  opacity: 1;
-}
-
-.chamber[data-state='refused'] .vessel {
-  background: var(--fault);
-  box-shadow:
-    0 0 0 4px color-mix(in oklab, var(--fault) 26%, transparent),
-    0 4px 14px color-mix(in oklab, var(--void) 74%, transparent);
-}
-
-.chamber[data-state='recovering'] .vessel {
-  background: var(--hold);
-  box-shadow:
-    0 0 0 4px color-mix(in oklab, var(--hold) 26%, transparent),
-    0 4px 14px color-mix(in oklab, var(--void) 74%, transparent);
-}
-
-/* A crest on the leading edge of the water, so the fill reads as a moving
-   surface rather than a growing bar. */
-.water::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  right: -1px;
-  width: 2px;
-  background: var(--water-100);
-  box-shadow: 0 0 10px 2px color-mix(in oklab, var(--water-100) 45%, transparent);
-}
-
-/* The gate at the head of each chamber. */
-.gate {
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: var(--rule);
-  transition: background var(--t-quick) var(--ease-gear);
-}
-
-.no {
+.logBtn {
+  justify-self: start;
+  min-height: 44px;
+  padding: 0 var(--s-3);
+  background: transparent;
+  border: 1px solid var(--rule-strong);
+  border-radius: 3px;
+  color: var(--bone-2);
   font-family: var(--font-data);
-  font-size: var(--step--2);
-  font-stretch: 87.5%;
+  font-size: 0.68rem;
   letter-spacing: 0.06em;
-  color: var(--muted-2);
-  font-variant-numeric: tabular-nums;
+  cursor: pointer;
 }
 
-.name {
-  font-size: var(--step-0);
-  font-weight: 550;
-  color: var(--bone);
-  letter-spacing: -0.005em;
-}
+.logBtn:hover:not(:disabled) { border-color: var(--signal); color: var(--signal); }
+.logBtn:disabled { opacity: 0.4; cursor: default; }
+.logBtn:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
 
-.kind {
-  font-family: var(--font-data);
-  font-size: var(--step--2);
-  font-stretch: 87.5%;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted-2);
-}
+/* --- fittings and drawer --------------------------------------------- */
 
-.chamber[data-kind='security'] .kind { color: var(--signal-2); }
-.chamber[data-kind='release'] .kind { color: var(--water-300); }
-
-.chamber[data-state='filling'] {
-  border-color: color-mix(in oklab, var(--water-300) 60%, transparent);
-}
-
-.chamber[data-state='filling'] .gate,
-.chamber[data-state='full'] .gate {
-  background: var(--water-100);
-}
-
-.chamber[data-state='full'] .name { color: var(--bone); }
-.chamber[data-state='empty'] .name { color: var(--muted); }
-
-.chamber[data-state='refused'] {
-  border-color: var(--fault);
-}
-
-.chamber[data-state='refused'] .gate {
-  background: var(--fault);
-  width: 5px;
-}
-
-.chamber[data-state='refused'] .water {
-  background: linear-gradient(
-    90deg,
-    color-mix(in oklab, var(--water-700) 88%, transparent),
-    color-mix(in oklab, var(--fault) 34%, transparent)
-  );
-  border-right-color: var(--fault);
-}
-
-.chamber[data-state='recovering'] {
-  border-color: var(--hold);
-}
-
-.chamber[data-state='recovering'] .gate { background: var(--hold); }
-
-/* The rising edge. Decorative, and stretched to the ladder. */
-.wake {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  opacity: 0.5;
-}
-
-/* ---------------- fittings ---------------- */
-
-.fittings { display: grid; }
+.fittings { grid-area: fittings; }
 
 .fittingList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-wrap: wrap;
   gap: var(--s-2);
 }
 
 .fittingList li {
-  font-family: var(--font-data);
-  font-size: var(--step--2);
-  font-stretch: 87.5%;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-  padding: 5px 9px;
+  padding: 5px 10px;
   border: 1px solid var(--rule);
-  border-radius: 2px;
+  font-family: var(--font-data);
+  font-size: 0.7rem;
+  color: var(--bone-2);
 }
 
-/* ---------------- tablet and up: the flight becomes a staircase ------- */
+.drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: var(--s-5);
+  background: color-mix(in oklab, var(--void) 82%, transparent);
+  backdrop-filter: blur(6px);
+}
 
-@media (min-width: 720px) {
+.drawerInner {
+  width: min(760px, 100%);
+  max-height: min(74dvh, 640px);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--s-3);
+  padding: var(--s-5);
+  background: var(--panel);
+  border: 1px solid var(--rule-strong);
+}
+
+.drawerHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.drawerList {
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--s-2) 0 0;
+  display: grid;
+  gap: var(--s-2);
+  overflow-y: auto;
+}
+
+.drawerList li {
+  display: grid;
+  grid-template-columns: 52px 118px minmax(0, 1fr);
+  gap: var(--s-3);
+  padding-left: var(--s-3);
+  border-left: 2px solid var(--edge);
+}
+
+.drawerList li[data-tone='ok'] { border-left-color: var(--live); }
+.drawerList li[data-tone='gate'] { border-left-color: var(--signal); }
+.drawerList li[data-tone='fault'] { border-left-color: var(--fault); }
+.drawerList li[data-tone='fix'] { border-left-color: var(--hold); }
+
+/* ---------------------------------------------------------------------
+   Tablet
+   --------------------------------------------------------------------- */
+
+@media (max-width: 1179px) {
   .root {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--s-6);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      'operator context'
+      'mechanism mechanism'
+      'fittings fittings';
   }
 
-  .controls {
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: end;
-    gap: var(--s-6);
+  .works { max-height: 40vh; }
+}
+
+/* ---------------------------------------------------------------------
+   Mobile — the flight stands up and climbs the screen.
+   --------------------------------------------------------------------- */
+
+@media (max-width: 719px) {
+  .root {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'operator' 'mechanism' 'context' 'fittings';
+    gap: var(--s-5);
+  }
+
+  .works {
+    aspect-ratio: auto;
+    height: auto;
+    max-height: none;
+    min-height: 0;
+    padding: var(--s-2);
   }
 
   .ladder {
+    position: static;
     display: flex;
-    align-items: flex-end;
-    gap: 4px;
+    flex-direction: column-reverse;
+    gap: 3px;
   }
 
   .chamber {
-    flex: 1 1 0;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr) auto;
-    align-items: start;
-    height: calc(148px + var(--i) * var(--rise, 14) * 1px);
-    min-height: 0;
-    padding: var(--s-3) var(--s-2) var(--s-4);
-    gap: var(--s-2);
-  }
-
-  /* Bottom-up fill, because a lock chamber fills from the floor. */
-  .water {
-    left: 0;
-    right: 0;
-    top: auto;
-    bottom: 0;
-    width: auto;
-    height: clamp(0%, calc((var(--flow, 0) - var(--i)) * 100%), 100%);
-    background: linear-gradient(
-      180deg,
-      color-mix(in oklab, var(--water-500) 82%, transparent),
-      color-mix(in oklab, var(--water-900) 96%, transparent)
-    );
-    border-right: 0;
-    border-top: 2px solid var(--water-100);
-  }
-
-  .vessel {
-    left: 50%;
-    top: auto;
-    bottom: clamp(0%, calc((var(--flow, 0) - var(--i)) * 100%), 100%);
-    margin-bottom: -7px;
-    margin-top: 0;
-  }
-
-  .water::after {
-    top: 0;
+    position: relative;
+    left: auto;
     bottom: auto;
-    left: 0;
-    right: 0;
-    width: auto;
-    height: 2px;
+    width: 100%;
+    height: 46px;
+    display: flex;
+    align-items: center;
+    padding-left: 44px;
   }
+
+  .water {
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+
+  .chamber[data-state='filling'] .water { transform: scaleX(0.62); }
+  .chamber[data-state='full'] .water { transform: scaleX(1); }
+  .chamber[data-state='recovering'] .water { transform: scaleX(0.8); }
+  .chamber[data-state='refused'] .water { transform: scaleX(0.42); }
 
   .gate {
-    left: 0;
+    top: auto;
     right: 0;
-    top: 0;
-    bottom: auto;
+    bottom: 0;
+    left: 0;
     width: auto;
     height: 3px;
+    transform-origin: right;
   }
 
-  .chamber[data-state='refused'] .gate { height: 5px; width: auto; }
+  .chamber[data-state='full'] .gate { transform: scaleX(0.06); }
 
-  .chamber[data-state='refused'] .water {
-    background: linear-gradient(
-      180deg,
-      color-mix(in oklab, var(--fault) 34%, transparent),
-      color-mix(in oklab, var(--water-900) 96%, transparent)
-    );
-    border-top-color: var(--fault);
+  .chamberLabel {
+    position: static;
+    writing-mode: horizontal-tb;
+    transform: none;
+    display: flex;
+    align-items: baseline;
+    gap: var(--s-2);
+    padding: 0;
   }
 
-  /* Nine columns is a narrow measure. Names hyphenate rather than being
-     clipped or broken mid-syllable — "Certificates" losing its last three
-     letters, and then splitting as "Certifica tes", were both wrong. */
-  .name {
-    align-self: end;
-    font-size: var(--step--1);
-    line-height: 1.16;
-    overflow-wrap: break-word;
-    hyphens: auto;
+  .name { font-size: 0.78rem; }
+  .no { font-size: 0.68rem; }
+
+  .token {
+    left: 12px;
+    bottom: calc(var(--flow) * (100% - 46px) / var(--n) + 8px);
+    margin: 0;
+    width: 26px;
+    height: 26px;
   }
 
-  /* The classification is a word only where a word fits. Below that it is
-     carried by the colour of the chamber number and the gate, which is the
-     same information without the broken typography. */
-  .kind { display: none; }
-
-  .chamber[data-kind='security'] .no { color: var(--signal); }
-  .chamber[data-kind='release'] .no { color: var(--water-100); }
+  .scaleNote { display: none; }
+  .refusalGrid > div { grid-template-columns: 74px minmax(0, 1fr); }
+  .drawerList li { grid-template-columns: 46px minmax(0, 1fr); }
+  .drawerInner { padding: var(--s-4); }
 }
 
-@media (min-width: 1400px) {
-  .kind {
-    display: block;
-    align-self: end;
-    white-space: nowrap;
-    font-size: 10px;
-    letter-spacing: 0.03em;
-  }
-}
-
-@media (min-width: 1180px) {
-  .root {
-    grid-template-columns: minmax(320px, 0.72fr) minmax(0, 1.9fr);
-    grid-template-areas:
-      'controls ladder'
-      'readout  ladder'
-      'log      ladder'
-      'fittings fittings';
-    gap: var(--s-6) var(--s-7);
-    align-items: start;
-  }
-
-  .controls { grid-area: controls; grid-template-columns: minmax(0, 1fr); align-items: start; }
-  .readout { grid-area: readout; }
-  .log { grid-area: log; }
-  .ladderWrap { grid-area: ladder; align-self: center; }
-  .fittings { grid-area: fittings; }
-
-  .chamber { height: calc(196px + var(--i) * var(--rise, 14) * 1px); }
-  .name { font-size: var(--step-0); }
+@media (prefers-reduced-motion: reduce) {
+  .water,
+  .gate,
+  .token { transition-duration: 1ms; }
 }

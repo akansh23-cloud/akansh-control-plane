@@ -1,0 +1,92 @@
+/* =====================================================================
+   OPERATION STRIP — the same four statements on every interactive plate.
+   ===================================================================== */
+
+.root {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: clamp(12px, 2vw, 28px);
+  align-items: start;
+  margin-bottom: var(--s-5);
+  padding: var(--s-4) var(--s-4) var(--s-4) 0;
+  border-top: 1px solid var(--rule-strong);
+  border-bottom: 1px solid var(--rule);
+  background: linear-gradient(90deg, color-mix(in oklab, var(--water-700) 16%, transparent), transparent 62%);
+}
+
+.root[data-done] {
+  background: linear-gradient(90deg, color-mix(in oklab, var(--live) 12%, transparent), transparent 62%);
+}
+
+.state {
+  padding-left: var(--s-4);
+  border-left: 3px solid var(--signal);
+  font-family: var(--font-data);
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--signal);
+  white-space: nowrap;
+}
+
+.root[data-done] .state {
+  border-left-color: var(--live);
+  color: var(--live);
+}
+
+.lines { display: grid; gap: var(--s-2); min-width: 0; }
+
+.doing {
+  font-family: var(--font-display);
+  font-size: var(--step-0);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--bone);
+}
+
+.matters,
+.action {
+  display: grid;
+  gap: 2px;
+  font-size: 0.86rem;
+  color: var(--muted);
+}
+
+.then {
+  display: grid;
+  gap: var(--s-3);
+  justify-items: start;
+  min-width: 0;
+}
+
+.continue {
+  min-height: 44px;
+  padding: 0 var(--s-4);
+  background: transparent;
+  border: 1px solid var(--rule-strong);
+  border-radius: 3px;
+  color: var(--bone-2);
+  font-family: var(--font-data);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.continue:hover { border-color: var(--signal); color: var(--signal); }
+.continue:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+
+@media (max-width: 1023px) {
+  .root {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s-3);
+    padding-right: 0;
+  }
+
+  .state { padding-left: var(--s-3); }
+  .lines, .then { padding-left: var(--s-3); }
+}
+
+/* The recruiter view is a different information experience: the operation
+   grammar is not the point there, the outcome is. */
+:global(html[data-depth='recruiter']) .root { display: none; }

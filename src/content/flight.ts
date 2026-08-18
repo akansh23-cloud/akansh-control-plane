@@ -144,3 +144,35 @@ export const faults: Fault[] = [
 
 export const flightNote =
   'Simulation. This is a model of how the release workflow behaves, drawn in the browser — not live infrastructure and not production data.';
+
+/**
+ * Why each chamber exists, stated as the decision it protects.
+ *
+ * The stage list says what happens; this says what would go wrong without it,
+ * which is the part that makes a gate legible to someone who has never run a
+ * pipeline. Nothing here is a metric or a claim about an outcome.
+ */
+export const chamberPurpose: Record<string, string> = {
+  retrieve:
+    'The release starts from a stored, versioned artifact rather than from whatever happens to be on a build machine.',
+  test:
+    'A change that cannot pass its own tests should never occupy a gate further up the flight.',
+  'source-scan':
+    'Source problems are cheapest to fix before an image exists. After this point the code is frozen into a layer.',
+  image:
+    'The image is built exactly once. Everything above this point promotes that same image instead of rebuilding it.',
+  'image-scan':
+    'This is the last place a vulnerable image can be stopped before it is capable of running on a cluster.',
+  certs:
+    'Certificates and key material are refreshed from Vault, so nothing secret has to live in the image or the repository.',
+  migrate:
+    'Schema moves ahead of the workload, incrementally, so a rollback of the application does not strand the data.',
+  deploy:
+    'Helm makes the deployment a declared object set — probes, limits, routes — rather than a sequence of commands.',
+  promote:
+    'Promotion moves the artifact, not the build. The image that was scanned is the image that runs.',
+};
+
+/** The immutability promise, said once, where it is being demonstrated. */
+export const artifactPromise =
+  'One image is built at stage 04 and carried unchanged to the top. Nothing is rebuilt during promotion.';
