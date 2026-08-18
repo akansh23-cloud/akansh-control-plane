@@ -359,7 +359,7 @@ body aside[aria-label='Blackwater operator challenge'] > button {
   gap: 10px !important;
 }
 
-#refit div:has(> [role='slider'][aria-label^='Modernisation seam']) > ol > li > span[data-face] {
+#refit div:has(> [role='slider'][aria-label^='Modernisation seam']) > ol > li > span:nth-child(2) > span[data-face] {
   padding: 7px 10px !important;
 }
 
