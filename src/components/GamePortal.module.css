@@ -13,9 +13,9 @@
   border-radius: 3px;
   background: color-mix(in oklab, var(--void) 94%, var(--water-900));
   color: var(--bone);
-  text-decoration: none;
   box-shadow: 0 12px 36px rgb(0 0 0 / 0.32);
-  transition: transform 180ms var(--ease-release), border-color 180ms var(--ease-gear), background 180ms var(--ease-gear);
+  cursor: pointer;
+  transition: transform 180ms var(--ease-release), border-color 180ms var(--ease-gear), background 180ms var(--ease-gear), opacity 180ms ease;
 }
 
 .portal:hover {
@@ -25,6 +25,7 @@
 }
 
 .portal:focus-visible { outline-offset: 4px; }
+.portal[data-launching] { opacity: 0; transform: scale(0.78); pointer-events: none; }
 
 .beacon {
   position: relative;
@@ -59,16 +60,131 @@
   animation: portalPulse 2.2s 0.45s ease-out infinite;
 }
 
-.copy { display: grid; line-height: 1.1; }
+.copy { display: grid; line-height: 1.1; text-align: left; }
 .copy strong { font-family: var(--font-data); font-size: 0.67rem; letter-spacing: 0.12em; color: var(--signal); }
 .copy small { margin-top: 3px; font-size: 0.72rem; color: var(--muted); }
 .arrow { color: var(--signal); font-size: 1rem; }
+
+.handoff {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  color: #dfe9e6;
+  background:
+    radial-gradient(circle at 50% 48%, rgb(30 123 119 / 0.22), transparent 24%),
+    linear-gradient(180deg, #020607, #030b0c 58%, #010303);
+  animation: handoffIgnite 1050ms cubic-bezier(.18,.8,.16,1) both;
+}
+
+.handoffGrid {
+  position: absolute;
+  inset: -12%;
+  opacity: 0.24;
+  background-image:
+    linear-gradient(rgb(96 190 179 / 0.11) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(96 190 179 / 0.11) 1px, transparent 1px);
+  background-size: 48px 48px;
+  transform: perspective(700px) rotateX(68deg) translateY(24%);
+  transform-origin: center bottom;
+  animation: handoffGridRush 1050ms cubic-bezier(.2,.78,.1,1) both;
+}
+
+.handoffBeam {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0 47%, rgb(116 239 216 / 0.5) 49.8% 50.2%, transparent 53% 100%);
+  filter: blur(1px);
+  animation: handoffBeam 880ms 80ms ease-in both;
+}
+
+.handoffCore {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: min(42vw, 430px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+}
+
+.handoffCore span { position: absolute; border-radius: 50%; }
+.orbitOne { inset: 11%; border: 1px solid rgb(109 225 204 / 0.36); animation: orbitExpand 900ms ease-out both; }
+.orbitTwo { inset: 24%; border: 1px dashed rgb(109 225 204 / 0.52); animation: orbitSpin 1.2s linear infinite; }
+.coreDot { width: 16px; height: 16px; background: #72e6ce; box-shadow: 0 0 18px #72e6ce, 0 0 70px rgb(114 230 206 / 0.6); animation: coreCollapse 900ms 120ms ease-in both; }
+
+.handoffCopy {
+  position: relative;
+  z-index: 2;
+  width: min(760px, calc(100vw - 42px));
+  text-align: center;
+  animation: handoffCopy 780ms 120ms ease both;
+}
+
+.handoffCopy > span,
+.handoffFooter {
+  font-family: var(--font-data);
+  font-size: 0.62rem;
+  letter-spacing: 0.17em;
+  color: #72cbb9;
+}
+
+.handoffCopy > strong {
+  display: block;
+  margin-top: 12px;
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 8vw, 7rem);
+  line-height: 0.86;
+  letter-spacing: -0.055em;
+  text-shadow: 0 0 44px rgb(108 225 203 / 0.14);
+}
+
+.handoffSteps {
+  width: min(500px, 92%);
+  margin: 30px auto 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 7px 12px;
+  text-align: left;
+  font-family: var(--font-data);
+}
+
+.handoffSteps i { color: #4d766f; font-style: normal; font-size: 0.58rem; }
+.handoffSteps p { color: #89a39d; font-size: 0.62rem; letter-spacing: 0.09em; }
+.handoffSteps p:nth-of-type(1) { animation: stepFlash 700ms 180ms both; }
+.handoffSteps p:nth-of-type(2) { animation: stepFlash 700ms 360ms both; }
+.handoffSteps p:nth-of-type(3) { animation: stepFlash 700ms 540ms both; }
+
+.handoffFooter {
+  position: absolute;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  opacity: 0.62;
+}
 
 @keyframes portalPulse {
   0% { transform: scale(0.7); opacity: 0; }
   25% { opacity: 1; }
   100% { transform: scale(1.15); opacity: 0; }
 }
+
+@keyframes handoffIgnite {
+  0% { opacity: 0; clip-path: circle(1% at calc(100% - 45px) 42px); }
+  38% { opacity: 1; clip-path: circle(22% at calc(100% - 45px) 42px); }
+  100% { clip-path: circle(150% at calc(100% - 45px) 42px); }
+}
+@keyframes handoffGridRush { from { opacity: 0; transform: perspective(700px) rotateX(68deg) translateY(48%) scale(.75); } to { opacity: .24; transform: perspective(700px) rotateX(68deg) translateY(24%) scale(1.2); } }
+@keyframes handoffBeam { 0% { opacity: 0; transform: scaleX(.08); } 48% { opacity: 1; } 100% { opacity: 0; transform: scaleX(7); } }
+@keyframes orbitExpand { from { opacity: 0; transform: scale(.05); } 70% { opacity: 1; } to { opacity: 0; transform: scale(2.6); } }
+@keyframes orbitSpin { to { transform: rotate(360deg); } }
+@keyframes coreCollapse { 0% { transform: scale(.4); opacity: 0; } 46% { transform: scale(1.6); opacity: 1; } 100% { transform: scale(.02); opacity: 0; } }
+@keyframes handoffCopy { from { opacity: 0; transform: translateY(14px); filter: blur(8px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes stepFlash { from { opacity: 0.15; } 55% { color: #b9fff0; text-shadow: 0 0 14px rgb(114 230 206 / 0.5); } to { opacity: 1; } }
 
 @media (max-width: 719px) {
   .portal {
@@ -85,9 +201,18 @@
   .beacon { width: 20px; height: 20px; }
   .beacon span:nth-child(3) { display: none; }
   .arrow { font-size: 0.9rem; }
+  .handoffCopy > strong { font-size: clamp(2.3rem, 15vw, 4.6rem); }
+  .handoffCore { width: 78vw; }
+  .handoffFooter { font-size: 0.5rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .beacon span { animation: none !important; }
+  .beacon span,
+  .handoff,
+  .handoffGrid,
+  .handoffBeam,
+  .handoffCore span,
+  .handoffCopy,
+  .handoffSteps p { animation: none !important; }
   .portal { transition: none; }
 }
