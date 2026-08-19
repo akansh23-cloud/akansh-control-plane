@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { barclays, contact, journey, profile, scale, site } from '@/content';
 import { disturbedSurface } from '@/lib/geometry';
 import {
-  usePaint,
   usePrefersReducedMotion,
   useReveal,
   useRig,
@@ -12,7 +11,6 @@ import {
   useScrollChannel,
   useTier,
   useVars,
-  useViewport,
   useWatch,
 } from '@/lib/motion';
 import styles from './Headwater.module.css';
@@ -20,30 +18,39 @@ import styles from './Headwater.module.css';
 /**
  * PLATE 01 — HEADWATER.
  *
- * The reader begins inside the chamber: the water is the ground the masthead
- * stands on, the gates are at either hand, and the level rises as they scroll.
- * The surface is deliberately calm. Scroll registration is critically damped
- * and the water carries no ambient wobble; it must never bounce or react like
- * a cursor effect while somebody is reading.
- *
- * Fine-pointer wake is owned by the global operating environment. The former
- * local `usePointerField` water displacement is intentionally not bound here:
- * cursor velocity must not physically shake a large water surface.
- *
- * It costs no extra page height, because the water is behind the type rather
- * than below it. The name floods in from the bottom on arrival. The level is
- * published as `--datum`, which the waterway down the left of every later
- * chapter follows, so the whole page shares one water level.
+ * The water is deliberately one heavy composited mass. Its surface geometry is
+ * built once; scroll only translates that already-rasterised layer. There is no
+ * per-frame SVG path reconstruction, no ambient wave clock and no scroll spring.
  */
 
-/* The chamber is drawn in a fixed box and stretched to the block. The stretch
-   is uniform, so a wider screen simply gets a wider chamber. */
 const VB_W = 1200;
 const VB_H = 800;
+const BASE_LEVEL = 0.79;
 
-/* The sill is the route, and the route is declared once in the content layer,
-   so the stations along the bottom of the chamber and the channel running down
-   the left of every later chapter are the same six places. */
+const WATER_FILL = disturbedSurface({
+  x: 0,
+  width: VB_W,
+  surfaceY: BASE_LEVEL * VB_H,
+  bottomY: VB_H + 380,
+  t: 0,
+  amp: 1.25,
+  wavelength: 760,
+  samples: 14,
+  close: true,
+});
+
+const WATER_LINE = disturbedSurface({
+  x: 0,
+  width: VB_W,
+  surfaceY: BASE_LEVEL * VB_H,
+  bottomY: VB_H + 380,
+  t: 0,
+  amp: 1.25,
+  wavelength: 760,
+  samples: 14,
+  close: false,
+});
+
 const STATIONS = journey.map((s, i) => ({
   at: i / (journey.length - 1),
   label: s.label,
@@ -53,15 +60,11 @@ const STATIONS = journey.map((s, i) => ({
 export function Headwater() {
   const reduced = usePrefersReducedMotion();
   const tier = useTier();
-  const viewport = useViewport();
 
   const rig = useRig({
     channels: {
-      /* Where the surface sits, 0 (top of the block) … 1 (bottom). */
-      level: { value: 0.79, family: 'hydraulic' },
-      /* Scroll registration is positional, not fluid momentum. Critical
-         damping prevents the surface from overshooting when direction changes. */
-      scroll: { value: 0, family: 'mechanical', tau: 0.12 },
+      /* Scroll is positional. It must track exactly, not chase through a spring. */
+      scroll: { value: 0, family: 'mechanical' },
       /* The start sequence runs once, on arrival, and then it is over. */
       start: { value: 0, family: 'release', tau: 1.15 },
     },
@@ -90,76 +93,30 @@ export function Headwater() {
     rig.setClock(false);
   });
 
-  /* Reduced motion has no sequence to finish, so the works are simply already
-     started: the same end state, reached without the journey. */
   const settled = arrived || reduced;
 
   const scrollRef = useScrollChannel<HTMLElement>(rig, 'scroll', {
-    family: 'mechanical',
-    tau: 0.12,
+    map: 'out',
+    direct: true,
   });
   const revealRef = useReveal<HTMLDivElement>({ margin: '0px' });
 
-  /* Surface resolution is intentionally modest. The visual is a large body of
-     water, not a waveform demo, and lower sampling cuts SVG path work sharply. */
-  const samples =
-    tier === 'calm'
-      ? 10
-      : viewport === 'mobile'
-        ? 12
-        : viewport === 'tablet'
-          ? 18
-          : 24;
-
-  /* The chamber fills as the reader descends. The travel is slightly reduced
-     so fast scrolls do not make the entire hero appear to heave. */
   const surfaceLevel = (r: import('@/lib/motion').Rig) =>
-    r.reduced ? 0.78 : 0.79 - r.get('scroll') * 0.44;
+    r.reduced ? 0.78 : BASE_LEVEL - r.get('scroll') * 0.44;
 
-  /* The waterline is shaped but not continuously animated. Its only visible
-     movement comes from the chamber level changing, so it reads as mass rather
-     than as a decorative waveform. */
-  const surface = (r: import('@/lib/motion').Rig, close: boolean) =>
-    disturbedSurface({
-      x: 0,
-      width: VB_W,
-      surfaceY: surfaceLevel(r) * VB_H,
-      bottomY: VB_H,
-      t: 0,
-      amp: 1.8,
-      wavelength: 620,
-      samples,
-      close,
-    });
-
-  const surfaceRef = usePaint<SVGPathElement>(rig, (el, r) => {
-    el.setAttribute('d', surface(r, true));
-  });
-
-  const lineRef = usePaint<SVGPathElement>(rig, (el, r) => {
-    el.setAttribute('d', surface(r, false));
-  });
-
-  /* Everything positional is a variable, so a vessel crossing the chamber and
-     a rising water level cost no React render and no layout. */
   const worksRef = useVars<HTMLDivElement>(rig, {
     '--datum': (r) => surfaceLevel(r),
-    /* One pass, left to right, and then it stays where it stopped. */
+    '--water-shift': (r) => `${(surfaceLevel(r) - BASE_LEVEL) * 100}%`,
     '--travel': (r) => r.get('start'),
-    /* It rides up as the chamber equalises and settles at a working level. */
     '--lift': (r) => {
       const p = r.get('start');
       return Math.sin(Math.min(1, p) * Math.PI) * 0.34 + p * 0.26 + 0.1;
     },
     '--settled': (r) => r.get('start'),
-    /* The paddle gear turns while the chamber is filling, and stops when it
-       has finished — machinery that runs with nothing to lift is a fault. */
     '--gear': (r) =>
       r.reduced ? 0 : r.time * 42 * Math.max(0, 1 - r.get('start')),
   });
 
-  /* Publish the level to the document so the waterway running down the left of
-     every later chapter starts from where this one left off. */
   useEffect(
     () =>
       rig.bindVars(document.documentElement, {
@@ -176,7 +133,6 @@ export function Headwater() {
       }}
       className={styles.root}
     >
-      {/* The chamber. Behind the type, full bleed, no extra height. */}
       <div ref={worksRef} className={styles.works} aria-hidden="true">
         <svg
           className={styles.svg}
@@ -191,26 +147,25 @@ export function Headwater() {
               <stop offset="100%" stopColor="#04191E" stopOpacity="1" />
             </linearGradient>
           </defs>
-          <path ref={surfaceRef} fill="url(#hw-water)" />
-          <path
-            ref={lineRef}
-            fill="none"
-            stroke="#A6DCE4"
-            strokeWidth="2"
-            vectorEffect="non-scaling-stroke"
-          />
+          <g className={styles.waterMass}>
+            <path d={WATER_FILL} fill="url(#hw-water)" />
+            <path
+              d={WATER_LINE}
+              fill="none"
+              stroke="#A6DCE4"
+              strokeWidth="1.5"
+              vectorEffect="non-scaling-stroke"
+            />
+          </g>
         </svg>
 
-        {/* Chamber walls, with the coping course at the top. */}
         <span className={`${styles.wall} ${styles.wallLeft}`} />
         <span className={`${styles.wall} ${styles.wallRight}`} />
 
-        {/* Paddle gear on the head gate. It turns while the chamber fills. */}
         <span className={styles.gear}>
           <span className={styles.gearSpokes} />
         </span>
 
-        {/* Depth gauge cut into the left wall. */}
         <span className={styles.gauge}>
           {[0.2, 0.4, 0.6, 0.8].map((m) => (
             <span key={m} className={styles.gaugeMark} style={{ top: `${m * 100}%` }} />
@@ -218,7 +173,6 @@ export function Headwater() {
           <span className={styles.gaugeLevel} />
         </span>
 
-        {/* The vessel, riding the surface. */}
         <span className={styles.token} />
       </div>
 
@@ -280,8 +234,6 @@ export function Headwater() {
           </a>
         </nav>
 
-        {/* Three numbers about three different things. Three cells, three
-            nouns, on purpose. */}
         <dl className={styles.scale}>
           {[scale.services, scale.workloads, scale.stages].map((s) => (
             <div key={s.noun} className={styles.stat}>
@@ -293,7 +245,6 @@ export function Headwater() {
         </dl>
       </div>
 
-      {/* The route, as a sill along the foot of the chamber. */}
       <ol className={styles.stations} data-settled={settled || undefined}>
         {STATIONS.map((s, i) => (
           <li
