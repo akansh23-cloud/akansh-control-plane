@@ -15,13 +15,15 @@ import {
   useWatch,
 } from '@/lib/motion';
 import styles from './Headwater.module.css';
+import motion from './HeadwaterMotion.module.css';
 
 /**
  * PLATE 01 — HEADWATER.
  *
- * The water is deliberately one heavy composited mass. Its surface geometry is
- * built once; scroll only translates that already-rasterised layer. There is no
- * per-frame SVG path reconstruction, no ambient wave clock and no scroll spring.
+ * The water is a set of pre-built SVG surfaces. Scroll only translates the
+ * complete water field, while independent compositor animations keep the
+ * surface, glints and subsurface currents alive when the page is stationary.
+ * No SVG path is reconstructed per frame and scroll never waits on a spring.
  *
  * Fine-pointer response stays owned by the global operating environment. The
  * former local usePointerField water displacement remains intentionally absent:
@@ -31,30 +33,59 @@ import styles from './Headwater.module.css';
 const VB_W = 1200;
 const VB_H = 800;
 const BASE_LEVEL = 0.79;
+const OVERSCAN_X = -180;
+const OVERSCAN_W = 1560;
+const BOTTOM = VB_H + 380;
 
 const WATER_FILL = disturbedSurface({
-  x: 0,
-  width: VB_W,
+  x: OVERSCAN_X,
+  width: OVERSCAN_W,
   surfaceY: BASE_LEVEL * VB_H,
-  bottomY: VB_H + 380,
-  t: 0,
-  amp: 1.25,
-  wavelength: 760,
-  samples: 14,
+  bottomY: BOTTOM,
+  t: 0.25,
+  amp: 5.5,
+  wavelength: 460,
+  samples: 52,
   close: true,
 });
 
-const WATER_LINE = disturbedSurface({
-  x: 0,
-  width: VB_W,
-  surfaceY: BASE_LEVEL * VB_H,
-  bottomY: VB_H + 380,
-  t: 0,
-  amp: 1.25,
-  wavelength: 760,
-  samples: 14,
+const WATER_REAR = disturbedSurface({
+  x: OVERSCAN_X,
+  width: OVERSCAN_W,
+  surfaceY: BASE_LEVEL * VB_H + 7,
+  bottomY: BOTTOM,
+  t: 2.1,
+  amp: 4.2,
+  wavelength: 340,
+  samples: 52,
   close: false,
 });
+
+const WATER_FRONT = disturbedSurface({
+  x: OVERSCAN_X,
+  width: OVERSCAN_W,
+  surfaceY: BASE_LEVEL * VB_H - 1,
+  bottomY: BOTTOM,
+  t: 4.4,
+  amp: 6.4,
+  wavelength: 520,
+  samples: 52,
+  close: false,
+});
+
+const CURRENT_LINES = [46, 92, 142].map((depth, i) =>
+  disturbedSurface({
+    x: OVERSCAN_X,
+    width: OVERSCAN_W,
+    surfaceY: BASE_LEVEL * VB_H + depth,
+    bottomY: BOTTOM,
+    t: 1.3 + i * 2.25,
+    amp: 2.2 + i * 0.45,
+    wavelength: 370 + i * 90,
+    samples: 44,
+    close: false,
+  }),
+);
 
 const STATIONS = journey.map((s, i) => ({
   at: i / (journey.length - 1),
@@ -147,27 +178,31 @@ export function Headwater() {
         >
           <defs>
             <linearGradient id="hw-water" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#1b7f8e" stopOpacity="0.95" />
-              <stop offset="42%" stopColor="#0E4753" stopOpacity="0.98" />
-              <stop offset="100%" stopColor="#04191E" stopOpacity="1" />
+              <stop offset="0%" stopColor="#1b7f8e" stopOpacity="0.96" />
+              <stop offset="38%" stopColor="#0E5260" stopOpacity="0.99" />
+              <stop offset="100%" stopColor="#031519" stopOpacity="1" />
             </linearGradient>
           </defs>
-          <g
-            style={{
-              transform: 'translate3d(0, var(--water-shift, 0%), 0)',
-              transformBox: 'view-box',
-              transformOrigin: '0 0',
-              willChange: 'transform',
-            } as React.CSSProperties}
-          >
-            <path d={WATER_FILL} fill="url(#hw-water)" />
-            <path
-              d={WATER_LINE}
-              fill="none"
-              stroke="#A6DCE4"
-              strokeWidth="1.5"
-              vectorEffect="non-scaling-stroke"
-            />
+
+          <g className={motion.waterScroll}>
+            <g className={motion.waterMass}>
+              <path d={WATER_FILL} fill="url(#hw-water)" />
+            </g>
+
+            <g className={motion.waveRear}>
+              <path d={WATER_REAR} className={motion.surfaceRear} />
+            </g>
+
+            <g className={motion.waveFront}>
+              <path d={WATER_FRONT} className={motion.surfaceFront} />
+              <path d={WATER_FRONT} className={motion.surfaceGlint} />
+            </g>
+
+            <g className={motion.currentField}>
+              {CURRENT_LINES.map((line, i) => (
+                <path key={i} d={line} className={motion.currentLine} />
+              ))}
+            </g>
           </g>
         </svg>
 
