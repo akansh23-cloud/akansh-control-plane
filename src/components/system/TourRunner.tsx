@@ -22,32 +22,43 @@ import styles from './TourRunner.module.css';
  */
 export function TourRunner() {
   const pathname = usePathname();
-  const run = useJourney();
+  const { goTo } = useJourney();
   const env = useEnvironment();
+  const {
+    touring,
+    tourStop,
+    reduced,
+    stopTour,
+    setTourStop,
+  } = env;
   const timer = useRef(0);
-  const stopRef = useLatest(env.stopTour);
+  const stopRef = useLatest(stopTour);
 
-  const stop = tourStops[env.tourStop];
+  const stop = tourStops[tourStop];
 
-  /* Advance. One timer, owned here, cleared on every change. */
+  /* Advance. Depend only on the tour controls themselves. The journey and
+     environment contexts also change while a smooth scroll crosses plates;
+     depending on those whole objects used to restart this timer and re-issue
+     the same scroll on every stage/dock update, which could make the guided
+     tour hesitate or appear stalled. */
   useEffect(() => {
-    if (!env.touring || pathname !== '/') return;
-    const current = tourStops[env.tourStop];
+    if (!touring || pathname !== '/') return;
+    const current = tourStops[tourStop];
     if (!current) return;
 
-    run.goTo(current.plate);
+    goTo(current.plate);
 
     timer.current = window.setTimeout(() => {
-      if (env.tourStop >= tourStops.length - 1) env.stopTour();
-      else env.setTourStop(env.tourStop + 1);
-    }, env.reduced ? Math.min(2200, current.hold) : current.hold);
+      if (tourStop >= tourStops.length - 1) stopTour();
+      else setTourStop(tourStop + 1);
+    }, reduced ? Math.min(2200, current.hold) : current.hold);
 
     return () => window.clearTimeout(timer.current);
-  }, [env, pathname, run]);
+  }, [goTo, pathname, reduced, setTourStop, stopTour, tourStop, touring]);
 
   /* The exit. Deliberately broad, deliberately passive, deliberately first. */
   useEffect(() => {
-    if (!env.touring) return;
+    if (!touring) return;
 
     const cancel = () => stopRef.current();
     const onKey = (event: KeyboardEvent) => {
@@ -66,11 +77,11 @@ export function TourRunner() {
       window.removeEventListener('pointerdown', cancel);
       window.removeEventListener('keydown', onKey);
     };
-  }, [env.touring, stopRef]);
+  }, [touring, stopRef]);
 
-  if (pathname !== '/' || !env.touring || !stop) return null;
+  if (pathname !== '/' || !touring || !stop) return null;
 
-  const progress = (env.tourStop + 1) / tourStops.length;
+  const progress = (tourStop + 1) / tourStops.length;
 
   return (
     <div className={styles.root} role="status" aria-live="polite">
@@ -84,9 +95,9 @@ export function TourRunner() {
 
         <div className={styles.foot}>
           <p className={styles.count}>
-            {String(env.tourStop + 1).padStart(2, '0')} / {String(tourStops.length).padStart(2, '0')}
+            {String(tourStop + 1).padStart(2, '0')} / {String(tourStops.length).padStart(2, '0')}
           </p>
-          <button type="button" className={styles.exit} onClick={env.stopTour}>
+          <button type="button" className={styles.exit} onClick={stopTour}>
             Take control
           </button>
         </div>
