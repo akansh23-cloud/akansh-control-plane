@@ -1,10 +1,4 @@
-/* The route, drawn to scale.
-
-   The rail is fixed, and it is a scale drawing of the whole document: the
-   channel is the journey end to end, the fill is how far the reader has come,
-   and the stations sit at their measured proportional positions. V7 turns the
-   craft into the persistent release artifact: run state changes its physical
-   behaviour without changing the scroll geometry. */
+/* The route, drawn to scale. Scroll owns the position; transforms own the paint. */
 
 .rail {
   position: fixed;
@@ -15,6 +9,8 @@
   z-index: 40;
   pointer-events: none;
   --flow: 0;
+  --craft-y: 0px;
+  contain: layout paint style;
 }
 
 .channel {
@@ -26,42 +22,43 @@
   background: color-mix(in oklab, var(--bone) 10%, transparent);
 }
 
-/* Water already passed. */
 .fill {
   position: absolute;
   left: 5px;
   top: 0;
+  bottom: 0;
   width: 2px;
-  height: calc(var(--flow) * 100%);
+  transform: scaleY(var(--flow));
+  transform-origin: 50% 0;
+  will-change: transform;
   background: linear-gradient(
     180deg,
     color-mix(in oklab, var(--water-500) 45%, transparent),
     var(--water-300)
   );
-  box-shadow: 0 0 10px color-mix(in oklab, var(--water-300) 40%, transparent);
+  box-shadow: 0 0 8px color-mix(in oklab, var(--water-300) 30%, transparent);
   transition:
     background var(--t-quick) var(--ease-water),
     box-shadow var(--t-quick) var(--ease-water);
 }
 
-/* The artifact, riding the level. */
 .craft {
   position: absolute;
   left: 2px;
-  top: calc(var(--flow) * 100%);
+  top: 0;
   width: 8px;
   height: 8px;
   margin-top: -4px;
   border-radius: 1px;
   background: var(--signal);
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--signal) 18%, transparent);
-  transform: rotate(45deg);
+  transform: translate3d(0, var(--craft-y), 0) rotate(45deg) scale(var(--craft-scale, 1));
   transform-origin: center;
+  will-change: transform;
   transition:
     background var(--t-quick) var(--ease-gear),
     box-shadow var(--t-quick) var(--ease-gear),
-    opacity var(--t-quick) var(--ease-gear),
-    scale var(--t-quick) var(--ease-gear);
+    opacity var(--t-quick) var(--ease-gear);
 }
 
 .rail[data-run-launched='false'] .craft {
@@ -71,71 +68,70 @@
 }
 
 .rail[data-run-phase='held'] .craft {
-  scale: 1.45;
+  --craft-scale: 1.45;
   background: var(--fault);
   box-shadow:
     0 0 0 3px color-mix(in oklab, var(--fault) 22%, transparent),
-    0 0 18px color-mix(in oklab, var(--fault) 56%, transparent);
+    0 0 14px color-mix(in oklab, var(--fault) 46%, transparent);
 }
 
 .rail[data-run-phase='recovering'] .craft {
-  scale: 1.22;
+  --craft-scale: 1.22;
   background: var(--hold);
-  box-shadow: 0 0 16px color-mix(in oklab, var(--hold) 42%, transparent);
+  box-shadow: 0 0 12px color-mix(in oklab, var(--hold) 34%, transparent);
 }
 
 .rail[data-run-phase='degraded'] .craft {
   background: var(--hold);
-  box-shadow: 0 0 13px color-mix(in oklab, var(--hold) 36%, transparent);
+  box-shadow: 0 0 10px color-mix(in oklab, var(--hold) 30%, transparent);
 }
 
 .rail[data-run-phase='production'] .craft {
   background: var(--live);
   box-shadow:
     0 0 0 3px color-mix(in oklab, var(--live) 20%, transparent),
-    0 0 22px color-mix(in oklab, var(--live) 44%, transparent);
+    0 0 16px color-mix(in oklab, var(--live) 36%, transparent);
 }
 
-/* Failure is pressure being arrested, not a shake. The wave sits on the craft
-   and expands laterally when a gate stops the artifact. */
 .backPressure {
   position: absolute;
   left: -8px;
-  top: calc(var(--flow) * 100%);
+  top: 0;
   width: 28px;
   height: 2px;
   margin-top: -1px;
   opacity: 0;
-  transform: scaleX(0.18);
+  --pressure-scale: 0.18;
+  transform: translate3d(0, var(--craft-y), 0) scaleX(var(--pressure-scale));
   transform-origin: center;
+  will-change: transform, opacity;
   background: var(--water-100);
-  box-shadow: 0 0 10px color-mix(in oklab, var(--water-100) 36%, transparent);
+  box-shadow: 0 0 8px color-mix(in oklab, var(--water-100) 28%, transparent);
   transition:
     opacity var(--t-quick) var(--ease-gear),
-    transform var(--t-move) var(--ease-water),
     background var(--t-quick) var(--ease-gear),
     box-shadow var(--t-quick) var(--ease-water);
 }
 
 .rail[data-run-phase='held'] .backPressure {
   opacity: 1;
-  transform: scaleX(1.45);
+  --pressure-scale: 1.45;
   background: var(--fault);
-  box-shadow: 0 0 18px color-mix(in oklab, var(--fault) 52%, transparent);
+  box-shadow: 0 0 14px color-mix(in oklab, var(--fault) 42%, transparent);
 }
 
 .rail[data-run-phase='recovering'] .backPressure {
   opacity: 0.72;
-  transform: scaleX(0.72);
+  --pressure-scale: 0.72;
   background: var(--hold);
 }
 
 .artifactTag {
   position: absolute;
   left: 16px;
-  top: calc(var(--flow) * 100%);
+  top: 0;
   display: none;
-  transform: translateY(-50%);
+  transform: translate3d(0, var(--craft-y), 0) translateY(-50%);
   padding: 3px 5px;
   border: 1px solid var(--rule-strong);
   background: color-mix(in oklab, var(--ground) 92%, transparent);
@@ -178,8 +174,6 @@
   position: absolute;
   left: 14px;
   top: 4px;
-  /* Only the station the reader is at is named. Six vertical labels on one
-     compressed rail overlap into noise; the ticks carry the rest. */
   display: none;
   writing-mode: vertical-rl;
   font-family: var(--font-data);
@@ -201,8 +195,6 @@
   opacity: 1;
 }
 
-/* Below the tablet breakpoint the gutter is 18px and there is no room for a
-   route beside the content — the plates carry the journey on their own there. */
 @media (max-width: 899px) {
   .rail { display: none; }
 }
