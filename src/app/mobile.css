@@ -6,6 +6,20 @@ div:has(> [role='group'][aria-label='System controls']) {
   grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.25fr) auto auto minmax(150px, 15vw) !important;
 }
 
+/* On tablet/small-laptop widths the operator bar already carries the release
+   identity. Show the physical capsule only when it is genuinely seated in a
+   visible mechanism; an off-dock fallback must never float over content or
+   steal taps from the chrome. */
+@media (max-width: 1179px) {
+  [data-capsule-root] {
+    opacity: var(--cap-seated, 0);
+  }
+
+  [data-capsule-root] > button {
+    pointer-events: none !important;
+  }
+}
+
 /* Compact secondary chrome before laptop widths get tight. The tap targets
    remain full size; only redundant words disappear. */
 @media (max-width: 1499px) and (min-width: 720px) {
@@ -93,19 +107,11 @@ div:has(> [role='group'][aria-label='System controls']) {
     display: none !important;
   }
 
-  /* On a phone the operator rail already carries release state. Do not float a
-     second copy of the capsule over résumé/contact/content cards. The physical
-     capsule reappears only while The Flight owns it, where its movement is the
-     interaction itself. */
+  /* The Flight is allowed to carry the physical capsule, but the object is
+     smaller than its desktop counterpart so it cannot erase stage labels. */
   [data-capsule-root] {
     scale: 0.82;
     transform-origin: 100% 100%;
-  }
-
-  body:not(:has([data-capsule-dock='flight'][data-occupied])) [data-capsule-root] {
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
   }
 
   /* The Flight is a vertical machine on phones. Its water layer is positioned,
