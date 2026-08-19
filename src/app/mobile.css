@@ -1,0 +1,83 @@
+/* Mobile-only composition contract. Desktop/tablet geometry is intentionally untouched. */
+@media (max-width: 719px) {
+  :root {
+    /* OperatorChrome is two rows on phones (44 + 48px). Reserve its real height. */
+    --rail: 94px;
+    --gutter: clamp(16px, 4.8vw, 22px);
+  }
+
+  html {
+    scroll-padding-bottom: calc(var(--rail) + var(--s-4) + env(safe-area-inset-bottom, 0px));
+  }
+
+  body {
+    min-width: 0;
+    overflow-x: clip;
+  }
+
+  main,
+  main > *,
+  main section,
+  main header {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* Recruiter-scale facts must read as facts, not compressed desktop rows. */
+  #headwater header dl {
+    width: 100%;
+  }
+
+  #headwater header dl > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 5px;
+    padding: 14px;
+  }
+
+  #headwater header dl > div > dt {
+    grid-row: auto;
+    font-size: clamp(2rem, 11vw, 2.8rem);
+    line-height: 1;
+  }
+
+  #headwater header dl > div > dd {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  #headwater h1 {
+    max-width: 100%;
+    font-size: clamp(3rem, 17vw, 4.25rem);
+    overflow-wrap: normal;
+  }
+
+  /* Chapter headers and prose stay inside the viewport even with browser text scaling. */
+  main h2,
+  main h3,
+  main p,
+  main dd,
+  main li {
+    min-width: 0;
+    overflow-wrap: break-word;
+  }
+
+  #flight h2 {
+    font-size: clamp(1.9rem, 9.5vw, 2.65rem);
+    line-height: 1.02;
+  }
+
+  /* The horizontal route is useful, but long station labels may never create page overflow. */
+  #headwater ol {
+    max-width: calc(100% - var(--gutter) * 2);
+  }
+}
+
+@media (max-width: 390px) {
+  #headwater header dl > div {
+    padding: 12px;
+  }
+
+  #headwater h1 {
+    font-size: clamp(2.8rem, 16vw, 3.75rem);
+  }
+}
