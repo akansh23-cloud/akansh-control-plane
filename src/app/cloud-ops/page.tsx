@@ -35,6 +35,34 @@ const quickCommands = [
   'dig checkout.svc',
 ];
 
+const warRoomGuidance = {
+  'connection-storm': [
+    'CONTRADICTION // readiness is collapsing while customer errors are still low. Look for a shared dependency that can reject new work before pods crash.',
+    'TRIANGULATE // compare replica count with a finite downstream resource. Six replicas are competing for something already at 100%.',
+    'VECTOR // inspect POSTGRES, then compare replicas × per-pod pool against the database ceiling. Mitigate the multiplier, not the symptom.',
+  ],
+  'poison-release': [
+    'CONTRADICTION // only some pods are unstable. Compare what changed between healthy and restarting replicas.',
+    'TRIANGULATE // inspect pod restarts and logs before adding capacity. Repeated restarts after a new image point toward the artifact itself.',
+    'VECTOR // establish the last known good image and reverse the release rather than scaling a leaking process.',
+  ],
+  'dns-fracture': [
+    'CONTRADICTION // application health is normal, yet requests do not reliably arrive. Follow the request before it reaches ingress.',
+    'TRIANGULATE // compare service health with name resolution. A healthy workload can still be unreachable if discovery is failing.',
+    'VECTOR // inspect CORE DNS and run a request trace. Repair the control-plane resolver instead of changing the application.',
+  ],
+  'certificate-expiry': [
+    'CONTRADICTION // internal traffic is healthy while public traffic is failing. The fault is likely at the trust boundary.',
+    'TRIANGULATE // inspect the edge before touching pods. Ask what happens during the TLS handshake.',
+    'VECTOR // inspect GLOBAL EDGE / ingress certificate state and restore trust at the boundary.',
+  ],
+  'az-failure': [
+    'CONTRADICTION // one failure domain is degraded while the other is healthy but hot. More replicas are not automatically more capacity.',
+    'TRIANGULATE // inspect AZ-B and trace where retries accumulate. Protect the healthy zone before adding work.',
+    'VECTOR // drain the unhealthy zone, then let healthy capacity carry traffic rather than scheduling into a failing domain.',
+  ],
+} as const;
+
 function clock(elapsed: number) {
   const seconds = 17 * 60 + elapsed;
   const mins = Math.floor(seconds / 60);
@@ -52,6 +80,7 @@ export default function CloudOpsGame() {
   ]);
   const [input, setInput] = useState('');
   const [exiting, setExiting] = useState(false);
+  const [guidanceLevel, setGuidanceLevel] = useState(0);
   const terminalRef = useRef<HTMLDivElement>(null);
   const scenario = scenarios[state.scenario];
   const selected = state.selected ? nodeCopy[state.selected] : null;
@@ -62,6 +91,7 @@ export default function CloudOpsGame() {
     if (state.telemetry.errors >= 4) return 'SEV-2';
     return 'DEGRADED';
   }, [state.phase, state.telemetry.errors]);
+  const guidance = guidanceLevel > 0 ? warRoomGuidance[state.scenario][Math.min(guidanceLevel, 3) - 1] : null;
 
   function inspect(node: NodeId) {
     setState((current) => selectNode(current, node));
@@ -100,6 +130,7 @@ export default function CloudOpsGame() {
     setState(createInitialState(nextScenario));
     setTerminal(['BLACKOUT SHELL 1.0', `New incident loaded · ${scenarios[nextScenario].codename}`, 'Type help.']);
     setInput('');
+    setGuidanceLevel(0);
   }
 
   return (
@@ -125,6 +156,22 @@ export default function CloudOpsGame() {
           <div className={styles.pagerAlarm}><span />{scenario.pager}</div>
           <h2>{scenario.codename}</h2>
           <p>{scenario.clue}</p>
+
+          <div style={{ marginTop: 18, padding: 12, border: '1px solid rgb(103 170 164 / 0.22)', background: 'rgb(4 14 15 / 0.72)' }}>
+            <p className={styles.panelMark}>WAR ROOM ECHO</p>
+            <p style={{ marginTop: 8, minHeight: 54, color: guidance ? '#b6c8c4' : '#78908b', fontSize: '0.72rem', lineHeight: 1.5 }}>
+              {guidance ?? 'Need a nudge? Pulse the room. It will expose a contradiction, then a direction, without selecting an answer for you.'}
+            </p>
+            <button
+              className={styles.exit}
+              style={{ marginTop: 10, width: '100%' }}
+              onClick={() => setGuidanceLevel((level) => Math.min(3, level + 1))}
+              disabled={guidanceLevel >= 3}
+            >
+              {guidanceLevel === 0 ? 'PULSE THE ROOM' : guidanceLevel < 3 ? 'DEEPER SIGNAL' : 'MAX SIGNAL ACQUIRED'}
+            </button>
+          </div>
+
           <div className={styles.mission}>
             <span>MISSION</span>
             <strong>{state.phase === 'mitigated' ? 'System stabilized. Review what actually happened.' : state.phase === 'failed' ? 'Restore from the last known good state.' : 'Find the fault. Mitigate impact. Do not guess.'}</strong>
@@ -160,7 +207,11 @@ export default function CloudOpsGame() {
             </div>
           </div>
 
-          <div className={styles.inspector} data-open={Boolean(selected) || undefined}>
+          <div
+            className={styles.inspector}
+            data-open={Boolean(selected) || undefined}
+            style={{ position: 'relative', inset: 'auto', right: 'auto', bottom: 'auto', width: '100%', marginTop: 10, transform: 'none' }}
+          >
             {selected ? <><p className={styles.panelMark}>{selected.type.toUpperCase()}</p><h3>{selected.name}</h3><p>{selected.duty}</p><button onClick={() => setState((current) => ({ ...current, selected: null }))}>CLOSE INSPECTOR</button></> : <><p className={styles.panelMark}>INSPECTOR</p><p>Select any component. The system will not tell you which one is broken.</p></>}
           </div>
         </section>
