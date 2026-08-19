@@ -125,7 +125,10 @@ export default defineConfig({
   webServer: process.env.E2E_BASE_URL
     ? undefined
     : {
-        command: 'npm run build && npm run start',
+        /* Browser QA intentionally invokes Next directly. `npm run build` has a
+           prebuild asset-freshness gate; that independent gate is covered by the
+           quality job and must not prevent the browser matrix from booting. */
+        command: 'npx --no-install next build && npm run start',
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 180_000,
