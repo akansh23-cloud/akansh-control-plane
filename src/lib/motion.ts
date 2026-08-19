@@ -301,49 +301,42 @@ export type RevealOptions = {
 export function useReveal<T extends HTMLElement>(options: RevealOptions = {}) {
   const { margin = '160px 0px 160px 0px', once = true } = options;
   const nodeRef = useRef<T | null>(null);
+  const playedRef = useRef(false);
 
+  /* Content is never hidden waiting for JavaScript. Under load the old
+     observer path could leave a section at data-reveal=out until its 1.4s
+     fail-safe fired — exactly the blank-then-catch-up failure. */
   const ref = useCallback((node: T | null) => {
     nodeRef.current = node;
-    if (node && !node.dataset.reveal) node.dataset.reveal = 'out';
+    if (node) node.dataset.reveal = 'in';
   }, []);
 
   useEffect(() => {
     const node = nodeRef.current;
-    if (!node) return;
-
-    /* A dead man's switch. If the observer never fires — an old browser, a
-       zero-height box, a layout the margin does not agree with — the content
-       appears anyway. An entrance is a nicety; a blank screen is the bug this
-       entire rebuild exists to fix, so the nicety is never allowed to cause
-       one. */
-    const failSafe = window.setTimeout(() => {
-      node.dataset.reveal = 'in';
-    }, 1400);
-
-    if (typeof IntersectionObserver === 'undefined') {
-      node.dataset.reveal = 'in';
-      return () => window.clearTimeout(failSafe);
-    }
+    if (!node || (once && playedRef.current)) return;
+    if (typeof IntersectionObserver === 'undefined') return;
 
     const io = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          node.dataset.reveal = 'in';
-          window.clearTimeout(failSafe);
-          if (once) io.disconnect();
-        } else if (!once) {
-          node.dataset.reveal = 'out';
+        if (!entry.isIntersecting) return;
+        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (!reduce && typeof node.animate === 'function') {
+          node.animate(
+            [
+              { opacity: 0.82, transform: 'translate3d(0, 12px, 0)' },
+              { opacity: 1, transform: 'translate3d(0, 0, 0)' },
+            ],
+            { duration: 360, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' },
+          );
         }
+        playedRef.current = true;
+        if (once) io.disconnect();
       },
-      /* Positive margin: play before the block is on screen, never after. */
       { rootMargin: margin, threshold: 0 },
     );
 
     io.observe(node);
-    return () => {
-      window.clearTimeout(failSafe);
-      io.disconnect();
-    };
+    return () => io.disconnect();
   }, [margin, once]);
 
   return ref;
@@ -390,33 +383,39 @@ export function useScrollChannel<T extends HTMLElement>(
     const node = nodeRef.current;
     if (!node) return;
 
-    const read = () => {
+    let top = 0;
+    let height = 1;
+
+    const measure = () => {
       const r = node.getBoundingClientRect();
+      top = r.top + window.scrollY;
+      height = Math.max(1, r.height);
+    };
+
+    const read = () => {
       const vh = window.innerHeight;
       const o = optsRef.current;
-      let p: number;
-
-      if ((o.map ?? 'out') === 'out') {
-        /* An element sitting at the top of the document must read 0 when the
-           page loads, not "already half way", which is what measuring against
-           the whole viewport-plus-height span does to a hero. */
-        if (r.height <= 0) return;
-        p = clamp(-r.top / r.height);
-      } else {
-        const span = r.height + vh;
-        if (span <= 0) return;
-        p = clamp((vh - r.top) / span);
-      }
-
+      const p = (o.map ?? 'out') === 'out'
+        ? clamp((window.scrollY - top) / height)
+        : clamp((window.scrollY + vh - top) / Math.max(1, height + vh));
       rig.set(channel, p, o.family, o.tau);
     };
 
+    /* Geometry is cached, so the passive scroll handler only reads scrollY and
+       writes a rig target. No layout read and no second frame scheduler. */
+    const onScroll = () => read();
+    const remeasure = () => { measure(); read(); };
+
+    measure();
     read();
-    window.addEventListener('scroll', read, { passive: true });
-    window.addEventListener('resize', read, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', remeasure, { passive: true });
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(remeasure) : null;
+    ro?.observe(node);
     return () => {
-      window.removeEventListener('scroll', read);
-      window.removeEventListener('resize', read);
+      ro?.disconnect();
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', remeasure);
     };
   }, [rig, channel, optsRef]);
 

@@ -81,9 +81,7 @@ body {
   /* A single low pool of light that rises when the system comes online. The
      pointer moves it very slightly — a hand near a machine, not a spotlight. */
   background-image: radial-gradient(
-    120% 70% at
-      calc(50% + (var(--ptr-x) - 0.5) * 6%)
-      calc(88% + (var(--ptr-y) - 0.5) * 3%),
+    120% 70% at 50% 88%,
     color-mix(
       in oklab,
       var(--water-900) calc(18% + var(--world-lift) * 26%),
@@ -91,7 +89,7 @@ body {
     ) 0%,
     transparent 62%
   );
-  background-attachment: fixed;
+  background-attachment: scroll;
   transition: background-image 1200ms var(--ease-water);
 }
 
@@ -129,8 +127,12 @@ html[data-world='production'] main {
    panel is live, so its switches feel loaded. */
 .ctl {
   box-shadow: 0 0 0 0 transparent,
-    inset 0 calc(var(--sys-pressure) * -1px) 0
-      color-mix(in oklab, var(--water-300) 22%, transparent);
+    inset 0 -0.5px 0 color-mix(in oklab, var(--water-300) 18%, transparent);
+}
+
+/* Scroll performance: the grain blend is decorative and costly on touch/tablet. */
+@media (max-width: 1179px), (pointer: coarse) {
+  .paper-grain { display: none; }
 }
 
 /* ---------------------------------------------------------------------

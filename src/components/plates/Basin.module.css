@@ -168,8 +168,12 @@
   stroke: var(--bone);
   stroke-width: 2.5;
   stroke-dasharray: 10 calc(var(--len, 100) * 1px);
-  animation: march 2.6s linear infinite;
+  animation: none;
   opacity: 0.85;
+}
+
+:global(#basin[data-current]) .link path[data-part='flow'] {
+  animation: march 2.6s linear infinite;
 }
 
 @keyframes march {
