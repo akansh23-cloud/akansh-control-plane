@@ -88,6 +88,8 @@ export function ReleaseCapsule() {
   const resolveTarget = useCallback((): TargetGeometry => {
     const small = viewport === 'mobile';
     const bay = small ? BAY_SIZE_SMALL : BAY_SIZE;
+    const railGap = small ? 108 : 84;
+    const sideGap = small ? 14 : 26;
     const stored = dockGeometry.current;
 
     if (desiredDock !== 'bay' && stored && stored.id === desiredDock && stored.width > 0) {
@@ -95,7 +97,11 @@ export function ReleaseCapsule() {
       const top = stored.top - window.scrollY;
       const width = Math.max(78, stored.width);
       const height = Math.max(42, stored.height);
-      const onScreen = top + height > 8 && top < window.innerHeight - 8;
+      const chromeSafeBottom = window.innerHeight - railGap;
+      const onScreen =
+        top + height > 8 &&
+        top < window.innerHeight - 8 &&
+        top + height <= chromeSafeBottom;
 
       if (onScreen) {
         return {
@@ -109,8 +115,6 @@ export function ReleaseCapsule() {
       }
     }
 
-    const railGap = small ? 108 : 84;
-    const sideGap = small ? 14 : 26;
     return {
       key: 'bay',
       left: window.innerWidth - bay.w - sideGap,

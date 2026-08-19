@@ -37,12 +37,14 @@ jobs:
       - run: npm run test:e2e
         env:
           CI: 'true'
-      - name: Upload visual QA captures
+      - name: Upload responsive QA captures
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: lockworks-visual-qa
-          path: test-results/visual-qa/
+          path: |
+            test-results/visual-qa/
+            test-results/device-qa/
           if-no-files-found: ignore
           retention-days: 7
       - name: Upload Playwright report on failure
