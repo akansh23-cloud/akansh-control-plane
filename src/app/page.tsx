@@ -1,5 +1,6 @@
 import { Brief } from '@/components/Brief';
 import { Legend } from '@/components/Legend';
+import { MotionGraphics } from '@/components/MotionGraphics';
 import { Plate } from '@/components/Plate';
 import { Waterway } from '@/components/Waterway';
 import { Basin } from '@/components/plates/Basin';
@@ -226,6 +227,7 @@ export default function Home() {
         </footer>
       </main>
 
+      <MotionGraphics />
       <Waterway />
       <Legend />
     </>
