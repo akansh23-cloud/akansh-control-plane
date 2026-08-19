@@ -11,6 +11,7 @@ import {
   useScrollChannel,
   useTier,
   useVars,
+  useViewport,
   useWatch,
 } from '@/lib/motion';
 import styles from './Headwater.module.css';
@@ -21,6 +22,10 @@ import styles from './Headwater.module.css';
  * The water is deliberately one heavy composited mass. Its surface geometry is
  * built once; scroll only translates that already-rasterised layer. There is no
  * per-frame SVG path reconstruction, no ambient wave clock and no scroll spring.
+ *
+ * Fine-pointer response stays owned by the global operating environment. The
+ * former local usePointerField water displacement remains intentionally absent:
+ * pointer motion must never shake this large surface.
  */
 
 const VB_W = 1200;
@@ -60,6 +65,7 @@ const STATIONS = journey.map((s, i) => ({
 export function Headwater() {
   const reduced = usePrefersReducedMotion();
   const tier = useTier();
+  const viewport = useViewport();
 
   const rig = useRig({
     channels: {
@@ -99,8 +105,9 @@ export function Headwater() {
   });
   const revealRef = useReveal<HTMLDivElement>({ margin: '0px' });
 
+  const travel = viewport === 'tablet' ? 0.4 : 0.44;
   const surfaceLevel = (r: import('@/lib/motion').Rig) =>
-    r.reduced ? 0.78 : BASE_LEVEL - r.get('scroll') * 0.44;
+    r.reduced ? 0.78 : BASE_LEVEL - r.get('scroll') * travel;
 
   const worksRef = useVars<HTMLDivElement>(rig, {
     '--datum': (r) => surfaceLevel(r),
@@ -120,7 +127,7 @@ export function Headwater() {
       rig.bindVars(document.documentElement, {
         '--datum': (r) => surfaceLevel(r),
       }),
-    [rig],
+    [rig, travel],
   );
 
   return (
