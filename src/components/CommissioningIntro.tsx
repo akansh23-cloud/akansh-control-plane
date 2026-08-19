@@ -63,19 +63,22 @@ export function CommissioningIntro() {
     run.endOpening();
   }, [run]);
 
-  /* The choreography. Every timer belongs to this cycle and dies with it. */
+  /* The choreography. Every timer belongs to this cycle and dies with it.
+     Reduced-motion users never wait through a disguised animation: the final
+     causal state is committed on the next task, preserving the same event
+     architecture without the visual travel. */
   useEffect(() => {
     if (!active) return;
 
     const marks = reduced
-      ? [0, 40, 90, 140, 190, 240, 300, 900]
+      ? [0, 0, 0, 0, 0, 0, 0, 0]
       : [0, 260, 900, 1500, 2150, 2900, 3700, 4600];
 
     const timers = marks.map((at, index) =>
       window.setTimeout(() => setStep(index), at),
     );
-    const exit = window.setTimeout(finish, reduced ? 1250 : 5400);
-    const focus = window.setTimeout(() => skipRef.current?.focus(), 90);
+    const exit = window.setTimeout(finish, reduced ? 80 : 5400);
+    const focus = reduced ? null : window.setTimeout(() => skipRef.current?.focus(), 90);
 
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') finish();
@@ -85,7 +88,7 @@ export function CommissioningIntro() {
     return () => {
       timers.forEach((timer) => window.clearTimeout(timer));
       window.clearTimeout(exit);
-      window.clearTimeout(focus);
+      if (focus !== null) window.clearTimeout(focus);
       document.removeEventListener('keydown', onKey);
     };
   }, [active, cycle, finish, reduced]);
