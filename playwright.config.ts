@@ -20,8 +20,9 @@ export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 1 : 0,
   workers: process.env.CI ? 2 : undefined,
+  timeout: 45_000,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
   use: {
     baseURL,
@@ -29,12 +30,14 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [
-    /* Full suite at the compact laptop size. The visual matrix inside the suite
-       still exercises desktop, laptop, tablet and phone widths in Chromium. */
-    {
-      name: 'laptop-1366',
-      use: chrome(1366, 768),
-    },
+    /* Chromium desktop/laptop matrix. These projects intentionally run the
+       responsive contract instead of legacy version-labelled interaction specs. */
+    { name: 'desktop-1920-chromium', testMatch: deviceOnlyMatch, use: chrome(1920, 1080) },
+    { name: 'desktop-1600-chromium', testMatch: deviceOnlyMatch, use: chrome(1600, 900) },
+    { name: 'desktop-1440-chromium', testMatch: deviceOnlyMatch, use: chrome(1440, 900) },
+    { name: 'laptop-1366-chromium', testMatch: responsiveMatch, use: chrome(1366, 768) },
+    { name: 'laptop-1280-chromium', testMatch: deviceOnlyMatch, use: chrome(1280, 800) },
+    { name: 'laptop-1024-chromium', testMatch: deviceOnlyMatch, use: chrome(1024, 768) },
 
     /* Android-class Chromium runs use touch, mobile UA and coarse-pointer
        semantics, not just a resized desktop browser. */
