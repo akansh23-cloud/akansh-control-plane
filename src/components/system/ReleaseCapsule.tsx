@@ -51,14 +51,18 @@ export function ReleaseCapsule() {
   const pathname = usePathname();
   const run = useJourney();
   const env = useEnvironment();
+  const {
+    capsule: status,
+    marks,
+    dock,
+    dockElement,
+  } = env;
   const viewport = useViewport();
   const reduced = usePrefersReducedMotion();
   const [inspecting, setInspecting] = useState(false);
 
   const identity = capsuleIdentity(run.artifact);
-  const status = env.capsule;
   const tone = CAPSULE_TONE[status];
-  const marks = env.marks;
 
   const rig = useRig({
     channels: {
@@ -74,7 +78,7 @@ export function ReleaseCapsule() {
 
   const rootRef = useRef<HTMLDivElement | null>(null);
   const desiredDock: CapsuleDockId =
-    viewport === 'mobile' && env.dock !== 'flight' ? 'bay' : env.dock;
+    viewport === 'mobile' && dock !== 'flight' ? 'bay' : dock;
 
   const dockGeometry = useRef<DockGeometry | null>(null);
   const targetRef = useRef<TargetGeometry | null>(null);
@@ -151,8 +155,9 @@ export function ReleaseCapsule() {
     rig.invalidate();
   }, [pathname, reduced, resolveTarget, rig]);
 
-  /* Measure dock geometry only when layout can actually change it. Scroll uses
-     the cached document coordinate and never asks layout for a rectangle. */
+  /* Measure dock geometry only when the dock itself or layout can change it.
+     Environment state such as X-Ray, tour, sound and chaos must not tear down
+     this observer or transiently unregister the dock. */
   useEffect(() => {
     if (pathname !== '/') return;
 
@@ -163,7 +168,7 @@ export function ReleaseCapsule() {
         return;
       }
 
-      const target = env.dockElement(desiredDock);
+      const target = dockElement(desiredDock);
       if (!target || !target.isConnected) {
         dockGeometry.current = null;
         syncTarget();
@@ -182,7 +187,7 @@ export function ReleaseCapsule() {
     };
 
     measure();
-    const target = desiredDock === 'bay' ? null : env.dockElement(desiredDock);
+    const target = desiredDock === 'bay' ? null : dockElement(desiredDock);
     const ro = target && typeof ResizeObserver !== 'undefined'
       ? new ResizeObserver(measure)
       : null;
@@ -193,7 +198,7 @@ export function ReleaseCapsule() {
       ro?.disconnect();
       window.removeEventListener('resize', measure);
     };
-  }, [desiredDock, env, pathname, syncTarget]);
+  }, [desiredDock, dockElement, pathname, syncTarget]);
 
   useEffect(() => {
     if (pathname !== '/') return;
@@ -359,10 +364,10 @@ export function CapsuleDock({
   className?: string;
   label?: string;
 }) {
-  const env = useEnvironment();
+  const { registerDock, dock } = useEnvironment();
   const ref = useCallback(
-    (node: HTMLDivElement | null) => env.registerDock(id, node),
-    [env, id],
+    (node: HTMLDivElement | null) => registerDock(id, node),
+    [id, registerDock],
   );
 
   return (
@@ -370,7 +375,7 @@ export function CapsuleDock({
       ref={ref}
       className={`${styles.dock}${className ? ` ${className}` : ''}`}
       data-capsule-dock={id}
-      data-occupied={env.dock === id || undefined}
+      data-occupied={dock === id || undefined}
       aria-hidden="true"
     >
       {label ? <span className={styles.dockLabel}>{label}</span> : null}
