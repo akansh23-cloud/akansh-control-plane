@@ -351,7 +351,7 @@ export class Rig {
   /* ---------------- the frame ---------------- */
 
   /** @internal Returns true if the rig still needs frames. */
-  advance(dt: number): boolean {
+  advance(dt: number, paint = true): boolean {
     if (!this.visible) return false;
 
     let moving = false;
@@ -361,13 +361,24 @@ export class Rig {
 
     if (this.clockRunning) this.time += dt;
 
-    const needsPaint = moving || this.clockRunning || this.dirty;
-    if (needsPaint) {
+    /* A delayed browser frame may require multiple physics substeps for stable
+       springs, but the DOM must still be written only once for that browser
+       frame. Keep the dirty bit through integration-only substeps and paint the
+       final state once. */
+    const wasDirty = this.dirty;
+    const activeMotion = moving || this.clockRunning;
+    const needsPaint = activeMotion || wasDirty;
+
+    if (paint && needsPaint) {
       for (let i = 0; i < this.writers.length; i += 1) this.writers[i].run(this);
       this.dirty = false;
+    } else if (needsPaint) {
+      this.dirty = true;
     }
 
-    if (moving || this.dirty) {
+    /* Watch semantic thresholds from integrated state, including a dirty-only
+       update. Capture the dirty state before a final paint clears it. */
+    if (moving || wasDirty) {
       for (let i = 0; i < this.watchers.length; i += 1) {
         const w = this.watchers[i];
         const v = w.read(this);
@@ -380,7 +391,7 @@ export class Rig {
       }
     }
 
-    return moving || this.clockRunning;
+    return activeMotion || this.dirty;
   }
 
   /** Force one paint pass — after a resize, a geometry swap, or a remount. */
@@ -412,11 +423,9 @@ function schedule(rig: Rig) {
 function loop(now: number) {
   frame = 0;
 
-  /* A browser is allowed to delay rAF under load. The old implementation
-     clamped the entire delayed frame to 50ms, silently throwing away elapsed
-     time; WebKit therefore made the same hydraulic release take several times
-     longer than Chromium. Keep the stable 50ms integration ceiling, but catch
-     up the bounded real elapsed time in substeps inside this one scheduler. */
+  /* A browser is allowed to delay rAF under load. Keep a stable integration
+     ceiling and catch up bounded real elapsed time in physics substeps, but do
+     not repaint the document multiple times inside this single rAF callback. */
   const elapsed = previous
     ? Math.min(0.25, Math.max(0.001, (now - previous) / 1000))
     : 0.016;
@@ -425,9 +434,9 @@ function loop(now: number) {
   const dt = elapsed / steps;
 
   for (const rig of active) {
-    let running = true;
-    for (let step = 0; step < steps && running; step += 1) {
-      running = rig.advance(dt);
+    let running = false;
+    for (let step = 0; step < steps; step += 1) {
+      running = rig.advance(dt, step === steps - 1);
     }
     if (!running) active.delete(rig);
   }
@@ -676,12 +685,26 @@ export function usePointerField(
     let lastX = 0;
     let lastY = 0;
     let lastT = 0;
+    let bounds = { left: 0, top: 0, width: 0, height: 0 };
+
+    /* Pointermove is a hot path. Cache document-space geometry instead of
+       forcing a layout read for every pointer event. Re-measure when the node
+       resizes, the viewport resizes, or the pointer enters the field. */
+    const measure = () => {
+      const rect = node.getBoundingClientRect();
+      bounds = {
+        left: rect.left + window.scrollX,
+        top: rect.top + window.scrollY,
+        width: rect.width,
+        height: rect.height,
+      };
+    };
+    measure();
 
     const onMove = (e: PointerEvent) => {
-      const rect = node.getBoundingClientRect();
-      if (rect.width === 0) return;
-      const x = (e.clientX - rect.left) / rect.width;
-      const y = (e.clientY - rect.top) / rect.height;
+      if (bounds.width === 0) return;
+      const x = (e.clientX + window.scrollX - bounds.left) / bounds.width;
+      const y = (e.clientY + window.scrollY - bounds.top) / bounds.height;
       const now = e.timeStamp;
       const dt = lastT ? Math.max(8, now - lastT) : 16;
       const speed = Math.hypot(e.clientX - lastX, e.clientY - lastY) / dt;
@@ -706,13 +729,20 @@ export function usePointerField(
       rig.set(`${channel}In`, 0, 'mechanical', 0.3);
     };
 
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    ro?.observe(node);
+    window.addEventListener('resize', measure, { passive: true });
+    node.addEventListener('pointerenter', measure as EventListener, { passive: true });
     node.addEventListener('pointermove', onMove as EventListener, {
       passive: true,
     });
     node.addEventListener('pointerleave', onLeave as EventListener);
     return () => {
       window.clearTimeout(decay);
+      ro?.disconnect();
       releaseVars();
+      window.removeEventListener('resize', measure);
+      node.removeEventListener('pointerenter', measure as EventListener);
       node.removeEventListener('pointermove', onMove as EventListener);
       node.removeEventListener('pointerleave', onLeave as EventListener);
     };
