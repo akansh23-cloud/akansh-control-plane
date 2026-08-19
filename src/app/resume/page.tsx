@@ -31,8 +31,16 @@ export const metadata: Metadata = {
 
 
 export default function ResumePage() {
+  /* The capsule becomes this sheet. The view-transition name is set inline
+     rather than in the CSS module so that the two ends of the morph are
+     provably the same string — V10 named `.resume-sheet` in global CSS, which
+     nothing ever rendered, so the transition silently did nothing. */
   return (
-    <main id="main" className={styles.sheet}>
+    <main
+      id="main"
+      className={styles.sheet}
+      style={{ viewTransitionName: 'release-capsule' } as React.CSSProperties}
+    >
       <div className={styles.inner}>
         <nav className={styles.top} aria-label="Résumé actions">
           <Link className={styles.back} href="/">
