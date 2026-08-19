@@ -24,8 +24,12 @@ export function Waterway() {
   const tier = useTier();
   const run = useJourney();
 
+  /* Scroll registration must follow the reader without hydraulic overshoot.
+     A critically damped channel preserves weight while eliminating the
+     forward/back wobble that made the route appear to dance on direction
+     changes. */
   const rig = useRig({
-    channels: { flow: { value: 0, family: 'hydraulic', tau: 0.3 } },
+    channels: { flow: { value: 0, family: 'mechanical', tau: 0.1 } },
     reduced,
     tier,
   });
@@ -80,18 +84,28 @@ export function Waterway() {
       const { top, height } = spanRef.current;
       const seen = window.scrollY + window.innerHeight * 0.58 - top;
       const p = Math.min(1, Math.max(0, seen / height));
-      rig.set('flow', p, 'hydraulic');
+      rig.set('flow', p, 'mechanical', 0.1);
 
       let next = 0;
       for (let i = 0; i < marks.length; i += 1) if (p >= marks[i] - 0.02) next = i;
       setActive((current) => (current === next ? current : next));
     };
 
+    let frame = 0;
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        read();
+      });
+    };
+
     const first = window.setTimeout(read, 0);
-    window.addEventListener('scroll', read, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
     return () => {
       window.clearTimeout(first);
-      window.removeEventListener('scroll', read);
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', onScroll);
     };
   }, [rig, marks]);
 
