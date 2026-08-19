@@ -33,6 +33,12 @@ import styles from './IncidentTimeMachine.module.css';
 
 const STEPS = 31;
 
+type ChartGeometry = {
+  trace: number[];
+  start: number;
+  points: string;
+};
+
 export function IncidentTimeMachine() {
   const run = useJourney();
   /* 0 = thirty minutes ago, 30 = now. Stored forwards so the slider reads
@@ -42,14 +48,28 @@ export function IncidentTimeMachine() {
   const minutesAgo = 30 - position;
   const frame = frameAt(minutesAgo);
 
-  const traces = useMemo(
+  /* Series generation and SVG point construction do not depend on scrubber
+     position. Keeping both outside the hot interaction path prevents every
+     pointer/keyboard step from rebuilding six 31-point polylines. */
+  const charts = useMemo(
     () =>
-      signals.reduce<Record<SignalId, number[]>>(
+      signals.reduce<Record<SignalId, ChartGeometry>>(
         (acc, signal) => {
-          acc[signal.id] = series(signal.id, STEPS);
+          const trace = series(signal.id, STEPS);
+          const max = Math.max(...trace, 1);
+          const min = Math.min(...trace, 0);
+          const span = Math.max(1, max - min);
+          const points = trace
+            .map((value, i) => {
+              const x = (i / (STEPS - 1)) * 100;
+              const y = 26 - ((value - min) / span) * 22;
+              return `${x.toFixed(2)},${y.toFixed(2)}`;
+            })
+            .join(' ');
+          acc[signal.id] = { trace, start: trace[0], points };
           return acc;
         },
-        {} as Record<SignalId, number[]>,
+        {} as Record<SignalId, ChartGeometry>,
       ),
     [],
   );
@@ -59,14 +79,13 @@ export function IncidentTimeMachine() {
      leaves its starting value. */
   const firstMover = useMemo(() => {
     let earliest: { id: SignalId; at: number } | null = null;
-    (Object.keys(traces) as SignalId[]).forEach((id) => {
-      const trace = traces[id];
-      const start = trace[0];
+    (Object.keys(charts) as SignalId[]).forEach((id) => {
+      const { trace, start } = charts[id];
       const index = trace.findIndex((value) => Math.abs(value - start) > start * 0.02);
       if (index > 0 && (!earliest || index < earliest.at)) earliest = { id, at: index };
     });
     return earliest as { id: SignalId; at: number } | null;
-  }, [traces]);
+  }, [charts]);
 
   return (
     <section
@@ -129,19 +148,9 @@ export function IncidentTimeMachine() {
 
       <ul className={styles.signals}>
         {signals.map((signal) => {
-          const trace = traces[signal.id];
+          const chart = charts[signal.id];
           const reading = readingFor(signal.id, frame);
-          const max = Math.max(...trace, 1);
-          const min = Math.min(...trace, 0);
-          const span = Math.max(1, max - min);
-          const points = trace
-            .map((value, i) => {
-              const x = (i / (STEPS - 1)) * 100;
-              const y = 26 - ((value - min) / span) * 22;
-              return `${x.toFixed(2)},${y.toFixed(2)}`;
-            })
-            .join(' ');
-          const moved = Math.abs(reading.value - trace[0]) > trace[0] * 0.02;
+          const moved = Math.abs(reading.value - chart.start) > chart.start * 0.02;
           const isFirst = firstMover?.id === signal.id;
 
           return (
@@ -157,7 +166,7 @@ export function IncidentTimeMachine() {
               </div>
 
               <svg className={styles.trace} viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
-                <polyline className={styles.traceLine} points={points} />
+                <polyline className={styles.traceLine} points={chart.points} />
                 <line
                   className={styles.traceHead}
                   x1={(position / 30) * 100}
