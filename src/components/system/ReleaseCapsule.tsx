@@ -16,14 +16,15 @@ import {
   useViewport,
 } from '@/lib/motion';
 import styles from './ReleaseCapsule.module.css';
+import motion from './ReleaseCapsuleMotion.module.css';
 
 /**
  * THE RELEASE CAPSULE.
  *
- * The capsule now follows a dock in dock-relative coordinates. Scrolling moves
- * the dock and capsule together immediately; only the offset between old and
- * new docks is animated. This removes the former spring-chase lag where the
- * page moved first and the capsule floated behind it trying to catch up.
+ * The capsule follows a dock in dock-relative coordinates. Scrolling moves the
+ * dock and capsule together immediately; only the offset between old and new
+ * docks is animated. Visual life is confined to inner overlays and lights so
+ * no decorative animation competes with the root positioning transform.
  */
 
 const BAY_SIZE = { w: 144, h: 70 };
@@ -255,7 +256,7 @@ export function ReleaseCapsule() {
         aria-label={`Release capsule, build ${identity.buildId}. Status ${CAPSULE_STATUS_LABEL[status].toLowerCase()}. Inspect.`}
         onClick={inspect}
       >
-        <svg className={styles.shell} viewBox="0 0 160 80" aria-hidden="true">
+        <svg className={`${styles.shell} ${motion.shellLive}`} viewBox="0 0 160 80" aria-hidden="true">
           <defs>
             <linearGradient id="capsule-shell" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stopColor="#263b42" />
@@ -304,6 +305,8 @@ export function ReleaseCapsule() {
           </g>
         </svg>
 
+        <span className={motion.energyRail} aria-hidden="true" />
+        <span className={motion.beacon} aria-hidden="true" />
         <span className={styles.scan} aria-hidden="true" />
       </button>
 
