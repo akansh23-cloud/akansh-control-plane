@@ -81,7 +81,7 @@ test.describe('Responsive device contract', () => {
         height: window.innerHeight,
         rail: Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--rail')) || 0,
         bar: barRect ? { left: barRect.left, right: barRect.right, top: barRect.top, bottom: barRect.bottom, height: barRect.height } : null,
-        portal: portalRect ? { left: portalRect.left, right: portalRect.right, top: portalRect.top, bottom: portalRect.bottom } : null,
+        portal: portalRect ? { left: portalRect.left, right: portalRect.right, top: portalRect.top, bottom: portalRect.bottom, width: portalRect.width, height: portalRect.height } : null,
         capsule: capsuleRect ? { left: capsuleRect.left, right: capsuleRect.right, top: capsuleRect.top, bottom: capsuleRect.bottom } : null,
         capsuleVisible: Boolean(
           capsuleRect &&
@@ -108,6 +108,10 @@ test.describe('Responsive device contract', () => {
       expect.soft(chrome.portal.right, 'Cloud Ops launcher right edge').toBeLessThanOrEqual(chrome.width + 1);
       expect.soft(chrome.portal.top, 'Cloud Ops launcher top edge').toBeGreaterThanOrEqual(-1);
       expect.soft(chrome.portal.bottom, 'Cloud Ops launcher bottom edge').toBeLessThanOrEqual(chrome.height + 1);
+      if (chrome.width <= 1179) {
+        expect.soft(chrome.portal.width, 'compact Cloud Ops launcher width').toBeLessThanOrEqual(52);
+        expect.soft(chrome.portal.height, 'compact Cloud Ops launcher height').toBeLessThanOrEqual(52);
+      }
       if (chrome.bar) {
         expect.soft(overlaps(chrome.portal, chrome.bar), 'Cloud Ops launcher must not overlap operator chrome').toBeFalsy();
       }
@@ -117,6 +121,23 @@ test.describe('Responsive device contract', () => {
     }
     if (chrome.width <= 719 && chrome.capsuleVisible && chrome.portal && chrome.capsule) {
       expect.soft(overlaps(chrome.portal, chrome.capsule), 'mobile Cloud Ops launcher must not overlap the visible release capsule').toBeFalsy();
+    }
+
+    const stationRects = await page.locator('#headwater ol li > span:last-child').evaluateAll((labels) => labels
+      .filter((label) => {
+        const style = getComputedStyle(label as Element);
+        const rect = (label as Element).getBoundingClientRect();
+        return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+      })
+      .map((label) => {
+        const rect = (label as Element).getBoundingClientRect();
+        return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom, text: label.textContent?.trim() ?? '' };
+      }));
+    for (let i = 1; i < stationRects.length; i += 1) {
+      expect.soft(
+        overlaps(stationRects[i - 1], stationRects[i]),
+        `Headwater route labels ${stationRects[i - 1].text} / ${stationRects[i].text} must not overlap`,
+      ).toBeFalsy();
     }
 
     if (chrome.width <= 719) {
