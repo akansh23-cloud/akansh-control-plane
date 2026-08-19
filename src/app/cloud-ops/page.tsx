@@ -1,168 +1,230 @@
 'use client';
 
-import type { CSSProperties } from 'react';
-import { useMemo, useState } from 'react';
+import { FormEvent, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './cloud-ops.module.css';
+import {
+  applyAction,
+  createInitialState,
+  runCommand,
+  scenarioForSeed,
+  scenarios,
+  selectNode,
+  type GameState,
+  type NodeId,
+} from './game-engine';
 
-type Score = { reliability: number; security: number; cost: number; speed: number };
-type Choice = { label: string; detail: string; delta: Score; result: string };
-type Incident = { title: string; signal: string; context: string; choices: Choice[] };
+const nodeCopy: Record<NodeId, { name: string; type: string; duty: string }> = {
+  edge: { name: 'GLOBAL EDGE', type: 'boundary', duty: 'Terminates public traffic and TLS before requests enter the cluster.' },
+  dns: { name: 'CORE DNS', type: 'control', duty: 'Resolves internal service names. A failure here can make healthy services unreachable.' },
+  ingress: { name: 'INGRESS', type: 'network', duty: 'Routes accepted traffic to the service inside the cluster.' },
+  checkout: { name: 'CHECKOUT', type: 'workload', duty: 'Customer-facing workload. Readiness decides whether a pod may receive traffic.' },
+  payments: { name: 'PAYMENTS', type: 'workload', duty: 'Downstream service on the critical request path.' },
+  kafka: { name: 'KAFKA', type: 'queue', duty: 'Buffers asynchronous work. Backlog becomes visible when consumers fall behind.' },
+  database: { name: 'POSTGRES', type: 'state', duty: 'Finite connection capacity. Every replica competes for the same server ceiling.' },
+  'az-a': { name: 'AZ-A', type: 'zone', duty: 'Healthy production capacity.' },
+  'az-b': { name: 'AZ-B', type: 'zone', duty: 'Second failure domain. Network degradation here should be contained, not amplified.' },
+};
 
-const initialScore: Score = { reliability: 62, security: 62, cost: 62, speed: 62 };
-
-const incidents: Incident[] = [
-  {
-    title: 'Traffic spike after release',
-    signal: 'p95 latency 880ms · pods 82% CPU',
-    context: 'Checkout traffic triples two minutes after a clean deployment. Error rate is still below the SLO burn threshold.',
-    choices: [
-      { label: 'Scale replicas', detail: 'Raise capacity behind the existing service.', delta: { reliability: 18, security: 0, cost: -8, speed: 10 }, result: 'Latency falls without changing the artifact. Capacity absorbs the spike.' },
-      { label: 'Rollback release', detail: 'Return to the previous image immediately.', delta: { reliability: 4, security: 0, cost: 0, speed: -8 }, result: 'Rollback succeeds, but the evidence never pointed at the release.' },
-      { label: 'Disable probes', detail: 'Keep busy pods from restarting.', delta: { reliability: -22, security: -4, cost: 2, speed: 6 }, result: 'The cluster looks calmer while unhealthy work stays in rotation.' },
-    ],
-  },
-  {
-    title: 'Critical image finding',
-    signal: 'registry scan · severity CRITICAL · fix available',
-    context: 'The candidate image passed tests, but the final registry scan finds a fixable runtime vulnerability before promotion.',
-    choices: [
-      { label: 'Block promotion', detail: 'Fail the gate and rebuild from the patched base.', delta: { reliability: 8, security: 24, cost: -3, speed: -9 }, result: 'Production stays on the trusted image. The gate does the job it exists to do.' },
-      { label: 'Waive for 24h', detail: 'Promote now and create a follow-up ticket.', delta: { reliability: -5, security: -18, cost: 2, speed: 12 }, result: 'Delivery is faster, but a known fixable risk crosses the production boundary.' },
-      { label: 'Hide the finding', detail: 'Exclude the package from the policy.', delta: { reliability: -12, security: -28, cost: 0, speed: 10 }, result: 'The dashboard turns green; the vulnerability does not.' },
-    ],
-  },
-  {
-    title: 'Configuration drift',
-    signal: 'Git desired=6 replicas · cluster actual=3',
-    context: 'A manual emergency change from last night remains in the cluster. GitOps reports divergence during peak traffic.',
-    choices: [
-      { label: 'Reconcile from Git', detail: 'Restore declared state and record the emergency lesson.', delta: { reliability: 20, security: 5, cost: -5, speed: 4 }, result: 'The cluster returns to the reviewed source of truth and drift disappears.' },
-      { label: 'Edit Git to match', detail: 'Make the accidental runtime state permanent.', delta: { reliability: -7, security: -2, cost: 5, speed: 5 }, result: 'Drift disappears by redefining the accident as intent.' },
-      { label: 'Pause GitOps', detail: 'Silence reconciliation until after peak.', delta: { reliability: -13, security: -6, cost: 2, speed: 7 }, result: 'The alert goes quiet while the control plane loses authority.' },
-    ],
-  },
-  {
-    title: 'Secret rotation under load',
-    signal: 'Vault lease expires in 06:00 · active sessions 14.2k',
-    context: 'The database credential is about to rotate while the service is handling its busiest window.',
-    choices: [
-      { label: 'Dual-secret rotation', detail: 'Overlap old and new credentials, then revoke.', delta: { reliability: 19, security: 18, cost: -2, speed: -3 }, result: 'Connections drain safely and the old credential is revoked without an outage.' },
-      { label: 'Extend old lease', detail: 'Delay rotation until traffic falls.', delta: { reliability: 7, security: -10, cost: 0, speed: 5 }, result: 'Availability wins for now, but credential exposure lasts longer than intended.' },
-      { label: 'Rotate immediately', detail: 'Revoke first and let clients reconnect.', delta: { reliability: -18, security: 12, cost: 0, speed: 6 }, result: 'Security posture improves while a preventable reconnect storm hits production.' },
-    ],
-  },
-  {
-    title: 'Region degradation',
-    signal: 'AZ-B packet loss 11% · healthy capacity 64%',
-    context: 'One availability zone is degrading. The remaining zones can carry traffic, but only if the platform moves decisively.',
-    choices: [
-      { label: 'Drain AZ-B', detail: 'Shift traffic and scale healthy zones before removing capacity.', delta: { reliability: 24, security: 2, cost: -8, speed: 8 }, result: 'Traffic moves before failure becomes outage. Capacity remains inside the SLO.' },
-      { label: 'Wait for recovery', detail: 'Avoid extra capacity unless alarms worsen.', delta: { reliability: -15, security: 0, cost: 12, speed: -5 }, result: 'Cost stays low while the error budget burns on an avoidable dependency.' },
-      { label: 'Restart everything', detail: 'Force fresh scheduling across the region.', delta: { reliability: -25, security: 0, cost: -5, speed: -3 }, result: 'A partial infrastructure problem becomes a full application event.' },
-    ],
-  },
+const quickCommands = [
+  'kubectl get pods',
+  'kubectl get events',
+  'kubectl logs checkout',
+  'trace request',
+  'kubectl describe ingress',
+  'dig checkout.svc',
 ];
 
-const clamp = (n: number) => Math.max(0, Math.min(100, n));
+function clock(elapsed: number) {
+  const seconds = 17 * 60 + elapsed;
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `02:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
 
 export default function CloudOpsGame() {
   const router = useRouter();
-  const [step, setStep] = useState(0);
-  const [score, setScore] = useState<Score>(initialScore);
-  const [result, setResult] = useState<string | null>(null);
+  const [runSeed, setRunSeed] = useState(0);
+  const [state, setState] = useState<GameState>(() => createInitialState('connection-storm'));
+  const [terminal, setTerminal] = useState<string[]>([
+    'BLACKOUT SHELL 1.0',
+    'Connected to production model. Type help. Nothing here is a multiple-choice answer.',
+  ]);
+  const [input, setInput] = useState('');
   const [exiting, setExiting] = useState(false);
-  const complete = step >= incidents.length;
-  const incident = incidents[Math.min(step, incidents.length - 1)];
-  const total = useMemo(() => Math.round((score.reliability + score.security + score.cost + score.speed) / 4), [score]);
+  const terminalRef = useRef<HTMLDivElement>(null);
+  const scenario = scenarios[state.scenario];
+  const selected = state.selected ? nodeCopy[state.selected] : null;
+  const impact = useMemo(() => {
+    if (state.phase === 'mitigated') return 'CONTAINED';
+    if (state.phase === 'failed') return 'PRODUCTION LOST';
+    if (state.telemetry.errors >= 10) return 'SEV-1';
+    if (state.telemetry.errors >= 4) return 'SEV-2';
+    return 'DEGRADED';
+  }, [state.phase, state.telemetry.errors]);
 
-  function choose(choice: Choice) {
-    if (result) return;
-    setScore((s) => ({
-      reliability: clamp(s.reliability + choice.delta.reliability),
-      security: clamp(s.security + choice.delta.security),
-      cost: clamp(s.cost + choice.delta.cost),
-      speed: clamp(s.speed + choice.delta.speed),
-    }));
-    setResult(choice.result);
+  function inspect(node: NodeId) {
+    setState((current) => selectNode(current, node));
   }
 
-  function next() {
-    setResult(null);
-    setStep((s) => s + 1);
+  function execute(command: string) {
+    setState((current) => {
+      const result = runCommand(current, command);
+      setTerminal((lines) => result.lines.includes('__CLEAR__') ? [] : [...lines, ...result.lines].slice(-42));
+      window.setTimeout(() => terminalRef.current?.scrollTo({ top: terminalRef.current.scrollHeight, behavior: 'smooth' }), 0);
+      return result.state;
+    });
+  }
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    const command = input.trim();
+    if (!command) return;
+    setInput('');
+    execute(command);
+  }
+
+  function action(name: string) {
+    setState((current) => applyAction(current, name));
   }
 
   function exit() {
     setExiting(true);
-    window.setTimeout(() => router.push('/'), 360);
+    window.setTimeout(() => router.push('/'), 520);
   }
 
   function restart() {
-    setStep(0);
-    setScore(initialScore);
-    setResult(null);
+    const nextSeed = runSeed + 1;
+    const nextScenario = scenarioForSeed(nextSeed);
+    setRunSeed(nextSeed);
+    setState(createInitialState(nextScenario));
+    setTerminal(['BLACKOUT SHELL 1.0', `New incident loaded · ${scenarios[nextScenario].codename}`, 'Type help.']);
+    setInput('');
   }
 
   return (
-    <main id="main" className={styles.root} data-exiting={exiting || undefined}>
-      <div className={styles.grid} aria-hidden="true" />
+    <main id="main" className={styles.root} data-phase={state.phase} data-exiting={exiting || undefined}>
+      <div className={styles.noise} aria-hidden="true" />
+      <div className={styles.scanline} aria-hidden="true" />
+
       <header className={styles.topbar}>
-        <div>
-          <p className={styles.kicker}>CLOUD OPS // LIVE SIMULATION</p>
-          <h1>Production Under Pressure</h1>
+        <div className={styles.identity}>
+          <p className={styles.kicker}>BLACKOUT // THE LAST GOOD DEPLOY</p>
+          <h1>Production Incident Room</h1>
         </div>
-        <button className={styles.exit} onClick={exit}>EXIT TO PORTFOLIO</button>
+        <div className={styles.headerStatus}>
+          <span data-tone={state.phase}>{impact}</span>
+          <strong>{clock(state.elapsed)}</strong>
+        </div>
+        <button className={styles.exit} onClick={exit}>EXIT INCIDENT</button>
       </header>
 
-      <section className={styles.shell}>
-        <aside className={styles.telemetry} aria-label="System telemetry">
-          {Object.entries(score).map(([key, value]) => (
-            <div className={styles.meter} key={key}>
-              <div className={styles.meterHead}><span>{key}</span><strong>{value}</strong></div>
-              <div className={styles.track}><span style={{ width: `${value}%` }} /></div>
-            </div>
-          ))}
-          <div className={styles.total}><span>OPS SCORE</span><strong>{total}</strong></div>
+      <section className={styles.world} aria-label="Interactive production control room">
+        <aside className={styles.pager}>
+          <p className={styles.panelMark}>PAGER // LIVE</p>
+          <div className={styles.pagerAlarm}><span />{scenario.pager}</div>
+          <h2>{scenario.codename}</h2>
+          <p>{scenario.clue}</p>
+          <div className={styles.mission}>
+            <span>MISSION</span>
+            <strong>{state.phase === 'mitigated' ? 'System stabilized. Review what actually happened.' : state.phase === 'failed' ? 'Restore from the last known good state.' : 'Find the fault. Mitigate impact. Do not guess.'}</strong>
+          </div>
         </aside>
 
-        {!complete ? (
-          <section className={styles.console} key={step}>
-            <div className={styles.progress}><span>INCIDENT {String(step + 1).padStart(2, '0')}</span><span>{step + 1}/{incidents.length}</span></div>
-            <div className={styles.signal}><span className={styles.liveDot} />{incident.signal}</div>
-            <h2>{incident.title}</h2>
-            <p className={styles.context}>{incident.context}</p>
+        <section className={styles.mapPanel}>
+          <div className={styles.mapHeader}>
+            <div><p className={styles.panelMark}>LIVE TOPOLOGY</p><strong>Packets are the clue.</strong></div>
+            <button onClick={() => execute('trace request')}>TRACE REQUEST</button>
+          </div>
 
-            <div className={styles.choices}>
-              {incident.choices.map((choice, i) => (
-                <button key={choice.label} onClick={() => choose(choice)} disabled={Boolean(result)}>
-                  <span className={styles.choiceNo}>0{i + 1}</span>
-                  <span><strong>{choice.label}</strong><small>{choice.detail}</small></span>
-                  <span className={styles.deploy}>EXECUTE</span>
-                </button>
+          <div className={styles.topology} data-scenario={state.scenario} data-phase={state.phase}>
+            <div className={`${styles.route} ${styles.route1}`} aria-hidden="true"><i /><i /><i /></div>
+            <div className={`${styles.route} ${styles.route2}`} aria-hidden="true"><i /><i /></div>
+            <div className={`${styles.route} ${styles.route3}`} aria-hidden="true"><i /><i /></div>
+            <div className={`${styles.route} ${styles.route4}`} aria-hidden="true"><i /></div>
+
+            <button className={`${styles.node} ${styles.edge}`} data-node="edge" data-active={state.selected === 'edge' || undefined} onClick={() => inspect('edge')}><em>01</em><span>GLOBAL EDGE</span><small>TLS / entry</small></button>
+            <button className={`${styles.node} ${styles.dns}`} data-node="dns" data-active={state.selected === 'dns' || undefined} onClick={() => inspect('dns')}><em>02</em><span>CORE DNS</span><small>service discovery</small></button>
+            <button className={`${styles.node} ${styles.ingress}`} data-node="ingress" data-active={state.selected === 'ingress' || undefined} onClick={() => inspect('ingress')}><em>03</em><span>INGRESS</span><small>route</small></button>
+            <button className={`${styles.node} ${styles.checkout}`} data-node="checkout" data-active={state.selected === 'checkout' || undefined} onClick={() => inspect('checkout')}><em>04</em><span>CHECKOUT</span><small>{state.telemetry.ready}/{state.telemetry.replicas} ready</small></button>
+            <button className={`${styles.node} ${styles.payments}`} data-node="payments" data-active={state.selected === 'payments' || undefined} onClick={() => inspect('payments')}><em>05</em><span>PAYMENTS</span><small>service</small></button>
+            <button className={`${styles.node} ${styles.kafka}`} data-node="kafka" data-active={state.selected === 'kafka' || undefined} onClick={() => inspect('kafka')}><em>06</em><span>KAFKA</span><small>lag {state.telemetry.kafkaLag}</small></button>
+            <button className={`${styles.node} ${styles.database}`} data-node="database" data-active={state.selected === 'database' || undefined} onClick={() => inspect('database')}><em>07</em><span>POSTGRES</span><small>{state.telemetry.dbConnections}/{state.telemetry.dbMax} connections</small></button>
+            <button className={`${styles.zone} ${styles.azA}`} data-active={state.selected === 'az-a' || undefined} onClick={() => inspect('az-a')}><span>AZ-A</span><small>production capacity</small></button>
+            <button className={`${styles.zone} ${styles.azB}`} data-active={state.selected === 'az-b' || undefined} onClick={() => inspect('az-b')}><span>AZ-B</span><small>{state.scenario === 'az-failure' ? 'packet loss 11%' : 'production capacity'}</small></button>
+
+            <div className={styles.podRack} aria-label="Checkout replicas">
+              {Array.from({ length: state.telemetry.replicas }, (_, index) => (
+                <span key={index} data-ready={index < state.telemetry.ready || undefined} data-failed={state.scenario === 'poison-release' && index >= state.telemetry.ready || undefined} title={`checkout pod ${index + 1}`} />
               ))}
             </div>
+          </div>
 
-            {result && (
-              <div className={styles.result} role="status">
-                <span>CONTROL PLANE RESPONSE</span>
-                <p>{result}</p>
-                <button onClick={next}>{step === incidents.length - 1 ? 'VIEW VERDICT' : 'NEXT INCIDENT'} →</button>
-              </div>
-            )}
-          </section>
-        ) : (
-          <section className={styles.verdict}>
-            <p className={styles.kicker}>SIMULATION COMPLETE</p>
-            <div className={styles.ring} style={{ '--score': `${total * 3.6}deg` } as CSSProperties}><strong>{total}</strong><span>/100</span></div>
-            <h2>{total >= 78 ? 'Production commander' : total >= 62 ? 'Reliable operator' : 'Keep the incident channel open'}</h2>
-            <p>{total >= 78 ? 'You protected reliability without treating delivery speed as the only objective.' : 'Your system survived, but the trade-offs show where production judgment matters most.'}</p>
-            <div className={styles.verdictActions}>
-              <button onClick={restart}>RUN AGAIN</button>
-              <button onClick={exit}>RETURN TO PORTFOLIO</button>
-            </div>
-          </section>
-        )}
+          <div className={styles.inspector} data-open={Boolean(selected) || undefined}>
+            {selected ? <><p className={styles.panelMark}>{selected.type.toUpperCase()}</p><h3>{selected.name}</h3><p>{selected.duty}</p><button onClick={() => setState((current) => ({ ...current, selected: null }))}>CLOSE INSPECTOR</button></> : <><p className={styles.panelMark}>INSPECTOR</p><p>Select any component. The system will not tell you which one is broken.</p></>}
+          </div>
+        </section>
+
+        <aside className={styles.telemetry}>
+          <p className={styles.panelMark}>TELEMETRY</p>
+          <Metric label="P95 LATENCY" value={`${state.telemetry.latency}ms`} level={Math.min(100, state.telemetry.latency / 12)} />
+          <Metric label="ERROR RATE" value={`${state.telemetry.errors.toFixed(1)}%`} level={Math.min(100, state.telemetry.errors * 6)} />
+          <Metric label="CPU" value={`${state.telemetry.cpu}%`} level={state.telemetry.cpu} />
+          <Metric label="READY" value={`${state.telemetry.ready}/${state.telemetry.replicas}`} level={(state.telemetry.ready / state.telemetry.replicas) * 100} inverse />
+          <Metric label="DB CONNECTIONS" value={`${state.telemetry.dbConnections}/${state.telemetry.dbMax}`} level={(state.telemetry.dbConnections / state.telemetry.dbMax) * 100} />
+          <div className={styles.discovery}><span>DISCOVERIES</span><strong>{state.discoveries.length}</strong><p>{state.discoveries.length ? state.discoveries.join(' · ').replaceAll('-', ' ') : 'None yet. Inspect the system.'}</p></div>
+        </aside>
       </section>
+
+      <section className={styles.opsDeck}>
+        <section className={styles.terminalPanel}>
+          <div className={styles.terminalHead}><div><p className={styles.panelMark}>OPERATOR TERMINAL</p><strong>Same state. Different control surface.</strong></div><span>shell // constrained production model</span></div>
+          <div className={styles.quickCommands}>{quickCommands.map((command) => <button key={command} onClick={() => execute(command)}>{command}</button>)}</div>
+          <div className={styles.terminal} ref={terminalRef} role="log" aria-live="polite">
+            {terminal.map((line, index) => <p key={`${index}-${line}`} data-prompt={line.includes('$') || undefined}>{line}</p>)}
+          </div>
+          <form className={styles.commandLine} onSubmit={submit}>
+            <label htmlFor="blackout-command">operator@blackout:~$</label>
+            <input id="blackout-command" value={input} onChange={(event) => setInput(event.target.value)} autoComplete="off" autoCapitalize="none" spellCheck={false} placeholder="type help" />
+          </form>
+        </section>
+
+        <section className={styles.physicalPanel}>
+          <div><p className={styles.panelMark}>PHYSICAL CONTROL BOARD</p><strong>Changes are immediate.</strong></div>
+          <div className={styles.levers}>
+            <button onClick={() => action('scale-up')}><span>CAPACITY</span><strong>ADD REPLICAS</strong><i /></button>
+            <button onClick={() => action('rollback')}><span>RELEASE</span><strong>ROLLBACK IMAGE</strong><i /></button>
+            <button onClick={() => action('reduce-pool')}><span>DATABASE</span><strong>POOL → 12</strong><i /></button>
+            <button onClick={() => action('restart-dns')}><span>CONTROL</span><strong>RESTART DNS</strong><i /></button>
+            <button onClick={() => action('rotate-cert')}><span>EDGE</span><strong>ROTATE CERT</strong><i /></button>
+            <button onClick={() => action('drain-zone')}><span>TRAFFIC</span><strong>DRAIN AZ-B</strong><i /></button>
+          </div>
+          <p className={styles.warning}>There are no safe-looking answer buttons. A wrong change mutates the same production model and can make the incident worse.</p>
+        </section>
+      </section>
+
+      {(state.phase === 'mitigated' || state.phase === 'failed') && (
+        <section className={styles.finale} data-outcome={state.phase} role="status">
+          <div className={styles.finalePulse} aria-hidden="true" />
+          <p className={styles.kicker}>{state.phase === 'mitigated' ? 'INCIDENT CLOSED' : 'PRODUCTION LOST'}</p>
+          <h2>{state.phase === 'mitigated' ? 'The system is quiet again.' : 'The control room went dark.'}</h2>
+          <p className={styles.rootCause}><span>ROOT CAUSE</span>{scenario.rootCause}</p>
+          <div className={styles.receipt}>
+            <span>BLACKOUT // RUN {String(runSeed + 1).padStart(2, '0')}</span>
+            <strong>{state.phase === 'mitigated' ? 'IMPACT CONTAINED' : 'RESTORE REQUIRED'}</strong>
+            <p>MTTR {Math.max(1, Math.ceil(state.elapsed / 60))}m · harmful changes {state.harmfulActions} · discoveries {state.discoveries.length}</p>
+          </div>
+          <div className={styles.finaleActions}>
+            <button onClick={restart}>{state.phase === 'mitigated' ? 'LOAD ANOTHER INCIDENT' : 'RESTORE LAST KNOWN GOOD'}</button>
+            <button onClick={exit}>RETURN TO PORTFOLIO</button>
+          </div>
+        </section>
+      )}
     </main>
   );
+}
+
+function Metric({ label, value, level, inverse = false }: { label: string; value: string; level: number; inverse?: boolean }) {
+  const alarm = inverse ? level < 70 : level > 72;
+  return <div className={styles.metric} data-alarm={alarm || undefined}><div><span>{label}</span><strong>{value}</strong></div><div className={styles.metricTrack}><i style={{ width: `${Math.max(2, Math.min(100, level))}%` }} /></div></div>;
 }
