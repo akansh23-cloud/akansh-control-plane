@@ -24,7 +24,7 @@ import {
 } from '@/lib/capsule';
 import { SystemBus, type SystemEvent } from '@/lib/events';
 import type { RunState } from '@/lib/lifecycle';
-import { useCoarsePointer, usePrefersReducedMotion, useTier } from '@/lib/motion';
+import { usePrefersReducedMotion } from '@/lib/motion';
 import { PressureModel } from '@/lib/pressure';
 import { SoundEngine } from '@/lib/sound';
 
@@ -111,8 +111,6 @@ export function OperatingEnvironment({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const run = useJourney();
   const reduced = usePrefersReducedMotion();
-  const coarse = useCoarsePointer();
-  const tier = useTier();
 
   const [bus] = useState(() => new SystemBus());
   const [pressure] = useState(() => new PressureModel());
@@ -149,25 +147,21 @@ export function OperatingEnvironment({ children }: { children: ReactNode }) {
     return () => sound.dispose();
   }, [bus, sound]);
 
-  /* Raw scroll pressure is a secondary effect. Disable it on coarse/calm
-     devices and sample it at ~30fps elsewhere so scrolling always wins. */
+  /* Scroll is an input to the world, never a hijack of it. */
   useEffect(() => {
-    if (reduced || coarse || tier === 'calm') return;
+    if (reduced) return;
     let last = window.scrollY;
     let lastTime = performance.now();
     let queued = false;
-    let lastSample = 0;
 
-    const measure = (frameTime: number) => {
+    const measure = () => {
       queued = false;
-      if (frameTime - lastSample < 28) return;
-      lastSample = frameTime;
       const now = performance.now();
       const dy = window.scrollY - last;
       const dt = Math.max(16, now - lastTime);
       last = window.scrollY;
       lastTime = now;
-      pressure.scrolled((dy / dt) * 0.42);
+      pressure.scrolled((dy / dt) * 0.5);
     };
 
     const onScroll = () => {
@@ -178,7 +172,7 @@ export function OperatingEnvironment({ children }: { children: ReactNode }) {
 
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
-  }, [coarse, pressure, reduced, tier]);
+  }, [pressure, reduced]);
 
   /**
    * POINTER WAKE. Not a cursor — a hand near a machine. Fine pointers only,
@@ -200,33 +194,24 @@ export function OperatingEnvironment({ children }: { children: ReactNode }) {
       '--ptr-v': (r) => r.get('ptrV'),
     });
 
-    let pointerFrame = 0;
-    let pending: PointerEvent | null = null;
-    const paintPointer = () => {
-      pointerFrame = 0;
-      const event = pending;
-      pending = null;
-      if (!event) return;
+    const onMove = (event: PointerEvent) => {
       const x = event.clientX / window.innerWidth;
       const y = event.clientY / window.innerHeight;
       const dt = lastT ? Math.max(8, event.timeStamp - lastT) : 16;
       const speed = Math.hypot(event.clientX - lastX, event.clientY - lastY) / dt;
-      lastX = event.clientX; lastY = event.clientY; lastT = event.timeStamp;
+      lastX = event.clientX;
+      lastY = event.clientY;
+      lastT = event.timeStamp;
+
       rig.set('ptrX', x, 'mechanical', 0.1);
       rig.set('ptrY', y, 'mechanical', 0.1);
       rig.set('ptrV', Math.min(1, speed / 2.4), 'mechanical', 0.12);
       window.clearTimeout(decay);
       decay = window.setTimeout(() => rig.set('ptrV', 0, 'hydraulic'), 110);
     };
-    const onMove = (event: PointerEvent) => {
-      pending = event;
-      if (!pointerFrame) pointerFrame = requestAnimationFrame(paintPointer);
-    };
 
     window.addEventListener('pointermove', onMove, { passive: true });
     return () => {
-      if (pointerFrame) cancelAnimationFrame(pointerFrame);
-      pending = null;
       window.clearTimeout(decay);
       unbind();
       window.removeEventListener('pointermove', onMove);
