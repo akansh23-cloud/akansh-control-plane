@@ -1,21 +1,37 @@
 'use client';
 
 import { useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import styles from './GamePortal.module.css';
 
 export function GamePortal() {
   const pathname = usePathname();
-  const router = useRouter();
   const [launching, setLaunching] = useState(false);
 
   if (pathname !== '/') return null;
 
   function launch() {
     if (launching) return;
+
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const delay = reduced ? 80 : 1050;
+
     setLaunching(true);
-    window.setTimeout(() => router.push('/cloud-ops'), reduced ? 80 : 1050);
+
+    // This handoff deliberately ends in a document navigation instead of an
+    // App Router transition. The takeover is a full-screen boundary between
+    // two experiences; a hard navigation also guarantees the overlay cannot
+    // strand the operator if a client-side route transition stalls.
+    window.setTimeout(() => {
+      window.location.assign('/cloud-ops');
+    }, delay);
+
+    // Belt-and-suspenders escape hatch for unusual browser/navigation failures.
+    window.setTimeout(() => {
+      if (window.location.pathname === '/') {
+        window.location.href = '/cloud-ops';
+      }
+    }, delay + 1400);
   }
 
   return (
