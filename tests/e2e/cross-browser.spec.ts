@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const OPENING_STORAGE_KEY = 'lockworks:opening:v8';
+const OPENING_STORAGE_KEY = 'lockworks:opening:v9';
 
 test.describe('Cross-browser Lockworks contract', () => {
   test('chrome, Index and depth controls remain stable', async ({ page }) => {
