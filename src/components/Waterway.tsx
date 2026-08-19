@@ -14,34 +14,31 @@ import styles from './Waterway.module.css';
 /**
  * THE CONTINUOUS SYSTEM JOURNEY.
  *
- * Every chapter of this site is one station on a single route. V7 makes the
- * craft on that route the same release artifact recorded by JourneySystem:
- * scroll still decides where the craft physically is, while the shared run
- * decides whether it is healthy, held, recovering or carrying degraded state.
+ * This rail is a position indicator, not simulated fluid. Scroll already owns
+ * the position, so the rail must follow it exactly instead of chasing it with a
+ * spring. The shared runtime still owns the paint; scroll simply teleports the
+ * channel to the latest position and the next shared frame composites it.
  */
 export function Waterway() {
   const reduced = usePrefersReducedMotion();
   const tier = useTier();
   const run = useJourney();
 
-  /* Scroll registration must follow the reader without hydraulic overshoot.
-     A critically damped channel preserves weight while eliminating the
-     forward/back wobble that made the route appear to dance on direction
-     changes. */
   const rig = useRig({
-    channels: { flow: { value: 0, family: 'mechanical', tau: 0.1 } },
+    channels: { flow: { value: 0, family: 'mechanical' } },
     reduced,
     tier,
   });
 
+  const spanRef = useRef({ top: 0, height: 1, railHeight: 1 });
   const rootRef = useVars<HTMLDivElement>(rig, {
     '--flow': (r) => r.get('flow'),
+    '--craft-y': (r) => `${r.get('flow') * spanRef.current.railHeight}px`,
   });
 
-  /* Measured once per layout change: where each station sits on the route. */
   const [marks, setMarks] = useState<number[]>(() => journey.map((_, i) => i / 6));
   const [active, setActive] = useState(0);
-  const spanRef = useRef({ top: 0, height: 1 });
+  const railNode = useRef<HTMLDivElement | null>(null);
 
   const measure = useCallback(() => {
     const anchors = journey.map((s) => document.getElementById(s.plate));
@@ -52,7 +49,8 @@ export function Waterway() {
     const top = first.getBoundingClientRect().top + window.scrollY;
     const bottom = last.getBoundingClientRect().bottom + window.scrollY;
     const height = Math.max(1, bottom - top);
-    spanRef.current = { top, height };
+    const railHeight = railNode.current?.getBoundingClientRect().height ?? 1;
+    spanRef.current = { top, height, railHeight: Math.max(1, railHeight) };
 
     setMarks(
       anchors.map((el, i) => {
@@ -62,13 +60,11 @@ export function Waterway() {
         return Math.min(1, Math.max(0, (centre - top) / height));
       }),
     );
-  }, []);
+    rig.invalidate();
+  }, [rig]);
 
   useEffect(() => {
-    /* Measured after paint, never during the effect body: the route is a
-       reading of the layout, so it has to wait for there to be one. */
     const first = window.setTimeout(measure, 0);
-    /* Fonts and images settle after first paint; re-measure once they have. */
     const settle = window.setTimeout(measure, 900);
     const onResize = () => measure();
     window.addEventListener('resize', onResize, { passive: true });
@@ -84,10 +80,14 @@ export function Waterway() {
       const { top, height } = spanRef.current;
       const seen = window.scrollY + window.innerHeight * 0.58 - top;
       const p = Math.min(1, Math.max(0, seen / height));
-      rig.set('flow', p, 'mechanical', 0.1);
+
+      /* Direct positional tracking: no spring, no overshoot, no catch-up lag. */
+      rig.jump('flow', p);
 
       let next = 0;
-      for (let i = 0; i < marks.length; i += 1) if (p >= marks[i] - 0.02) next = i;
+      for (let i = 0; i < marks.length; i += 1) {
+        if (p >= marks[i] - 0.02) next = i;
+      }
       setActive((current) => (current === next ? current : next));
     };
 
@@ -101,7 +101,10 @@ export function Waterway() {
 
   return (
     <div
-      ref={rootRef}
+      ref={(node) => {
+        railNode.current = node;
+        rootRef(node);
+      }}
       className={styles.rail}
       aria-hidden="true"
       data-route="journey"
