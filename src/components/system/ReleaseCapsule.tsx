@@ -42,6 +42,8 @@ import styles from './ReleaseCapsule.module.css';
 const BAY_SIZE = { w: 132, h: 64 };
 const BAY_SIZE_SMALL = { w: 104, h: 52 };
 
+type DockGeometry = { id: CapsuleDockId; left: number; top: number; width: number; height: number };
+
 export function ReleaseCapsule() {
   const pathname = usePathname();
   const run = useJourney();
@@ -74,9 +76,9 @@ export function ReleaseCapsule() {
   /* On a phone the capsule does not fly the length of every section — it holds
      its bay and only seats into the Flight, where the mechanism it belongs to
      actually is. Adapted for touch rather than shrunk from desktop. */
-  const dockRef = useLatest<CapsuleDockId>(
-    viewport === 'mobile' && env.dock !== 'flight' ? 'bay' : env.dock,
-  );
+  const desiredDock: CapsuleDockId = viewport === 'mobile' && env.dock !== 'flight' ? 'bay' : env.dock;
+  const dockRef = useLatest<CapsuleDockId>(desiredDock);
+  const dockGeometry = useRef<DockGeometry | null>(null);
 
   /* --------------------------------------------------------------- */
   /* Tracking                                                         */
@@ -89,54 +91,55 @@ export function ReleaseCapsule() {
    */
   useEffect(() => {
     if (pathname !== '/') return;
+    const measure = () => {
+      if (desiredDock === 'bay') { dockGeometry.current = null; rig.invalidate(); return; }
+      const target = env.dockElement(desiredDock);
+      if (!target || !target.isConnected) { dockGeometry.current = null; rig.invalidate(); return; }
+      const rect = target.getBoundingClientRect();
+      dockGeometry.current = { id: desiredDock, left: rect.left + window.scrollX, top: rect.top + window.scrollY, width: rect.width, height: rect.height };
+      rig.invalidate();
+    };
+    measure();
+    const target = desiredDock === 'bay' ? null : env.dockElement(desiredDock);
+    const ro = target && typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    if (target) ro?.observe(target);
+    if (typeof document !== 'undefined') ro?.observe(document.body);
+    window.addEventListener('resize', measure, { passive: true });
+    return () => { ro?.disconnect(); window.removeEventListener('resize', measure); };
+  }, [desiredDock, env, pathname, rig]);
+
+  useEffect(() => {
+    if (pathname !== '/') return;
     const node = rootRef.current;
     if (!node) return;
-
-    let frames = 0;
-
     return rig.bindPaint(node, (el, r) => {
       const element = el as HTMLElement;
-      frames += 1;
-
-      /* Settled capsules do not need a layout read every frame. */
-      const moving = !r.settled('x', 0.5) || !r.settled('y', 0.5);
-      if (moving || frames % 4 === 0) {
-        const dockId = dockRef.current;
-        const target = dockId === 'bay' ? null : env.dockElement(dockId);
-        const small = viewport === 'mobile';
-        const bay = small ? BAY_SIZE_SMALL : BAY_SIZE;
-
-        if (target && target.isConnected) {
-          const rect = target.getBoundingClientRect();
-          const onScreen =
-            rect.bottom > 8 && rect.top < window.innerHeight - 8 && rect.width > 0;
-          if (onScreen) {
-            r.set('x', rect.left + rect.width / 2, 'mechanical', 0.34);
-            r.set('y', rect.top + rect.height / 2, 'mechanical', 0.34);
-            r.set('w', Math.max(72, rect.width), 'mechanical', 0.28);
-            r.set('h', Math.max(38, rect.height), 'mechanical', 0.28);
-            r.set('seated', 1, 'mechanical');
-          } else {
-            parkInBay(r, bay, small);
-          }
-        } else {
-          parkInBay(r, bay, small);
-        }
-      }
-
+      const dockId = dockRef.current;
+      const target = dockGeometry.current;
+      const small = viewport === 'mobile';
+      const bay = small ? BAY_SIZE_SMALL : BAY_SIZE;
+      if (dockId !== 'bay' && target && target.id === dockId && target.width > 0) {
+        const left = target.left - window.scrollX;
+        const top = target.top - window.scrollY;
+        const onScreen = top + target.height > 8 && top < window.innerHeight - 8;
+        if (onScreen) {
+          r.set('x', left + target.width / 2, 'mechanical', 0.34);
+          r.set('y', top + target.height / 2, 'mechanical', 0.34);
+          r.set('w', Math.max(72, target.width), 'mechanical', 0.28);
+          r.set('h', Math.max(38, target.height), 'mechanical', 0.28);
+          r.set('seated', 1, 'mechanical');
+        } else parkInBay(r, bay, small);
+      } else parkInBay(r, bay, small);
       const width = r.get('w');
       const height = r.get('h');
       element.style.setProperty('--cap-w', `${width.toFixed(2)}px`);
       element.style.setProperty('--cap-h', `${height.toFixed(2)}px`);
-      element.style.setProperty(
-        '--cap-x',
-        `${(r.get('x') - width / 2 + r.get('refuse') * -14).toFixed(2)}px`,
-      );
+      element.style.setProperty('--cap-x', `${(r.get('x') - width / 2 + r.get('refuse') * -14).toFixed(2)}px`);
       element.style.setProperty('--cap-y', `${(r.get('y') - height / 2).toFixed(2)}px`);
       element.style.setProperty('--cap-seated', r.get('seated').toFixed(3));
       element.style.setProperty('--cap-refuse', r.get('refuse').toFixed(3));
     });
-  }, [dockRef, env, pathname, rig, viewport]);
+  }, [dockRef, pathname, rig, viewport]);
 
   /* A refusal is felt, not announced: the capsule is physically pushed back
      from the gate and held there until the fault is cleared. */
