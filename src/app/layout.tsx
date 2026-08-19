@@ -7,6 +7,7 @@ import './v7.css';
 import './v8.css';
 import './v9.css';
 import './v10.css';
+import './performance.css';
 import { CommissioningIntro } from '@/components/CommissioningIntro';
 import { JourneyProvider } from '@/components/JourneySystem';
 import { OperatorChrome } from '@/components/OperatorChrome';
