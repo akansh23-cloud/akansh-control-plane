@@ -1,92 +1,179 @@
 /* =====================================================================
    OPERATOR RECEIPT
 
-   A machine printout: pale stock, perforated top and bottom, dot-matrix
-   impression on the type. The paper is the only light surface anywhere in the
-   works, which is exactly why it reads as something that came out of a
-   machine rather than another panel of the interface.
+   The finale's one physical object: warm machine stock against a dark control
+   plane. It is deliberately larger at the finish so the run record becomes
+   the focal point rather than a small accessory below the verdict.
    ===================================================================== */
 
 .root {
-  width: min(300px, 100%);
-  filter: drop-shadow(0 10px 24px rgb(2 8 10 / 0.55));
-  animation: receipt-print 620ms var(--ease-release) both;
+  position: relative;
+  width: min(390px, 88vw);
+  transform-origin: 50% 82%;
+  animation: receipt-arrive 760ms var(--ease-release) both;
 }
 
-@keyframes receipt-print {
-  from { clip-path: inset(0 0 100% 0); }
-  to { clip-path: inset(0 0 0 0); }
+.root::before,
+.root::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.root::before {
+  inset: 14px -9px 12px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgb(246 188 53 / 0.1), transparent 12% 88%, rgb(76 225 235 / 0.08));
+  box-shadow:
+    0 18px 44px rgb(0 5 7 / 0.72),
+    0 0 34px rgb(246 188 53 / 0.08),
+    0 0 56px rgb(66 221 231 / 0.05);
+}
+
+.root::after {
+  left: 8%;
+  right: 8%;
+  bottom: -18px;
+  height: 28px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgb(95 231 240 / 0.2), transparent 68%);
+  transform: scaleY(0.45);
+}
+
+@keyframes receipt-arrive {
+  0% { opacity: 0; transform: translate3d(0, 26px, 0) scale(0.94); }
+  68% { opacity: 1; transform: translate3d(0, -3px, 0) scale(1.012); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
 }
 
 .perfTop,
 .perfBottom {
-  height: 8px;
+  position: relative;
+  z-index: 2;
+  height: 10px;
   background:
-    radial-gradient(circle at 6px 4px, transparent 3px, #E8E4D8 3.4px) 0 0 / 12px 8px repeat-x;
+    radial-gradient(circle at 7px 5px, transparent 3.4px, #eee9dc 3.8px) 0 0 / 14px 10px repeat-x;
+}
+
+.perfTop::after,
+.perfBottom::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgb(246 188 53 / 0.14), transparent 22% 78%, rgb(61 204 215 / 0.08));
+  pointer-events: none;
 }
 
 .perfBottom { transform: scaleY(-1); }
 
 .sheet {
-  padding: 16px 18px 18px;
-  background: #E8E4D8;
+  position: relative;
+  z-index: 1;
+  padding: 24px 28px 26px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 18% 20%, rgb(255 255 255 / 0.38), transparent 24%),
+    repeating-linear-gradient(0deg, rgb(40 47 45 / 0.018) 0 1px, transparent 1px 4px),
+    linear-gradient(110deg, #eee9dc, #e6e0d2 50%, #f0eadc);
   color: #16252a;
   font-family: var(--font-data);
   font-size: 11px;
   letter-spacing: 0.1em;
-  line-height: 1.7;
-  /* The impression: type struck onto stock, very slightly uneven. */
-  text-shadow: 0 0.5px 0 rgb(22 37 42 / 0.28);
+  line-height: 1.72;
+  text-align: center;
+  text-shadow: 0 0.5px 0 rgb(22 37 42 / 0.24);
+  box-shadow:
+    inset 1px 0 rgb(255 255 255 / 0.62),
+    inset -1px 0 rgb(22 37 42 / 0.09);
+}
+
+.sheet::before {
+  content: '—  OPERATOR RECEIPT  —';
+  display: block;
+  margin-bottom: 9px;
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  color: #596b6d;
+}
+
+.sheet::after {
+  content: '';
+  position: absolute;
+  top: -20%;
+  left: -70%;
+  width: 44%;
+  height: 140%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.2), transparent);
+  transform: skewX(-16deg);
+  animation: paper-sheen 7s ease-in-out 1.2s infinite;
+  pointer-events: none;
+}
+
+@keyframes paper-sheen {
+  0%, 68% { transform: translate3d(0, 0, 0) skewX(-16deg); opacity: 0; }
+  76% { opacity: 0.7; }
+  90%, 100% { transform: translate3d(440%, 0, 0) skewX(-16deg); opacity: 0; }
 }
 
 .mark {
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.28em;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.34em;
+  color: #17252a;
 }
 
 .run {
+  margin-top: 1px;
   font-size: 11px;
-  letter-spacing: 0.16em;
-  color: #3b5158;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: #26717a;
 }
 
 .rule {
-  margin: 10px 0;
-  border-top: 1px dashed rgb(22 37 42 / 0.36);
+  margin: 14px 0;
+  border-top: 1px dashed rgb(22 37 42 / 0.34);
 }
 
 .capsuleKicker {
   font-size: 9.5px;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.22em;
   color: #52696f;
 }
 
 .capsuleSubject {
-  font-size: 12px;
-  letter-spacing: 0.08em;
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.11em;
 }
 
 .capsuleBuild {
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  color: #3b5158;
+  margin-top: 1px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.17em;
+  color: #27717b;
 }
 
 .lines {
   display: grid;
-  gap: 2px;
+  gap: 3px;
 }
 
 .lines li {
   font-size: 11px;
-  letter-spacing: 0.1em;
+  font-weight: 500;
+  letter-spacing: 0.11em;
 }
 
 .lines li[data-strong] {
-  margin-top: 6px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
+  margin-top: 8px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: #196c75;
 }
 
 .thin {
@@ -96,12 +183,19 @@
 }
 
 .foot {
-  font-size: 8.5px;
+  font-size: 8px;
   letter-spacing: 0.12em;
-  line-height: 1.5;
+  line-height: 1.55;
   color: #52696f;
 }
 
+@media (max-width: 430px) {
+  .root { width: min(360px, 90vw); }
+  .sheet { padding: 21px 22px 23px; }
+  .mark { font-size: 16px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .root { animation: none; }
+  .root,
+  .sheet::after { animation: none; }
 }
