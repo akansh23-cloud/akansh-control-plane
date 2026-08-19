@@ -1,4 +1,26 @@
-/* Mobile-only composition contract. Desktop/tablet geometry is intentionally untouched. */
+/* Cross-device composition safeguards. The fixed operator chrome has five
+   direct controls on tablet/desktop: stage, run, depth, system strip and the
+   next operation. Give each one a real grid track so the fifth control can
+   never auto-flow into a phantom second row. */
+div:has(> [role='group'][aria-label='System controls']) {
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.25fr) auto auto minmax(150px, 15vw) !important;
+}
+
+/* Compact secondary chrome before laptop widths get tight. The tap targets
+   remain full size; only redundant words disappear. */
+@media (max-width: 1499px) and (min-width: 720px) {
+  [role='group'][aria-label='System controls'] button > span:last-child {
+    display: none !important;
+  }
+
+  button[aria-controls='key-plate'] > span:last-child,
+  button[aria-controls='living-release-panel'] > span:last-child {
+    display: none !important;
+  }
+}
+
+/* Mobile-only composition contract. Desktop/tablet geometry is intentionally
+   preserved apart from the operator-rail hardening above. */
 @media (max-width: 719px) {
   :root {
     /* OperatorChrome is two rows on phones (44 + 48px). Reserve its real height. */
@@ -28,6 +50,7 @@
      the second row. This keeps the bar at the 94px height reserved above. */
   div:has(> [role='group'][aria-label='System controls']) {
     position: relative;
+    grid-template-columns: minmax(0, 1fr) auto !important;
   }
 
   div:has(> [role='group'][aria-label='System controls']) > [role='group'][aria-label='System controls'] {
@@ -46,13 +69,13 @@
     text-align: left;
   }
 
-  /* Cloud Ops stays reachable without sitting on top of chapter controls.
-     On phones it becomes a compact launch beacon parked just above the one
-     fixed operator layer. Desktop keeps the full labelled portal. */
+  /* Cloud Ops stays reachable without colliding with the release capsule.
+     A phone gets a tiny top-right OPS beacon; the large desktop callout is
+     intentionally not carried through the viewport. */
   button[aria-label='Enter BLACKOUT Cloud Ops incident room'] {
-    top: auto !important;
+    top: max(10px, env(safe-area-inset-top)) !important;
     right: 10px !important;
-    bottom: calc(var(--rail) + 10px + env(safe-area-inset-bottom, 0px));
+    bottom: auto !important;
     min-width: 66px;
     width: auto;
     min-height: 44px;
@@ -74,6 +97,14 @@
   button[aria-label='Enter BLACKOUT Cloud Ops incident room'] > span:nth-child(2) small,
   button[aria-label='Enter BLACKOUT Cloud Ops incident room'] > span:last-child {
     display: none !important;
+  }
+
+  /* The fallback capsule is still a physical object, but it cannot be allowed
+     to erase a full line of content on a 360–430px screen. Individual scale
+     leaves the rig's translate transform untouched. */
+  [data-capsule-root] {
+    scale: 0.82;
+    transform-origin: 100% 100%;
   }
 
   /* The Flight is a vertical machine on phones. Its water layer is positioned,
@@ -127,6 +158,17 @@
   main select,
   main textarea {
     min-width: 0;
+  }
+
+  /* Headwater's operator facts retain their two-column scan pattern, but the
+     engraved labels get enough room to stay whole at 360px. */
+  #headwater header ul > li {
+    grid-template-columns: 110px minmax(0, 1fr);
+    gap: var(--s-2);
+  }
+
+  #headwater header ul > li > span:first-child {
+    white-space: nowrap;
   }
 
   /* Recruiter-scale facts must read as facts, not compressed desktop rows. */
@@ -189,5 +231,9 @@
 
   div:has(> [role='group'][aria-label='System controls']) > button:last-child {
     padding-right: 180px;
+  }
+
+  #headwater header ul > li {
+    grid-template-columns: 106px minmax(0, 1fr);
   }
 }
