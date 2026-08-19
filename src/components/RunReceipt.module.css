@@ -1,0 +1,107 @@
+/* =====================================================================
+   OPERATOR RECEIPT
+
+   A machine printout: pale stock, perforated top and bottom, dot-matrix
+   impression on the type. The paper is the only light surface anywhere in the
+   works, which is exactly why it reads as something that came out of a
+   machine rather than another panel of the interface.
+   ===================================================================== */
+
+.root {
+  width: min(300px, 100%);
+  filter: drop-shadow(0 10px 24px rgb(2 8 10 / 0.55));
+  animation: receipt-print 620ms var(--ease-release) both;
+}
+
+@keyframes receipt-print {
+  from { clip-path: inset(0 0 100% 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+
+.perfTop,
+.perfBottom {
+  height: 8px;
+  background:
+    radial-gradient(circle at 6px 4px, transparent 3px, #E8E4D8 3.4px) 0 0 / 12px 8px repeat-x;
+}
+
+.perfBottom { transform: scaleY(-1); }
+
+.sheet {
+  padding: 16px 18px 18px;
+  background: #E8E4D8;
+  color: #16252a;
+  font-family: var(--font-data);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  line-height: 1.7;
+  /* The impression: type struck onto stock, very slightly uneven. */
+  text-shadow: 0 0.5px 0 rgb(22 37 42 / 0.28);
+}
+
+.mark {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+}
+
+.run {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: #3b5158;
+}
+
+.rule {
+  margin: 10px 0;
+  border-top: 1px dashed rgb(22 37 42 / 0.36);
+}
+
+.capsuleKicker {
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  color: #52696f;
+}
+
+.capsuleSubject {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
+.capsuleBuild {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: #3b5158;
+}
+
+.lines {
+  display: grid;
+  gap: 2px;
+}
+
+.lines li {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+
+.lines li[data-strong] {
+  margin-top: 6px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+}
+
+.thin {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: #52696f;
+}
+
+.foot {
+  font-size: 8.5px;
+  letter-spacing: 0.12em;
+  line-height: 1.5;
+  color: #52696f;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root { animation: none; }
+}

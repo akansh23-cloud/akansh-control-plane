@@ -64,6 +64,14 @@ type JourneyContextValue = RunState & {
   telemetryChanged: (load: number, state: TelemetryState) => void;
   incidentCalled: (correct: boolean) => void;
 
+  /* V10 — chaos and tracing. Both go through the same reducer as everything
+     else, so a command in the console and a lever on a plate are the same
+     action rather than two implementations of it. */
+  armChaos: (fault: string | null) => void;
+  injectChaos: (fault: string, label: string, plate: string) => void;
+  recoverChaos: (fault: string, label: string) => void;
+  traceRan: (degraded: boolean) => void;
+
   goTo: (plate: StageId) => void;
 };
 
@@ -129,6 +137,24 @@ export function JourneyProvider({
   );
   const incidentCalled = useCallback(
     (correct: boolean) => dispatch({ type: 'incident', correct }),
+    [],
+  );
+
+  const armChaos = useCallback(
+    (fault: string | null) => dispatch({ type: 'chaos:arm', fault }),
+    [],
+  );
+  const injectChaos = useCallback(
+    (fault: string, label: string, plate: string) =>
+      dispatch({ type: 'chaos:inject', fault, label, plate }),
+    [],
+  );
+  const recoverChaos = useCallback(
+    (fault: string, label: string) => dispatch({ type: 'chaos:recover', fault, label }),
+    [],
+  );
+  const traceRan = useCallback(
+    (degraded: boolean) => dispatch({ type: 'trace', degraded }),
     [],
   );
 
@@ -258,8 +284,10 @@ export function JourneyProvider({
     html.dataset.openingCycle = String(state.openingCycleId);
     html.dataset.finalePlayedForRunId =
       state.finalePlayedForRunId === null ? '' : String(state.finalePlayedForRunId);
+    html.dataset.runChaos = state.chaosActive.join(' ');
   }, [
     pathname,
+    state.chaosActive,
     state.currentStage,
     state.drifted,
     state.finalePlayedForRunId,
@@ -316,14 +344,18 @@ export function JourneyProvider({
       servicesChanged,
       telemetryChanged,
       incidentCalled,
+      armChaos,
+      injectChaos,
+      recoverChaos,
+      traceRan,
       goTo,
     }),
     [
-      clusterDrift, derived, endOpening, goTo, incidentCalled, launch,
-      markFinalePlayed, newRun, playOpening, progress, releasePromoted,
-      releaseRecovering, releaseRefused, releaseReset, setReleaseStage,
-      releaseStarted, servicesChanged, setMode, signalSeed, state,
-      telemetryChanged,
+      armChaos, clusterDrift, derived, endOpening, goTo, incidentCalled,
+      injectChaos, launch, markFinalePlayed, newRun, playOpening, progress,
+      recoverChaos, releasePromoted, releaseRecovering, releaseRefused,
+      releaseReset, setReleaseStage, releaseStarted, servicesChanged, setMode,
+      signalSeed, state, telemetryChanged, traceRan,
     ],
   );
 

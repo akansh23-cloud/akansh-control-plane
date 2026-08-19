@@ -3,7 +3,9 @@
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useJourney } from '@/components/JourneySystem';
+import { RunReceipt } from '@/components/RunReceipt';
 import { contact, site } from '@/content';
+import { capsuleIdentity } from '@/lib/capsule';
 import { finaleEligible, STAGES } from '@/lib/lifecycle';
 import { usePrefersReducedMotion } from '@/lib/motion';
 import styles from './ProductionFinale.module.css';
@@ -103,7 +105,7 @@ export function ProductionFinale() {
       tabIndex={-1}
     >
       <p className={styles.live} aria-live="polite">
-        Release {run.artifact} reached production.
+        The release capsule, {capsuleIdentity(run.artifact).build}, reached production.
       </p>
 
       <div className={styles.stage} aria-hidden="true">
@@ -121,7 +123,13 @@ export function ProductionFinale() {
             <rect x="878" y="30" width="6" height="60" />
             <rect x="896" y="30" width="6" height="60" />
           </g>
-          <circle className={styles.arrival} cx="940" cy="60" r="16" />
+          {/* The capsule itself arrives here: it docks into the final chamber,
+              receives its production approval, and becomes part of the mark. */}
+          <g className={styles.capsule}>
+            <path d="M898 44 H962 L972 54 V66 L962 76 H898 L888 66 V54 Z" />
+            <rect className={styles.capsuleStrip} x="896" y="50" width="5" height="20" />
+            <path className={styles.capsuleSeal} d="M918 62 l5 5 l9 -11" />
+          </g>
           <g className={styles.signals}>
             <circle cx="120" cy="46" r="4" />
             <circle cx="146" cy="46" r="4" />
@@ -142,7 +150,8 @@ export function ProductionFinale() {
         <h2 id="production-finale-title">The same artifact made it through.</h2>
 
         <p className={styles.artifact}>
-          {run.artifact} · run {String(runId).padStart(2, '0')}
+          Release capsule · {capsuleIdentity(run.artifact).build} · run{' '}
+          {String(runId).padStart(2, '0')}
         </p>
 
         <p className={styles.summary}>
@@ -158,9 +167,14 @@ export function ProductionFinale() {
           <div><dt>Incident room</dt><dd>{incident}</dd></div>
         </dl>
 
+        <div className={styles.printer}>
+          <p className="u-mark">Operator receipt</p>
+          <RunReceipt />
+        </div>
+
         <div className={styles.actions}>
           <button type="button" className={styles.primary} onClick={dismiss}>
-            Open Tidewater
+            View run
           </button>
           <button
             type="button"
@@ -171,7 +185,7 @@ export function ProductionFinale() {
               run.goTo('headwater');
             }}
           >
-            Run another release
+            Replay system
           </button>
           <button
             type="button"

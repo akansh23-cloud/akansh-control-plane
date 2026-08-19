@@ -3,6 +3,8 @@
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useJourney } from '@/components/JourneySystem';
+import { ChaosPanel } from '@/components/system/ChaosPanel';
+import { SystemStrip } from '@/components/system/SystemStrip';
 import {
   contact,
   defaultDepth,
@@ -13,6 +15,7 @@ import {
   site,
   type DepthMode,
 } from '@/content';
+import { capsuleIdentity } from '@/lib/capsule';
 import { phaseLabel, phaseTone, STAGES, stageIndex } from '@/lib/lifecycle';
 import styles from './OperatorChrome.module.css';
 
@@ -213,9 +216,10 @@ export function OperatorChrome() {
           <div className={styles.runHead}>
             <div>
               <p id="living-release-title" className="u-mark">
-                Living release · run {String(Math.max(1, run.runId)).padStart(2, '0')}
+                Release capsule · run {String(Math.max(1, run.runId)).padStart(2, '0')}
               </p>
-              <p className={styles.name}>{run.artifact}</p>
+              <p className={styles.name}>Akansh Portfolio</p>
+              <p className="u-data">{capsuleIdentity(run.artifact).build}</p>
             </div>
             <p className={styles.phasePill} data-tone={phaseTone[run.phase]}>
               {phaseLabel[run.phase]}
@@ -299,6 +303,8 @@ export function OperatorChrome() {
             </p>
           </section>
 
+          <ChaosPanel />
+
           <div className={styles.trace}>
             <p className="u-mark">Run trace</p>
             {run.events.length ? (
@@ -371,9 +377,9 @@ export function OperatorChrome() {
           <span className={styles.artifactDot} data-tone={phaseTone[run.phase]} aria-hidden="true" />
           <span className={styles.runCopy}>
             <span className={styles.runKicker}>
-              {run.launched ? `LIVE RUN ${String(run.runId).padStart(2, '0')}` : 'LIVING RELEASE'}
+              {run.launched ? `LIVE RUN ${String(run.runId).padStart(2, '0')}` : 'RELEASE CAPSULE'}
             </span>
-            <span className={styles.runLine}>{run.artifact}</span>
+            <span className={styles.runLine}>{capsuleIdentity(run.artifact).build}</span>
           </span>
           <span className={styles.runPhase} data-tone={phaseTone[run.phase]}>
             {phaseLabel[run.phase]}
@@ -395,6 +401,8 @@ export function OperatorChrome() {
             </button>
           ))}
         </div>
+
+        <SystemStrip />
 
         <button type="button" className={styles.next} onClick={advance}>
           <span className={styles.nextKicker}>Next operation</span>

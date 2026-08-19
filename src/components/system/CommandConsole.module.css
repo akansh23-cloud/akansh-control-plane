@@ -1,0 +1,171 @@
+/* =====================================================================
+   COMMAND CONSOLE
+
+   A machine console, not a search box: mono throughout, a hard prompt glyph,
+   an inline completion behind the caret, and results grouped by the part of
+   the system they operate.
+   ===================================================================== */
+
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 210;
+  display: grid;
+  align-items: start;
+  justify-items: center;
+  padding: clamp(48px, 12vh, 140px) var(--s-4) var(--s-4);
+  background: color-mix(in oklab, var(--void) 72%, transparent);
+  backdrop-filter: blur(3px);
+  animation: console-in 140ms var(--ease-gear);
+}
+
+@keyframes console-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.panel {
+  width: min(640px, 100%);
+  max-height: min(70vh, 560px);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background: linear-gradient(180deg, #0f1d21, #0a1315);
+  border: 1px solid var(--rule-strong);
+  border-radius: 4px;
+  box-shadow: 0 24px 60px rgb(2 8 10 / 0.6);
+  overflow: hidden;
+}
+
+/* --- field ------------------------------------------------------------- */
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-4);
+  border-bottom: 1px solid var(--rule);
+}
+
+.prompt {
+  font-family: var(--font-data);
+  font-size: var(--step-1);
+  color: var(--signal);
+  line-height: 1;
+}
+
+.inputWrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: grid;
+}
+
+.input,
+.ghost {
+  grid-area: 1 / 1;
+  font-family: var(--font-data);
+  font-size: var(--step--1);
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  padding: 6px 0;
+}
+
+.input {
+  width: 100%;
+  border: none;
+  background: none;
+  color: var(--bone);
+  outline: none;
+}
+
+.input::placeholder { color: var(--muted-2); }
+
+.ghost {
+  pointer-events: none;
+  color: var(--muted-2);
+  white-space: pre;
+  overflow: hidden;
+}
+
+.ghostTyped { visibility: hidden; }
+
+.count {
+  font-family: var(--font-data);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  white-space: nowrap;
+}
+
+/* --- list -------------------------------------------------------------- */
+
+.list {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--s-2) 0 var(--s-3);
+}
+
+.group {
+  display: block;
+  padding: var(--s-3) var(--s-4) 4px;
+  font-family: var(--font-data);
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+
+.command {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  min-height: 46px;
+  padding: 8px var(--s-4);
+  text-align: left;
+  border-left: 2px solid transparent;
+}
+
+.item[data-on] .command {
+  background: color-mix(in oklab, var(--water-700) 34%, transparent);
+  border-left-color: var(--signal);
+}
+
+.label {
+  font-family: var(--font-data);
+  font-size: var(--step--1);
+  letter-spacing: 0.06em;
+  color: var(--bone);
+}
+
+.detail {
+  font-size: var(--step--2);
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.empty {
+  padding: var(--s-5) var(--s-4);
+  font-size: var(--step--1);
+  color: var(--muted);
+}
+
+/* --- foot -------------------------------------------------------------- */
+
+.foot {
+  padding: var(--s-2) var(--s-4);
+  border-top: 1px solid var(--rule);
+  font-family: var(--font-data);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--muted-2);
+}
+
+@media (max-width: 719px) {
+  .root { padding-top: 12vh; }
+  .foot { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root { animation: none; }
+}

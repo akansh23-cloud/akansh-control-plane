@@ -1,4 +1,8 @@
 import { Brief } from '@/components/Brief';
+import { IncidentTimeMachine } from '@/components/IncidentTimeMachine';
+import { TechTerm } from '@/components/TechTerm';
+import { TraceRequest } from '@/components/TraceRequest';
+import { CapsuleDock } from '@/components/system/ReleaseCapsule';
 import { Operation } from '@/components/Operation';
 import { Plate } from '@/components/Plate';
 import { Waterway } from '@/components/Waterway';
@@ -29,8 +33,17 @@ export default function Home() {
   return (
     <>
       <main id="main">
-        <section id="headwater" className={styles.hero}>
+        <section
+          id="headwater"
+          className={styles.hero}
+          data-xray="system"
+          data-xray-label="Source"
+          data-xray-duty="Where the release capsule is commissioned"
+        >
           <Headwater />
+          <div className={styles.capsuleBay}>
+            <CapsuleDock id="headwater" label="Release capsule" />
+          </div>
         </section>
 
         {/* The sixty-second version of everything below. Shown only when the
@@ -46,7 +59,9 @@ export default function Home() {
           intro={
             <p className="u-prose">
               Every release answers the same question at every level it passes
-              through: can this be trusted here? Send one up. Then break it on
+              through: can this be trusted here? <TechTerm id="gitlab">GitLab
+              CI/CD</TechTerm> carries one image up; <TechTerm id="trivy" /> is
+              the last place it can be stopped. Send one up, then break it on
               purpose and watch a gate refuse.
             </p>
           }
@@ -87,8 +102,9 @@ export default function Home() {
           intro={
             <p className="u-prose">
               Five layers of the platform were replaced under a service that had
-              to keep running. Drag the seam and watch each one become what
-              replaced it.
+              to keep running — including the move to <TechTerm id="helm" /> on{' '}
+              <TechTerm id="openshift" />. Drag the seam and watch each one
+              become what replaced it.
             </p>
           }
         >
@@ -135,7 +151,16 @@ export default function Home() {
             action="Edit the cluster, then reconcile."
             next="split"
           />
-          <Basin />
+          <div
+            data-xray="state"
+            data-xray-label="Declared state"
+            data-xray-duty="Git holds the level — Argo CD reconciles the cluster to it"
+          >
+            <Basin />
+          </div>
+          <div className={styles.capsuleBay}>
+            <CapsuleDock id="basin" label="Capsule locked to declared state" />
+          </div>
         </Plate>
 
         <Plate
@@ -162,7 +187,17 @@ export default function Home() {
             action="Extract services, then take one out of service."
             next="gauges"
           />
-          <Split />
+          <div
+            data-xray="network"
+            data-xray-label="Gateway"
+            data-xray-duty="Resolves each route, and holds the fallback to the monolith"
+          >
+            <Split />
+          </div>
+          <TraceRequest />
+          <div className={styles.capsuleBay}>
+            <CapsuleDock id="split" label="Capsule serving traffic" />
+          </div>
         </Plate>
 
         <Plate
@@ -186,7 +221,13 @@ export default function Home() {
             action="Drag the load against the resource limit."
             next="watch"
           />
-          <Gauges />
+          <div
+            data-xray="state"
+            data-xray-label="Telemetry"
+            data-xray-duty="Saturation → latency → readiness → errors, in that order"
+          >
+            <Gauges />
+          </div>
         </Plate>
 
         <Plate
@@ -218,7 +259,11 @@ export default function Home() {
             action="Work the signals, then name the cause."
             next="vault"
           />
+          <IncidentTimeMachine />
           <Watch />
+          <div className={styles.capsuleBay}>
+            <CapsuleDock id="watch" label="Capsule under observation" />
+          </div>
         </Plate>
 
         <Plate
@@ -254,6 +299,9 @@ export default function Home() {
           }
         >
           <Tidewater />
+          <div className={styles.capsuleBay}>
+            <CapsuleDock id="tidewater" label="Capsule in production" />
+          </div>
         </Plate>
 
         <footer className={styles.footer}>

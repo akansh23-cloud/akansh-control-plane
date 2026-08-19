@@ -6,10 +6,16 @@ import './globals.css';
 import './v7.css';
 import './v8.css';
 import './v9.css';
+import './v10.css';
 import { CommissioningIntro } from '@/components/CommissioningIntro';
 import { JourneyProvider } from '@/components/JourneySystem';
 import { OperatorChrome } from '@/components/OperatorChrome';
 import { ProductionFinale } from '@/components/ProductionFinale';
+import { CommandConsole } from '@/components/system/CommandConsole';
+import { OperatingEnvironment } from '@/components/system/Environment';
+import { ReleaseCapsule } from '@/components/system/ReleaseCapsule';
+import { TourRunner } from '@/components/system/TourRunner';
+import { XRayLayer } from '@/components/system/XRayLayer';
 import {
   completedCredentials,
   contact,
@@ -157,10 +163,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <a className="skip-link" href="#main">Skip to content</a>
         <JourneyProvider commit={commit}>
-          <CommissioningIntro />
-          {children}
-          <OperatorChrome />
-          <ProductionFinale />
+          {/* V10. The run lifecycle is inside; the world that reacts to it is
+              outside. Order matters only here: everything below consumes the
+              environment, nothing above it does. */}
+          <OperatingEnvironment>
+            <CommissioningIntro />
+            {children}
+            <OperatorChrome />
+            <ReleaseCapsule />
+            <XRayLayer />
+            <CommandConsole />
+            <TourRunner />
+            <ProductionFinale />
+          </OperatingEnvironment>
         </JourneyProvider>
         <div className="paper-grain" aria-hidden="true" />
         <script

@@ -54,3 +54,25 @@
   padding-block: var(--s-7) var(--s-8);
   border-top: 1px solid var(--rule-faint);
 }
+
+/* =====================================================================
+   V10 — capsule bays
+
+   Where the release capsule seats inside a plate. It is real layout, not an
+   overlay: the drawing makes room for the object rather than the object
+   floating over the drawing.
+   ===================================================================== */
+
+.capsuleBay {
+  margin-top: var(--s-5);
+  display: grid;
+  grid-template-columns: minmax(160px, 240px);
+  justify-content: start;
+}
+
+@media (max-width: 719px) {
+  .capsuleBay {
+    margin-top: var(--s-4);
+    grid-template-columns: minmax(140px, 200px);
+  }
+}

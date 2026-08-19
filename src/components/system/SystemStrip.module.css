@@ -1,0 +1,113 @@
+/* =====================================================================
+   SYSTEM STRIP
+
+   Four small machined switches and a pressure gauge, seated inside the one
+   operator bar. Labels collapse before targets do: the buttons never drop
+   under 44px, they just lose their words.
+   ===================================================================== */
+
+.root {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-inline: var(--s-2);
+  border-left: 1px solid var(--rule);
+}
+
+/* --- pressure gauge ---------------------------------------------------- */
+
+.gauge {
+  position: relative;
+  width: 44px;
+  height: 8px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 1px;
+  background: var(--void);
+  overflow: hidden;
+  flex: none;
+}
+
+.gaugeFill {
+  position: absolute;
+  inset: 0;
+  transform-origin: left;
+  transform: scaleX(var(--sys-pressure, 0.12));
+  background: linear-gradient(90deg, var(--water-500), var(--signal));
+  opacity: 0.7;
+}
+
+/* Flow rides on top of pressure — a fast-moving system shows a bright edge. */
+.gaugeNeedle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  left: calc(var(--sys-flow, 0.16) * 100%);
+  background: var(--bone);
+  opacity: calc(0.25 + var(--sys-turbulence, 0) * 0.75);
+}
+
+/* --- buttons ----------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  min-width: 44px;
+  justify-content: center;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: var(--muted);
+  transition:
+    color var(--t-tap) var(--ease-gear),
+    border-color var(--t-tap) var(--ease-gear),
+    background var(--t-tap) var(--ease-gear);
+}
+
+.btn:hover {
+  color: var(--bone);
+  border-color: var(--rule-strong);
+}
+
+.btn[aria-pressed='true'],
+.btn[aria-expanded='true'] {
+  color: var(--signal);
+  border-color: color-mix(in oklab, var(--signal) 46%, transparent);
+  background: color-mix(in oklab, var(--signal) 10%, transparent);
+}
+
+.glyph {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.label {
+  font-family: var(--font-data);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Words go before targets do. */
+@media (max-width: 1180px) {
+  .label { display: none; }
+}
+
+@media (max-width: 719px) {
+  .root {
+    border-left: none;
+    padding-inline: 0;
+    gap: 2px;
+  }
+
+  .gauge { display: none; }
+}

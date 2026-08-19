@@ -72,13 +72,30 @@
   transition: opacity 420ms var(--ease-gear), transform 420ms var(--ease-gear);
 }
 
-.arrival {
-  fill: var(--signal);
+.capsule {
   opacity: 0;
   transform-box: fill-box;
   transform-origin: center;
-  transform: scale(0.2);
+  transform: translateX(-42px);
   transition: opacity 380ms var(--ease-water), transform 620ms var(--ease-release);
+}
+
+.capsule path:first-child {
+  fill: #16252a;
+  stroke: var(--signal);
+  stroke-width: 1.4;
+}
+
+.capsuleStrip { fill: var(--live); }
+
+.capsuleSeal {
+  fill: none;
+  stroke: var(--live);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-dasharray: 22;
+  stroke-dashoffset: 22;
+  transition: stroke-dashoffset 460ms var(--ease-release) 220ms;
 }
 
 .signals circle {
@@ -232,7 +249,8 @@
 .root:is([data-step='1'], [data-step='2'], [data-step='3'], [data-step='4']) .route { stroke-dashoffset: 0; }
 .root:is([data-step='1'], [data-step='2'], [data-step='3'], [data-step='4']) .station rect { fill: var(--water-300); }
 
-.root:is([data-step='2'], [data-step='3'], [data-step='4']) .arrival { opacity: 1; transform: scale(1); }
+.root:is([data-step='2'], [data-step='3'], [data-step='4']) .capsule { opacity: 1; transform: none; }
+.root:is([data-step='3'], [data-step='4']) .capsuleSeal { stroke-dashoffset: 0; }
 
 .root:is([data-step='3'], [data-step='4']) .lockGates rect { opacity: 1; transform: translateY(0); }
 .root:is([data-step='3'], [data-step='4']) .signals circle { opacity: 1; }
@@ -246,7 +264,8 @@
 .root[data-reduced-motion] .route,
 .root[data-reduced-motion] .station rect,
 .root[data-reduced-motion] .lockGates rect,
-.root[data-reduced-motion] .arrival,
+.root[data-reduced-motion] .capsule,
+.root[data-reduced-motion] .capsuleSeal,
 .root[data-reduced-motion] .signals circle,
 .root[data-reduced-motion] .receipt,
 .root[data-reduced-motion] .monogram,
@@ -277,4 +296,22 @@
   .stage svg { max-height: 24vh; }
   .summary { display: none; }
   .record { margin-top: 0; }
+}
+
+/* =====================================================================
+   THE PRINTER
+
+   The receipt is the only pale surface in the works, and it arrives after the
+   verdict — a machine finishing its job, not a certificate handed out.
+   ===================================================================== */
+
+.printer {
+  display: grid;
+  gap: var(--s-2);
+  justify-items: start;
+  margin-top: var(--s-4);
+}
+
+@media (max-width: 900px) {
+  .printer { justify-items: stretch; }
 }

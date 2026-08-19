@@ -88,8 +88,10 @@
   bottom: 16%;
   display: grid;
   place-items: center;
-  width: 62px;
-  height: 62px;
+  width: 128px;
+  height: 64px;
+  grid-template-rows: 1fr auto;
+  gap: 8px;
   opacity: 0;
   transform: scale(0.7);
   transition:
@@ -99,21 +101,15 @@
     bottom 1500ms var(--ease-gear);
 }
 
-.artifactCore {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(150deg, var(--signal), var(--signal-2));
-  clip-path: polygon(50% 0%, 100% 26%, 100% 74%, 50% 100%, 0% 74%, 0% 26%);
-  box-shadow: 0 0 40px color-mix(in oklab, var(--signal) 40%, transparent);
-}
-
 .artifactStamp {
   position: relative;
   font-family: var(--font-data);
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--void);
+  font-size: 0.5rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-align: center;
+  white-space: nowrap;
+  color: var(--signal);
 }
 
 /* --- the channel legend ------------------------------------------------ */
@@ -331,4 +327,40 @@
 @media (max-height: 700px) {
   .channel { bottom: clamp(58px, 9vh, 88px); }
   .premise { display: none; }
+}
+
+/* =====================================================================
+   V10 — the capsule is forged
+
+   The opening's artifact is now the release capsule itself: the same machined
+   carrier the visitor will follow all the way to Tidewater, drawn once here so
+   that the object is recognised the moment the page opens.
+   ===================================================================== */
+
+.artifactShell {
+  width: 100%;
+  height: 100%;
+}
+
+.artifactShell path {
+  fill: #16252a;
+  stroke: color-mix(in oklab, var(--bone) 40%, transparent);
+  stroke-width: 1.2;
+}
+
+.artifactStrip { fill: var(--signal); }
+
+.artifactEtch {
+  font-family: var(--font-data);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  fill: var(--bone);
+}
+
+.artifactBuild {
+  font-family: var(--font-data);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  fill: var(--muted);
 }

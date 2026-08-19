@@ -1,0 +1,223 @@
+/* =====================================================================
+   TRACE ONE REQUEST
+
+   The route is a channel drawn in section: levels step down and back up, the
+   stations are square markers on it, and the request is a single bright pulse
+   with a short wake. Nothing else on this plate moves.
+   ===================================================================== */
+
+.root {
+  display: grid;
+  gap: var(--s-4);
+  margin-top: var(--s-5);
+  padding: var(--s-4);
+  border: 1px solid var(--edge);
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--panel) 62%, transparent);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-4);
+}
+
+.lede {
+  margin-top: 4px;
+  max-width: 54ch;
+  font-size: var(--step--1);
+  line-height: 1.5;
+  color: var(--bone-2);
+}
+
+.controls {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+}
+
+.route {
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.route[data-degraded] { color: var(--hold); }
+
+/* --- drawing ---------------------------------------------------------- */
+
+.field {
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background:
+    linear-gradient(180deg, color-mix(in oklab, var(--void) 55%, transparent), transparent);
+  padding: var(--s-2);
+}
+
+.drawing {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.track {
+  fill: none;
+  stroke: color-mix(in oklab, var(--bone) 22%, transparent);
+  stroke-width: 1.6;
+}
+
+.branch {
+  fill: none;
+  stroke: color-mix(in oklab, var(--bone) 10%, transparent);
+  stroke-width: 1.4;
+  stroke-dasharray: 5 5;
+  transition: stroke var(--t-move) var(--ease-gear);
+}
+
+.branch[data-on] { stroke: var(--hold); }
+
+.station rect {
+  fill: var(--ground);
+  stroke: color-mix(in oklab, var(--bone) 34%, transparent);
+  stroke-width: 1.2;
+  transition: fill var(--t-quick) var(--ease-gear), stroke var(--t-quick) var(--ease-gear);
+}
+
+.station[data-passed] rect {
+  fill: var(--water-500);
+  stroke: var(--water-100);
+}
+
+.station[data-current] rect {
+  fill: var(--signal);
+  stroke: var(--signal);
+}
+
+.stationLabel {
+  font-family: var(--font-data);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  fill: var(--muted-2);
+  text-anchor: middle;
+  transition: fill var(--t-quick) var(--ease-gear);
+}
+
+.station[data-passed] .stationLabel { fill: var(--bone-2); }
+.station[data-current] .stationLabel { fill: var(--signal); }
+
+.pulse { opacity: 0; transition: opacity 200ms linear; }
+.root[data-running] .pulse { opacity: 1; }
+
+.pulseHalo {
+  fill: color-mix(in oklab, var(--signal) 26%, transparent);
+}
+
+.pulseCore {
+  fill: var(--signal);
+}
+
+/* --- readout ---------------------------------------------------------- */
+
+.readout {
+  display: grid;
+  gap: var(--s-3);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  align-items: start;
+}
+
+.current {
+  display: grid;
+  gap: 4px;
+}
+
+.currentName {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--step-1);
+  color: var(--bone);
+}
+
+.currentDuty {
+  font-size: var(--step--1);
+  line-height: 1.5;
+  color: var(--muted);
+  max-width: 42ch;
+}
+
+.hops {
+  display: grid;
+  gap: 2px;
+}
+
+.hops li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: 5px 8px;
+  border-left: 2px solid var(--rule);
+  transition: border-color var(--t-quick) var(--ease-gear), background var(--t-quick) var(--ease-gear);
+}
+
+.hops li[data-passed] {
+  border-left-color: var(--water-300);
+  background: color-mix(in oklab, var(--water-700) 16%, transparent);
+}
+
+.hops li[data-current] {
+  border-left-color: var(--signal);
+  background: color-mix(in oklab, var(--signal) 10%, transparent);
+}
+
+.hopName {
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  letter-spacing: 0.08em;
+  color: var(--bone-2);
+}
+
+.hopSays {
+  font-family: var(--font-data);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: right;
+}
+
+.cost {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: var(--s-2);
+  align-items: baseline;
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  color: var(--bone-2);
+}
+
+.note {
+  font-size: var(--step--2);
+  line-height: 1.45;
+  color: var(--muted-2);
+  max-width: 68ch;
+}
+
+@media (max-width: 900px) {
+  .readout { grid-template-columns: 1fr; }
+  .stationLabel { font-size: 13px; }
+}
+
+@media (max-width: 719px) {
+  .root { padding: var(--s-3); }
+  .stationLabel { font-size: 15px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse,
+  .branch,
+  .station rect { transition: none; }
+}

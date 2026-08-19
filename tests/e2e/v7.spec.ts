@@ -6,7 +6,7 @@ test.describe('V7 living release', () => {
 
     const consoleButton = page.locator('button[aria-controls="living-release-panel"]');
     await expect(consoleButton).toBeVisible();
-    await expect(consoleButton).toContainText(/V7 · LIVING RELEASE/i);
+    await expect(consoleButton).toContainText(/LIVING RELEASE/i);
 
     await consoleButton.click();
     const panel = page.locator('#living-release-panel');
@@ -15,7 +15,9 @@ test.describe('V7 living release', () => {
 
     await expect(page.locator('html')).toHaveAttribute('data-run-launched', 'true');
     await expect(consoleButton).toContainText(/LIVE RUN/i);
-    await expect(consoleButton).toContainText(/AM-/i);
+    /* V10 renamed the visitor-facing artifact: the capsule is the object and
+       the build code is metadata under it. */
+    await expect(consoleButton).toContainText(/build/i);
   });
 
   test('carries a refused release into the global run and clears it through recovery', async ({ page }) => {
@@ -66,7 +68,7 @@ test.describe('V7 living release', () => {
 
     const finale = page.getByRole('heading', { name: 'The same artifact made it through.' });
     await expect(finale).toBeVisible({ timeout: 8_000 });
-    await expect(page.getByText(/TIDEWATER · RELEASE ACCEPTED/i)).toBeVisible();
+    await expect(page.getByText(/Release accepted/i).first()).toBeVisible();
     await expect(page.getByText(/Clean release path/i)).toBeVisible();
     await expect(page.getByText(/No drift introduced/i)).toBeVisible();
 
@@ -76,22 +78,27 @@ test.describe('V7 living release', () => {
   });
 
   test('Blackwater Drill advances only after a real recovery', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'laptop-1366', 'One canonical drill path is enough; the responsive matrix covers the launcher elsewhere.');
+    test.skip(testInfo.project.name !== 'laptop-1366', 'One canonical drill path is enough; the responsive matrix covers the chrome elsewhere.');
 
     await page.goto('/');
-    await page.getByRole('button', { name: /Blackwater Drill/i }).click();
-
-    const drillPanel = page.locator('#blackwater-drill-panel');
-    const drillBar = page.locator('button[aria-controls="blackwater-drill-panel"]');
-    await expect(drillPanel.getByRole('heading', { name: 'Contain a refused release' })).toBeVisible();
-    await drillPanel.getByRole('button', { name: 'Go to The Flight' }).click();
+    /* V9 folded the drill into the single run drawer: one operator chrome,
+       one panel, no fourth floating layer. */
+    await page.locator('button[aria-controls="living-release-panel"]').click();
+    const panel = page.locator('#living-release-panel');
+    await expect(panel.getByRole('heading', { name: /Blackwater Drill/i })).toBeVisible();
+    await panel.getByRole('button', { name: 'Go to The Flight' }).first().click();
 
     const flight = page.locator('#flight');
     await flight.getByRole('button', { name: /Critical CVE in the image/i }).click();
     await expect(flight.getByText(/Held at/i)).toBeVisible({ timeout: 12_000 });
     await flight.getByRole('button', { name: 'Apply the fix' }).click();
+    await expect(flight.getByText('Promoted', { exact: true })).toBeVisible({ timeout: 15_000 });
 
-    await expect(drillBar).toContainText('Restore declared state');
-    await expect(drillBar).toContainText('1 / 5');
+    await page.locator('button[aria-controls="living-release-panel"]').click();
+    const recovered = panel
+      .getByRole('listitem')
+      .filter({ hasText: 'Let a gate refuse, then recover it' });
+    await expect(recovered).toHaveAttribute('data-done', '');
+    await expect(panel).toContainText(/[23] \/ 6/);
   });
 });

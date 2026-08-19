@@ -1,0 +1,164 @@
+/* =====================================================================
+   X-RAY
+
+   The normal drawing does not disappear — it is pushed back. Underneath, the
+   boundaries are drawn as datum ticks and the annotations sit outside the
+   regions they name, so nothing is covered by its own label.
+
+   Each lens has its own ink so switching lens is legible peripherally:
+   system = bone, network = water, security = signal, state = live.
+   ===================================================================== */
+
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  pointer-events: none;
+  --xray-ink: var(--bone);
+  animation: xray-in 180ms var(--ease-gear);
+}
+
+.root[data-lens='network'] { --xray-ink: var(--water-100); }
+.root[data-lens='security'] { --xray-ink: var(--signal); }
+.root[data-lens='state'] { --xray-ink: var(--live); }
+
+@keyframes xray-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.field {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+
+.region {
+  animation: region-in 220ms var(--ease-gear) both;
+  animation-delay: calc(var(--i) * 26ms);
+}
+
+@keyframes region-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.box {
+  fill: color-mix(in oklab, var(--xray-ink) 5%, transparent);
+  stroke: color-mix(in oklab, var(--xray-ink) 22%, transparent);
+  stroke-width: 1;
+  stroke-dasharray: 3 5;
+}
+
+.corner {
+  fill: none;
+  stroke: var(--xray-ink);
+  stroke-width: 1.4;
+}
+
+.leader {
+  fill: none;
+  stroke: color-mix(in oklab, var(--xray-ink) 60%, transparent);
+  stroke-width: 1;
+}
+
+.label {
+  font-family: var(--font-data);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  fill: var(--xray-ink);
+  text-anchor: end;
+}
+
+.duty {
+  font-family: var(--font-body);
+  font-size: 11px;
+  fill: color-mix(in oklab, var(--bone) 70%, transparent);
+  text-anchor: end;
+}
+
+/* --- legend ---------------------------------------------------------- */
+
+.legend {
+  position: absolute;
+  left: clamp(12px, 3vw, 32px);
+  bottom: calc(var(--chrome-h, 60px) + 76px);
+  width: min(320px, 74vw);
+  padding: 12px 14px;
+  background: color-mix(in oklab, var(--void) 90%, transparent);
+  border: 1px solid color-mix(in oklab, var(--xray-ink) 30%, transparent);
+  border-radius: 3px;
+  backdrop-filter: blur(8px);
+}
+
+.lens {
+  font-family: var(--font-data);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--xray-ink);
+}
+
+.question {
+  margin-top: 4px;
+  font-size: var(--step--1);
+  color: var(--bone-2);
+  line-height: 1.4;
+}
+
+.keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.keys li {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 7px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  font-family: var(--font-data);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.keys li[data-on] {
+  border-color: var(--xray-ink);
+  color: var(--xray-ink);
+}
+
+.keys li span {
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  background: color-mix(in oklab, var(--xray-ink) 22%, transparent);
+  color: var(--bone);
+}
+
+.note {
+  margin-top: 10px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--muted-2);
+}
+
+@media (max-width: 719px) {
+  .legend {
+    left: 10px;
+    right: 10px;
+    width: auto;
+    bottom: calc(var(--chrome-h, 92px) + 66px);
+  }
+
+  .duty { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root,
+  .region { animation: none; }
+}

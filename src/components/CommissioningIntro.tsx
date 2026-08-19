@@ -132,9 +132,17 @@ export function CommissioningIntro() {
 
       <div className={styles.pressure} aria-hidden="true" />
 
+      {/* The capsule is forged here. This is the visitor's first sight of the
+          object they will carry to production, so it is named on the spot
+          rather than left as a hash to decode. */}
       <div className={styles.artifact} aria-hidden="true">
-        <span className={styles.artifactCore} />
-        <span className={styles.artifactStamp}>AM</span>
+        <svg viewBox="0 0 160 80" className={styles.artifactShell}>
+          <path d="M20 8 H140 L152 20 V60 L140 72 H20 L8 60 V20 Z" />
+          <rect x="20" y="14" width="8" height="52" rx="1" className={styles.artifactStrip} />
+          <text x="56" y="34" className={styles.artifactEtch}>RELEASE</text>
+          <text x="56" y="50" className={styles.artifactBuild}>CAPSULE</text>
+        </svg>
+        <span className={styles.artifactStamp}>RELEASE CAPSULE INITIALISED</span>
       </div>
 
       <ol className={styles.channel} aria-hidden="true">

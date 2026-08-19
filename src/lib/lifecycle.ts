@@ -106,15 +106,43 @@ export type RunState = {
   productionReached: boolean;
   finalePlayedForRunId: number | null;
 
+  /* ---- V10 ---------------------------------------------------------- */
+
+  /** Chaos: what is armed, what is currently injected, what has been fixed. */
+  chaosArmed: string | null;
+  chaosActive: string[];
+  chaosHistory: string[];
+
+  /**
+   * The receipt counters. These exist so the finale can state what the visitor
+   * actually did without any component having to remember it — and so it can
+   * never claim an action that was not performed.
+   */
+  releasesRun: number;
+  blocks: number;
+  remediations: number;
+  driftEvents: number;
+  reconciliations: number;
+  diagnoses: number;
+  traces: number;
+
   events: RunEvent[];
   seq: number;
 };
 
 export const EVENT_DEPTH = 24;
 
+/**
+ * The build code carried by the release capsule.
+ *
+ * V9 published this as `AM-64723A4`, which is precise and means nothing to a
+ * visitor. V10 keeps the number — it is the real short commit sha in a
+ * deployed build — but demotes it to metadata under the words RELEASE CAPSULE.
+ * See `lib/capsule.ts` for how it is presented.
+ */
 export function artifactName(commit: string) {
   const clean = commit.trim().slice(0, 7);
-  return clean && clean !== 'local' ? `AM-${clean.toUpperCase()}` : 'AM-V9-WORKING';
+  return clean && clean !== 'local' ? clean.toUpperCase() : 'WORKING';
 }
 
 export function initialRun(
@@ -146,6 +174,16 @@ export function initialRun(
     incidentSolved: false,
     productionReached: false,
     finalePlayedForRunId: null,
+    chaosArmed: null,
+    chaosActive: [],
+    chaosHistory: [],
+    releasesRun: 0,
+    blocks: 0,
+    remediations: 0,
+    driftEvents: 0,
+    reconciliations: 0,
+    diagnoses: 0,
+    traces: 0,
     events: [],
     seq: 0,
     ...carry,
@@ -170,7 +208,11 @@ export type RunAction =
   | { type: 'telemetry'; load: number; state: TelemetryState }
   | { type: 'incident'; correct: boolean }
   | { type: 'production' }
-  | { type: 'finale:played' };
+  | { type: 'finale:played' }
+  | { type: 'chaos:arm'; fault: string | null }
+  | { type: 'chaos:inject'; fault: string; label: string; plate: string }
+  | { type: 'chaos:recover'; fault: string; label: string }
+  | { type: 'trace'; degraded: boolean };
 
 type Emission = Omit<RunEvent, 'id'>;
 
@@ -258,6 +300,7 @@ export function runReducer(state: RunState, action: RunAction): RunState {
           releaseStage: 0,
           releaseCleared: false,
           productionReached: false,
+          releasesRun: state.releasesRun + 1,
           fault: action.fault,
           faultGate: action.gate,
           faultRemediated: false,
@@ -285,6 +328,7 @@ export function runReducer(state: RunState, action: RunAction): RunState {
           phase: 'held',
           release: 'refused',
           releaseCleared: false,
+          blocks: state.blocks + 1,
           fault: action.fault,
           faultGate: action.gate,
         },
@@ -298,7 +342,13 @@ export function runReducer(state: RunState, action: RunAction): RunState {
 
     case 'release:recovering':
       return record(
-        { ...state, phase: 'recovering', release: 'recovering', faultRemediated: true },
+        {
+          ...state,
+          phase: 'recovering',
+          release: 'recovering',
+          faultRemediated: true,
+          remediations: state.remediations + 1,
+        },
         {
           key: `release:recovering:${state.fault ?? 'gate'}`,
           stage: '02 · The Flight',
@@ -345,6 +395,8 @@ export function runReducer(state: RunState, action: RunAction): RunState {
           ...(action.drifted ? begun(state) : {}),
           drifted: action.drifted,
           reconciled: action.drifted ? false : true,
+          driftEvents: state.driftEvents + (action.drifted ? 1 : 0),
+          reconciliations: state.reconciliations + (action.drifted ? 0 : 1),
           phase: action.drifted ? 'degraded' : state.phase === 'held' ? 'held' : 'healthy',
         },
         {
@@ -391,6 +443,7 @@ export function runReducer(state: RunState, action: RunAction): RunState {
           ...state,
           incidentAttempts: state.incidentAttempts + 1,
           incidentSolved: state.incidentSolved || action.correct,
+          diagnoses: state.diagnoses + (action.correct && !state.incidentSolved ? 1 : 0),
           phase: action.correct ? 'healthy' : 'degraded',
         },
         {
@@ -419,6 +472,66 @@ export function runReducer(state: RunState, action: RunAction): RunState {
 
     case 'finale:played':
       return { ...state, finalePlayedForRunId: state.runId };
+
+    /* ---- V10 ------------------------------------------------------- */
+
+    case 'chaos:arm':
+      return state.chaosArmed === action.fault
+        ? state
+        : { ...state, chaosArmed: action.fault };
+
+    case 'chaos:inject': {
+      if (state.chaosActive.includes(action.fault)) return state;
+      return record(
+        {
+          ...state,
+          ...begun(state),
+          chaosArmed: null,
+          chaosActive: [...state.chaosActive, action.fault],
+          chaosHistory: state.chaosHistory.includes(action.fault)
+            ? state.chaosHistory
+            : [...state.chaosHistory, action.fault],
+          phase: 'degraded',
+        },
+        {
+          key: `chaos:inject:${action.fault}:${state.seq}`,
+          stage: action.plate,
+          label: `Fault injected · ${action.label}`,
+          tone: 'fault',
+        },
+      );
+    }
+
+    case 'chaos:recover': {
+      if (!state.chaosActive.includes(action.fault)) return state;
+      const remaining = state.chaosActive.filter((id) => id !== action.fault);
+      return record(
+        {
+          ...state,
+          chaosActive: remaining,
+          phase: remaining.length ? 'degraded' : 'healthy',
+        },
+        {
+          key: `chaos:recover:${action.fault}:${state.seq}`,
+          stage: 'Chaos',
+          label: `Recovered · ${action.label}`,
+          tone: 'ok',
+        },
+      );
+    }
+
+    case 'trace':
+      return record(
+        { ...state, ...begun(state), traces: state.traces + 1 },
+        {
+          key: `trace:${state.traces + 1}`,
+          stage: '05 · The Split',
+          label: action.degraded
+            ? 'Request traced · gateway fell back to the monolith'
+            : 'Request traced end to end through the architecture',
+          tone: action.degraded ? 'hold' : 'ok',
+        },
+      );
 
     default:
       return state;
@@ -632,4 +745,43 @@ export function runProgress(state: RunState) {
   const list = objectives(state);
   const done = list.filter((objective) => objective.done).length;
   return { done, total: list.length, ratio: done / list.length };
+}
+
+/* ------------------------------------------------------------------ */
+/* The operator receipt                                                */
+/* ------------------------------------------------------------------ */
+
+export type ReceiptLine = { count: number; label: string; done: boolean };
+
+/**
+ * What this run actually contained.
+ *
+ * Every line is a counter the reducer incremented when the visitor did the
+ * thing. A line that did not happen is not printed — the receipt is never
+ * allowed to claim an action nobody performed, which is the whole reason it is
+ * derived from counters instead of assembled by the finale.
+ */
+export function runReceipt(state: RunState): ReceiptLine[] {
+  const lines: ReceiptLine[] = [
+    { count: state.releasesRun, label: 'release executed', done: state.releasesRun > 0 },
+    { count: state.blocks, label: 'security block', done: state.blocks > 0 },
+    { count: state.remediations, label: 'remediation', done: state.remediations > 0 },
+    { count: state.driftEvents, label: 'drift event', done: state.driftEvents > 0 },
+    { count: state.reconciliations, label: 'reconciliation', done: state.reconciliations > 0 },
+    { count: state.traces, label: 'request traced', done: state.traces > 0 },
+    { count: state.diagnoses, label: 'incident diagnosed', done: state.diagnoses > 0 },
+    {
+      count: state.chaosHistory.length,
+      label: 'fault injected',
+      done: state.chaosHistory.length > 0,
+    },
+    { count: state.serviceDown ? 1 : 0, label: 'fallback exercised', done: state.serviceDown },
+  ];
+  return lines.filter((line) => line.done);
+}
+
+/** Pluralised, upper-case receipt text: `1 RELEASE EXECUTED`. */
+export function receiptText(line: ReceiptLine) {
+  const plural = line.count === 1 ? line.label : `${line.label}s`;
+  return `${line.count} ${plural}`.toUpperCase();
 }

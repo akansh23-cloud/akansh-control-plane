@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Fold } from '@/components/Fold';
 import { useJourney } from '@/components/JourneySystem';
+import { CapsuleDock } from '@/components/system/ReleaseCapsule';
+import { useMaybeEnvironment } from '@/components/system/Environment';
 import {
   artifactPromise,
   chamberPurpose,
@@ -64,6 +66,7 @@ export function Flight() {
     setReleaseStage,
   } = useJourney();
 
+  const env = useMaybeEnvironment();
   const [stage, setStage] = useState(0);
   const [mode, setMode] = useState<Mode>('idle');
   const [faultId, setFaultId] = useState<string | null>(null);
@@ -316,6 +319,19 @@ export function Flight() {
     };
   }, [mode, run]);
 
+  /* The command console does not re-implement the flight. It announces the
+     command and this plate — which owns the mechanism — performs it, so
+     `deploy` in the console and "Run a release" on screen are one action. */
+  useEffect(() => {
+    if (!env) return;
+    return env.bus.on('COMMAND', (event) => {
+      if (event.type !== 'COMMAND') return;
+      if (event.command === 'release:run') run(event.arg ?? null);
+      if (event.command === 'release:reset') reset();
+      if (event.command === 'release:fix' && mode === 'held') remediate();
+    });
+  }, [env, mode, remediate, reset, run]);
+
   useEffect(() => {
     if (!logOpen) return;
     const onKey = (event: KeyboardEvent) => {
@@ -360,7 +376,12 @@ export function Flight() {
   return (
     <div ref={rootRef} className={styles.root} data-phase={phase}>
       {/* ---------------- operator ---------------- */}
-      <div className={styles.operator}>
+      <div
+        className={styles.operator}
+        data-xray="security"
+        data-xray-label="Fault injection"
+        data-xray-duty="Three real gates that can refuse this release"
+      >
         <p className={styles.task}>
           <span className="u-mark">What you are doing</span>
           Sending one immutable image through the delivery gates.
@@ -402,7 +423,13 @@ export function Flight() {
       </div>
 
       {/* ---------------- mechanism ---------------- */}
-      <div ref={pointerRef} className={styles.mechanism}>
+      <div
+        ref={pointerRef}
+        className={styles.mechanism}
+        data-xray="system security"
+        data-xray-label="Release flight"
+        data-xray-duty="Nine chambers · one image, built once and promoted unchanged"
+      >
         <div ref={worksRef} className={styles.works} data-phase={phase}>
           <ol className={styles.ladder} aria-label="Release stages">
             {chambers.map((c, i) => (
@@ -433,9 +460,12 @@ export function Flight() {
             ))}
           </ol>
 
-          <span className={styles.token} aria-hidden="true">
-            <span className={styles.tokenCore} />
-            <span className={styles.tokenStamp}>AM</span>
+          {/* The release capsule seats here. The token is the dock the global
+              capsule flies to, which is why there is no second artifact drawn
+              on this plate any more — there is one release, and this is where
+              it is. */}
+          <span className={styles.token} data-capsule-seat="">
+            <CapsuleDock id="flight" />
           </span>
         </div>
 
