@@ -8,7 +8,9 @@ import './v8.css';
 import './v9.css';
 import './v10.css';
 import './performance.css';
+import './mobile.css';
 import { CommissioningIntro } from '@/components/CommissioningIntro';
+import { GamePortal } from '@/components/GamePortal';
 import { JourneyProvider } from '@/components/JourneySystem';
 import { OperatorChrome } from '@/components/OperatorChrome';
 import { ProductionFinale } from '@/components/ProductionFinale';
@@ -170,6 +172,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <OperatingEnvironment>
             <CommissioningIntro />
             {children}
+            <GamePortal />
             <OperatorChrome />
             <ReleaseCapsule />
             <XRayLayer />
