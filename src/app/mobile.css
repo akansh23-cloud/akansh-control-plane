@@ -18,6 +18,35 @@ div:has(> [role='group'][aria-label='System controls']) {
   [data-capsule-root] > button {
     pointer-events: none !important;
   }
+
+  /* The desktop Cloud Ops callout is too large to remain fixed over a portrait
+     tablet or compact laptop. Keep the destination as a 48px edge beacon. */
+  button[aria-label='Enter BLACKOUT Cloud Ops incident room'] {
+    min-width: 48px;
+    width: 48px;
+    min-height: 48px;
+    height: 48px;
+    padding: 0 !important;
+    grid-template-columns: 1fr !important;
+    place-items: center;
+    gap: 0 !important;
+    border-radius: 50%;
+    box-shadow: 0 10px 28px rgb(0 0 0 / 0.4);
+  }
+
+  button[aria-label='Enter BLACKOUT Cloud Ops incident room'] > span:nth-child(2),
+  button[aria-label='Enter BLACKOUT Cloud Ops incident room'] > span:last-child {
+    display: none !important;
+  }
+}
+
+/* At the portrait-tablet breakpoint the final two long station names collide.
+   Observability is the destination, so keep it and remove the redundant
+   Production label while retaining its tick in the physical route. */
+@media (min-width: 720px) and (max-width: 900px) {
+  #headwater ol > li:nth-child(5) > span:last-child {
+    display: none;
+  }
 }
 
 /* Compact secondary chrome before laptop widths get tight. The tap targets
@@ -83,28 +112,12 @@ div:has(> [role='group'][aria-label='System controls']) {
     text-align: left;
   }
 
-  /* Cloud Ops becomes a standard 48px floating action on phones. Keeping only
-     the beacon prevents a desktop-sized callout from following the reader over
-     every simulation, while the accessible label still names the destination. */
+  /* Phones seat the same compact Cloud Ops beacon immediately above the
+     operator rail rather than over the top identity block. */
   button[aria-label='Enter BLACKOUT Cloud Ops incident room'] {
     top: auto !important;
     right: 12px !important;
     bottom: calc(var(--rail) + 12px + env(safe-area-inset-bottom, 0px)) !important;
-    min-width: 48px;
-    width: 48px;
-    min-height: 48px;
-    height: 48px;
-    padding: 0 !important;
-    grid-template-columns: 1fr !important;
-    place-items: center;
-    gap: 0 !important;
-    border-radius: 50%;
-    box-shadow: 0 10px 28px rgb(0 0 0 / 0.46);
-  }
-
-  button[aria-label='Enter BLACKOUT Cloud Ops incident room'] > span:nth-child(2),
-  button[aria-label='Enter BLACKOUT Cloud Ops incident room'] > span:last-child {
-    display: none !important;
   }
 
   /* The Flight is allowed to carry the physical capsule, but the object is
