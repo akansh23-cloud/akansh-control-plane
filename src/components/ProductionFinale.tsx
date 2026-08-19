@@ -34,16 +34,14 @@ export function ProductionFinale() {
   const run = useJourney();
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
-  const [step, setStep] = useState(0);
-  const [playedRun, setPlayedRun] = useState(-1);
+  const [sequence, setSequence] = useState({ runId: -1, step: 0 });
 
   const open = pathname === '/' && finaleEligible(run) && !run.openingActive;
   const runId = run.runId;
-
-  if (open && playedRun !== runId) {
-    setPlayedRun(runId);
-    setStep(0);
-  }
+  /* Derive the visible step from the run identity. This prevents a completed
+     previous run from flashing step 4 for one paint while the next run's
+     effect resets the sequence, without writing React state during render. */
+  const step = sequence.runId === runId ? sequence.step : 0;
 
   const dismiss = useCallback(() => {
     run.markFinalePlayed();
@@ -52,7 +50,10 @@ export function ProductionFinale() {
   useEffect(() => {
     if (!open) return;
     const marks = reduced ? [0, 30, 60, 90, 120] : [0, 420, 1350, 2250, 3050];
-    const timers = marks.map((at, index) => window.setTimeout(() => setStep(index), at));
+    const timers = marks.map((at, index) => window.setTimeout(
+      () => setSequence({ runId, step: index }),
+      at,
+    ));
     return () => timers.forEach((timer) => window.clearTimeout(timer));
   }, [open, reduced, runId]);
 
@@ -220,7 +221,10 @@ export function ProductionFinale() {
             <span className={styles.ticketOrbitA} aria-hidden="true" />
             <span className={styles.ticketOrbitB} aria-hidden="true" />
             <span className={styles.ticketPulse} aria-hidden="true" />
-            <RunReceipt />
+            {/* Mount the physical receipt only when the verdict resolves. Its
+                own print animation used to finish behind the invisible parent
+                during steps 0–3, so visitors never saw the machine print. */}
+            {step >= 4 ? <RunReceipt key={runId} /> : null}
           </div>
         </div>
 
