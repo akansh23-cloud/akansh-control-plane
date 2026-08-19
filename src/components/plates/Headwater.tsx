@@ -63,9 +63,7 @@ export function Headwater() {
 
   const rig = useRig({
     channels: {
-      /* Scroll is positional. It must track exactly, not chase through a spring. */
       scroll: { value: 0, family: 'mechanical' },
-      /* The start sequence runs once, on arrival, and then it is over. */
       start: { value: 0, family: 'release', tau: 1.15 },
     },
     reduced,
@@ -147,7 +145,14 @@ export function Headwater() {
               <stop offset="100%" stopColor="#04191E" stopOpacity="1" />
             </linearGradient>
           </defs>
-          <g className={styles.waterMass}>
+          <g
+            style={{
+              transform: 'translate3d(0, var(--water-shift, 0%), 0)',
+              transformBox: 'view-box',
+              transformOrigin: '0 0',
+              willChange: 'transform',
+            } as React.CSSProperties}
+          >
             <path d={WATER_FILL} fill="url(#hw-water)" />
             <path
               d={WATER_LINE}
