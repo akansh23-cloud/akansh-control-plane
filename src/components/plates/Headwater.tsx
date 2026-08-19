@@ -5,7 +5,6 @@ import { barclays, contact, journey, profile, scale, site } from '@/content';
 import { disturbedSurface } from '@/lib/geometry';
 import {
   usePaint,
-  usePointerField,
   usePrefersReducedMotion,
   useReveal,
   useRig,
@@ -21,14 +20,15 @@ import styles from './Headwater.module.css';
 /**
  * PLATE 01 — HEADWATER.
  *
- * Third attempt at this block, and the first one that is actually a place.
+ * The reader begins inside the chamber: the water is the ground the masthead
+ * stands on, the gates are at either hand, and the level rises as they scroll.
+ * The surface is deliberately calm. Scroll registration is critically damped
+ * and the water carries only a slow, low-amplitude movement; it must never
+ * wobble, bounce or react like a cursor effect while somebody is reading.
  *
- * The first version was a full-screen canvas with the name floating in it. The
- * second was an honest header with a decorative water strip underneath — safe,
- * legible, and completely forgettable. This one puts the reader inside the
- * chamber: the water is the ground the masthead stands on, the gates are at
- * either hand, and the level rises as they scroll, because that is what a lock
- * does when it is working.
+ * Fine-pointer wake is owned by the global operating environment. The former
+ * local `usePointerField` water displacement is intentionally not bound here:
+ * cursor velocity must not physically shake a large water surface.
  *
  * It costs no extra page height, because the water is behind the type rather
  * than below it. The name floods in from the bottom on arrival. The level is
@@ -59,16 +59,11 @@ export function Headwater() {
     channels: {
       /* Where the surface sits, 0 (top of the block) … 1 (bottom). */
       level: { value: 0.79, family: 'hydraulic' },
-      /* Scroll through the block, 0…1, written by a passive listener. */
-      scroll: { value: 0, family: 'hydraulic', tau: 0.22 },
-      /* The start sequence. It runs once, on arrival, and then it is over —
-         an artifact crossing the works and settling at a healthy level. It is
-         deliberately not a loop: a hero that keeps restarting is a hero that
-         keeps asking to be looked at while somebody is trying to read. */
+      /* Scroll registration is positional, not fluid momentum. Critical
+         damping prevents the surface from overshooting when direction changes. */
+      scroll: { value: 0, family: 'mechanical', tau: 0.12 },
+      /* The start sequence runs once, on arrival, and then it is over. */
       start: { value: 0, family: 'release', tau: 1.15 },
-      pointerX: { value: 0.5, family: 'mechanical' },
-      pointerV: { value: 0, family: 'mechanical' },
-      pointerIn: { value: 0, family: 'mechanical' },
     },
     reduced,
     tier,
@@ -84,28 +79,30 @@ export function Headwater() {
   useWatch(rig, (r) => r.get('start'), 0.94, 'up', () => setArrived(true));
 
   /* Reduced motion has no sequence to finish, so the works are simply already
-     started: the same end state, reached without the journey. Derived rather
-     than pushed into state by an effect. */
+     started: the same end state, reached without the journey. */
   const settled = arrived || reduced;
 
-  const scrollRef = useScrollChannel<HTMLElement>(rig, 'scroll');
-  const pointerRef = usePointerField(rig);
+  const scrollRef = useScrollChannel<HTMLElement>(rig, 'scroll', {
+    family: 'mechanical',
+    tau: 0.12,
+  });
   const revealRef = useReveal<HTMLDivElement>({ margin: '0px' });
 
-  /* Surface resolution is a device decision, not a design one. */
+  /* Surface resolution is intentionally modest. The visual is a large body of
+     water, not a waveform demo, and lower sampling cuts SVG path work sharply. */
   const samples =
     tier === 'calm'
-      ? 14
+      ? 10
       : viewport === 'mobile'
-        ? 24
+        ? 12
         : viewport === 'tablet'
-          ? 34
-          : 48;
+          ? 18
+          : 24;
 
-  /* The chamber fills as the reader descends: the surface starts low under the
-     masthead and climbs toward the gate sill by the time they leave. */
+  /* The chamber fills as the reader descends. The travel is slightly reduced
+     so fast scrolls do not make the entire hero appear to heave. */
   const surfaceLevel = (r: import('@/lib/motion').Rig) =>
-    r.reduced ? 0.78 : 0.79 - r.get('scroll') * 0.5;
+    r.reduced ? 0.78 : 0.79 - r.get('scroll') * 0.44;
 
   const surface = (r: import('@/lib/motion').Rig, close: boolean) =>
     disturbedSurface({
@@ -113,12 +110,10 @@ export function Headwater() {
       width: VB_W,
       surfaceY: surfaceLevel(r) * VB_H,
       bottomY: VB_H,
-      t: r.time,
-      amp: 7,
-      wavelength: 460,
+      t: r.time * 0.22,
+      amp: 1.8,
+      wavelength: 620,
       samples,
-      pointer: r.get('pointerX'),
-      pointerAmp: r.get('pointerIn') * (4 + r.get('pointerV') * 16),
       close,
     });
 
@@ -163,7 +158,6 @@ export function Headwater() {
       ref={(node) => {
         rootRef(node);
         scrollRef(node);
-        pointerRef(node);
       }}
       className={styles.root}
     >

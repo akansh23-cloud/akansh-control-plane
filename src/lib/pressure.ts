@@ -5,19 +5,18 @@
  * puts the water behind the gate under pressure, and opening it again releases
  * that pressure as a pulse that arrives downstream a beat later.
  *
- * This is the smallest honest model of that, and it is what makes V10 feel
- * causal rather than decorated. Four numbers, published once on the document
- * element as CSS custom properties, which every plate can read without a
- * listener, a render, or a second animation loop:
+ * Four numbers are published on the document element as CSS custom properties
+ * so every plate can read the same semantic system state without a render or a
+ * second animation loop:
  *
  *   --sys-pressure    0…1  how much is being held back
  *   --sys-flow        0…1  how fast the system is moving
  *   --sys-turbulence  0…1  how disturbed it is
  *   --sys-energy      0…1  the delayed downstream consequence
  *
- * Inputs are scroll velocity and lifecycle events. There is no ambient random
- * motion anywhere in it: with no scrolling and no run, all four settle to
- * their resting values and the rig stops taking frames entirely.
+ * Ordinary document scrolling is deliberately not fluid turbulence. The
+ * pressure model now reacts only to lifecycle/system events; scroll-linked
+ * registration is handled by the components that actually follow the page.
  */
 
 import type { SystemBus, SystemEvent } from './events';
@@ -36,17 +35,13 @@ export class PressureModel {
   readonly rig: Rig;
 
   private held = false;
-  private scrollDecay = 0;
   private released: (() => void)[] = [];
 
   constructor() {
     this.rig = new Rig({
-      /* Water carries momentum and settles late. */
       pressure: { value: REST.pressure, family: 'hydraulic' },
-      flow: { value: REST.flow, family: 'hydraulic' },
-      /* Disturbance is quick to appear and quick to go. */
+      flow: { value: REST.flow, family: 'mechanical' },
       turbulence: { value: 0, family: 'mechanical' },
-      /* The downstream consequence arrives after the cause. */
       energy: { value: REST.energy, family: 'hydraulic' },
     });
   }
@@ -79,27 +74,19 @@ export class PressureModel {
   /* ---------------------------------------------------------------- */
 
   /**
-   * Scroll is an input to the world, never a hijack of it. Fast scrolling
-   * briefly raises flow and turbulence; stopping lets both settle.
+   * Scroll moves the reader through the works; it is not a fault and it does
+   * not create turbulence. Keeping this hook makes the environment wiring
+   * stable while preventing ordinary scrolling from pumping the whole page.
    */
   scrolled(velocity: number) {
-    const v = Math.min(1, Math.abs(velocity));
-    if (v < 0.02) return;
-    this.rig.set('flow', clamp(REST.flow + v * 0.62, 0, 1), 'hydraulic');
-    this.rig.set('turbulence', Math.min(0.5, v * 0.45), 'mechanical', 0.14);
-    if (!this.held) {
-      this.rig.set('pressure', clamp(REST.pressure + v * 0.22, 0, 1), 'hydraulic');
-    }
-
-    window.clearTimeout(this.scrollDecay);
-    this.scrollDecay = window.setTimeout(() => this.settle(), 260);
+    void velocity;
   }
 
   /** Everything returns to rest unless something is holding it. */
   settle() {
-    this.rig.set('flow', this.held ? 0.05 : REST.flow, 'hydraulic');
-    this.rig.set('turbulence', this.held ? 0.28 : 0, 'mechanical');
-    if (!this.held) this.rig.set('pressure', REST.pressure, 'hydraulic');
+    this.rig.set('flow', this.held ? 0.05 : REST.flow, 'mechanical', 0.28);
+    this.rig.set('turbulence', this.held ? 0.28 : 0, 'mechanical', 0.22);
+    if (!this.held) this.rig.set('pressure', REST.pressure, 'recovery', 0.48);
   }
 
   /** A gate closed. Upstream pressure builds while flow is cut off. */
@@ -107,53 +94,51 @@ export class PressureModel {
     this.held = true;
     this.rig.set('pressure', 0.94, 'hydraulic', 1.5);
     this.rig.set('flow', 0.05, 'failure');
-    this.rig.set('turbulence', 0.34, 'mechanical');
+    this.rig.set('turbulence', 0.28, 'mechanical', 0.18);
     this.rig.set('energy', 0.06, 'hydraulic');
   }
 
   /**
-   * A gate reopened. The held pressure is released as a pulse that reaches
-   * downstream *after* the flow moves, which is the whole point: cause first,
-   * consequence second, visibly separated in time.
+   * A gate reopened. The system responds firmly but without an artificial
+   * velocity kick. The downstream energy still arrives after the cause.
    */
   release() {
     this.held = false;
-    this.rig.set('pressure', REST.pressure, 'recovery');
-    this.rig.set('flow', 0.86, 'release');
-    this.rig.impulse('flow', 1.4);
-    this.rig.set('turbulence', 0.52, 'mechanical');
+    this.rig.set('pressure', REST.pressure, 'recovery', 0.48);
+    this.rig.set('flow', 0.72, 'mechanical', 0.2);
+    this.rig.set('turbulence', 0.2, 'mechanical', 0.16);
 
     window.setTimeout(() => {
-      this.rig.set('energy', 0.92, 'release');
-      this.rig.set('turbulence', 0, 'mechanical');
+      this.rig.set('energy', 0.86, 'release');
+      this.rig.set('turbulence', 0, 'mechanical', 0.24);
     }, 220);
     window.setTimeout(() => {
-      this.rig.set('flow', REST.flow, 'hydraulic');
-      this.rig.set('energy', 0.34, 'hydraulic');
-    }, 1100);
+      this.rig.set('flow', REST.flow, 'mechanical', 0.34);
+      this.rig.set('energy', 0.34, 'recovery', 0.48);
+    }, 900);
   }
 
   /** A short directed surge — a release moving, a request dispatched. */
   surge(strength = 0.6) {
-    this.rig.set('flow', clamp(0.4 + strength * 0.5, 0, 1), 'release');
-    this.rig.impulse('flow', strength);
-    window.setTimeout(() => this.settle(), 900);
+    const s = clamp(strength, 0, 1);
+    this.rig.set('flow', clamp(0.3 + s * 0.38, 0, 1), 'mechanical', 0.18);
+    window.setTimeout(() => this.settle(), 620);
   }
 
   /** The system is running steadily and telemetry is live. */
   operational() {
     this.held = false;
-    this.rig.set('pressure', 0.42, 'recovery');
-    this.rig.set('flow', 0.5, 'hydraulic');
-    this.rig.set('energy', 0.72, 'hydraulic');
-    this.rig.set('turbulence', 0, 'mechanical');
+    this.rig.set('pressure', 0.42, 'recovery', 0.56);
+    this.rig.set('flow', 0.48, 'mechanical', 0.3);
+    this.rig.set('energy', 0.72, 'recovery', 0.52);
+    this.rig.set('turbulence', 0, 'mechanical', 0.24);
   }
 
-  /** Something is degraded. Pressure is uneven rather than high. */
+  /** Something is degraded. Pressure changes; disturbance is event-driven. */
   disturb() {
-    this.rig.set('turbulence', 0.66, 'mechanical');
-    this.rig.set('pressure', 0.58, 'hydraulic');
-    this.rig.set('energy', 0.24, 'hydraulic');
+    this.rig.set('turbulence', 0.58, 'mechanical', 0.16);
+    this.rig.set('pressure', 0.56, 'recovery', 0.42);
+    this.rig.set('energy', 0.24, 'recovery', 0.42);
   }
 
   reset() {
@@ -231,7 +216,6 @@ export class PressureModel {
   }
 
   dispose() {
-    window.clearTimeout(this.scrollDecay);
     this.released.forEach((off) => off());
     this.released = [];
   }
