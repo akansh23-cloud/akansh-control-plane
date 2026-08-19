@@ -23,6 +23,112 @@
     max-width: 100%;
   }
 
+  /* Fixed operator chrome must never consume a phantom third row on phones.
+     SystemStrip is removed from grid flow and seats inside the right side of
+     the second row. This keeps the bar at the 94px height reserved above. */
+  div:has(> [role='group'][aria-label='System controls']) {
+    position: relative;
+  }
+
+  div:has(> [role='group'][aria-label='System controls']) > [role='group'][aria-label='System controls'] {
+    position: absolute;
+    right: 6px;
+    bottom: max(2px, env(safe-area-inset-bottom, 0px));
+    z-index: 3;
+    height: 44px;
+    background: color-mix(in oklab, var(--void) 98%, var(--water-900));
+  }
+
+  div:has(> [role='group'][aria-label='System controls']) > button:last-child {
+    padding-right: 188px;
+    justify-content: flex-start;
+    justify-items: start;
+    text-align: left;
+  }
+
+  /* Cloud Ops stays reachable without sitting on top of chapter controls.
+     On phones it becomes a compact launch beacon parked just above the one
+     fixed operator layer. Desktop keeps the full labelled portal. */
+  button[aria-label='Enter BLACKOUT Cloud Ops incident room'] {
+    top: auto !important;
+    right: 10px !important;
+    bottom: calc(var(--rail) + 10px + env(safe-area-inset-bottom, 0px));
+    min-width: 66px;
+    width: auto;
+    min-height: 44px;
+    padding: 7px 9px !important;
+    grid-template-columns: auto auto !important;
+    box-shadow: 0 10px 28px rgb(0 0 0 / 0.46);
+  }
+
+  button[aria-label='Enter BLACKOUT Cloud Ops incident room'] > span:nth-child(2) strong {
+    font-size: 0 !important;
+  }
+
+  button[aria-label='Enter BLACKOUT Cloud Ops incident room'] > span:nth-child(2) strong::after {
+    content: 'OPS';
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+  }
+
+  button[aria-label='Enter BLACKOUT Cloud Ops incident room'] > span:nth-child(2) small,
+  button[aria-label='Enter BLACKOUT Cloud Ops incident room'] > span:last-child {
+    display: none !important;
+  }
+
+  /* The Flight is a vertical machine on phones. Its water layer is positioned,
+     so the static labels used to be painted underneath it and disappeared.
+     Raise the labels above the water and compact the nine chambers slightly. */
+  #flight ol[aria-label='Release stages'] > li[data-kind][data-state] {
+    height: 42px !important;
+    min-height: 42px;
+  }
+
+  #flight ol[aria-label='Release stages'] > li[data-kind][data-state] > span:last-child {
+    position: relative !important;
+    z-index: 2;
+    min-width: 0;
+    color: var(--bone);
+  }
+
+  #flight ol[aria-label='Release stages'] > li[data-kind][data-state] > span:last-child span {
+    position: relative;
+    z-index: 2;
+  }
+
+  /* Generic hardening for the remaining engineering views. Large technical
+     payloads may scroll inside their own surface but may never widen the page. */
+  main pre,
+  main code {
+    max-width: 100%;
+    overflow-wrap: normal;
+  }
+
+  main pre {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  main table {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  main svg,
+  main canvas {
+    max-width: 100%;
+  }
+
+  main button,
+  main input,
+  main select,
+  main textarea {
+    min-width: 0;
+  }
+
   /* Recruiter-scale facts must read as facts, not compressed desktop rows. */
   #headwater header dl {
     width: 100%;
@@ -79,5 +185,9 @@
 
   #headwater h1 {
     font-size: clamp(2.8rem, 16vw, 3.75rem);
+  }
+
+  div:has(> [role='group'][aria-label='System controls']) > button:last-child {
+    padding-right: 180px;
   }
 }
