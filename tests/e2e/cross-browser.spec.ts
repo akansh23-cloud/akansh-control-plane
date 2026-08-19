@@ -16,10 +16,23 @@ test.describe('Cross-browser Lockworks contract', () => {
       await expect(page.locator('#key-plate')).toBeHidden();
     }
 
-    await lowerBar.getByRole('button', { name: /^Recruiter\b/i }).click();
-    await expect(html).toHaveAttribute('data-depth', 'recruiter');
-    await lowerBar.getByRole('button', { name: /^Engineer\b/i }).click();
-    await expect(html).toHaveAttribute('data-depth', 'engineer');
+    const width = await page.evaluate(() => window.innerWidth);
+    if (width <= 719) {
+      await indexButton.click();
+      const index = page.locator('#key-plate');
+      await expect(index).toBeVisible();
+      await index.getByRole('button', { name: /^Recruiter\b/i }).click();
+      await expect(html).toHaveAttribute('data-depth', 'recruiter');
+      await index.getByRole('button', { name: /^Engineer\b/i }).click();
+      await expect(html).toHaveAttribute('data-depth', 'engineer');
+      await indexButton.click();
+      await expect(index).toBeHidden();
+    } else {
+      await lowerBar.getByRole('button', { name: /^Recruiter\b/i }).click();
+      await expect(html).toHaveAttribute('data-depth', 'recruiter');
+      await lowerBar.getByRole('button', { name: /^Engineer\b/i }).click();
+      await expect(html).toHaveAttribute('data-depth', 'engineer');
+    }
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(1);
@@ -49,7 +62,11 @@ test.describe('Cross-browser Lockworks contract', () => {
     ).toBe('seen');
 
     const opening = page.getByRole('dialog', { name: 'Commissioning the Lockworks' });
-    await page.getByRole('button', { name: 'Replay opening' }).click();
+    const indexButton = page.locator('button[aria-controls="key-plate"]');
+    await indexButton.click();
+    const index = page.locator('#key-plate');
+    await expect(index).toBeVisible();
+    await index.getByRole('button', { name: 'Replay opening' }).click();
     await expect(opening).toBeVisible();
     await page.getByRole('button', { name: 'Skip opening' }).click();
     await expect(opening).toBeHidden();
