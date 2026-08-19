@@ -10,14 +10,14 @@ import {
   useVars,
 } from '@/lib/motion';
 import styles from './Waterway.module.css';
+import motion from './WaterwayMotion.module.css';
 
 /**
  * THE CONTINUOUS SYSTEM JOURNEY.
  *
- * This rail is a position indicator, not simulated fluid. Scroll already owns
- * the position, so the rail must follow it exactly instead of chasing it with a
- * spring. The shared runtime still owns the paint; scroll simply teleports the
- * channel to the latest position and the next shared frame composites it.
+ * Scroll owns position and tracks directly. A separate CSS-only current runs
+ * inside the filled rail so the system still feels alive when the user stops
+ * scrolling, without reintroducing spring lag or per-frame layout work.
  */
 export function Waterway() {
   const reduced = usePrefersReducedMotion();
@@ -113,7 +113,7 @@ export function Waterway() {
       data-run-phase={run.phase}
     >
       <span className={styles.channel} />
-      <span className={styles.fill} />
+      <span className={`${styles.fill} ${motion.flowing}`} />
       <span className={styles.backPressure} />
       <span className={styles.craft} data-artifact={run.artifact} />
       <span className={styles.artifactTag}>{run.artifact}</span>
