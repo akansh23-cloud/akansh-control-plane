@@ -4,8 +4,14 @@ import { expect, test, type Page, type TestInfo } from '@playwright/test';
 const routes = ['/', '/resume', '/cloud-ops'] as const;
 const plateIds = ['headwater', 'flight', 'refit', 'basin', 'split', 'gauges', 'watch', 'vault', 'tidewater'] as const;
 
+type Rect = { left: number; right: number; top: number; bottom: number };
+
 function safeName(value: string) {
   return value.replace(/[^a-z0-9-]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase();
+}
+
+function overlaps(a: Rect, b: Rect) {
+  return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
 }
 
 async function settle(page: Page) {
@@ -69,6 +75,7 @@ test.describe('Responsive device contract', () => {
       const barRect = barNode?.getBoundingClientRect();
       const portalRect = portalNode?.getBoundingClientRect();
       const capsuleRect = capsuleNode?.getBoundingClientRect();
+      const capsuleStyle = capsuleNode ? getComputedStyle(capsuleNode) : null;
       return {
         width: window.innerWidth,
         height: window.innerHeight,
@@ -76,6 +83,15 @@ test.describe('Responsive device contract', () => {
         bar: barRect ? { left: barRect.left, right: barRect.right, top: barRect.top, bottom: barRect.bottom, height: barRect.height } : null,
         portal: portalRect ? { left: portalRect.left, right: portalRect.right, top: portalRect.top, bottom: portalRect.bottom } : null,
         capsule: capsuleRect ? { left: capsuleRect.left, right: capsuleRect.right, top: capsuleRect.top, bottom: capsuleRect.bottom } : null,
+        capsuleVisible: Boolean(
+          capsuleRect &&
+          capsuleStyle &&
+          capsuleStyle.display !== 'none' &&
+          capsuleStyle.visibility !== 'hidden' &&
+          Number(capsuleStyle.opacity || '1') > 0 &&
+          capsuleRect.width > 0 &&
+          capsuleRect.height > 0
+        ),
       };
     });
 
@@ -92,15 +108,15 @@ test.describe('Responsive device contract', () => {
       expect.soft(chrome.portal.right, 'Cloud Ops launcher right edge').toBeLessThanOrEqual(chrome.width + 1);
       expect.soft(chrome.portal.top, 'Cloud Ops launcher top edge').toBeGreaterThanOrEqual(-1);
       expect.soft(chrome.portal.bottom, 'Cloud Ops launcher bottom edge').toBeLessThanOrEqual(chrome.height + 1);
+      if (chrome.bar) {
+        expect.soft(overlaps(chrome.portal, chrome.bar), 'Cloud Ops launcher must not overlap operator chrome').toBeFalsy();
+      }
     }
-    if (chrome.width <= 719 && chrome.portal && chrome.capsule) {
-      const portalCapsuleOverlap = !(
-        chrome.portal.right <= chrome.capsule.left ||
-        chrome.portal.left >= chrome.capsule.right ||
-        chrome.portal.bottom <= chrome.capsule.top ||
-        chrome.portal.top >= chrome.capsule.bottom
-      );
-      expect.soft(portalCapsuleOverlap, 'mobile Cloud Ops launcher must not overlap the release capsule').toBeFalsy();
+    if (chrome.capsuleVisible && chrome.capsule && chrome.bar) {
+      expect.soft(overlaps(chrome.capsule, chrome.bar), 'visible release capsule must not overlap operator chrome').toBeFalsy();
+    }
+    if (chrome.width <= 719 && chrome.capsuleVisible && chrome.portal && chrome.capsule) {
+      expect.soft(overlaps(chrome.portal, chrome.capsule), 'mobile Cloud Ops launcher must not overlap the visible release capsule').toBeFalsy();
     }
 
     if (chrome.width <= 719) {
