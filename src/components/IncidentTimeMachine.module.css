@@ -14,6 +14,7 @@
   border: 1px solid var(--edge);
   border-radius: 3px;
   background: color-mix(in oklab, var(--panel) 62%, transparent);
+  min-width: 0;
 }
 
 .head {
@@ -22,6 +23,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--s-4);
+  min-width: 0;
 }
 
 .prompt {
@@ -59,6 +61,7 @@
 .scrubber {
   position: relative;
   padding-bottom: 22px;
+  min-width: 0;
 }
 
 .range {
@@ -117,6 +120,7 @@
   position: absolute;
   inset: auto 0 0 0;
   height: 18px;
+  overflow: hidden;
 }
 
 .tick {
@@ -129,6 +133,10 @@
   white-space: nowrap;
 }
 
+/* Keep endpoint labels inside the scrubber instead of letting the 0%/100%
+   ticks protrude into the page gutter and create horizontal overflow. */
+.tick:first-child { transform: translateX(0); }
+.tick:last-child { transform: translateX(-100%); }
 .tick[data-major] { color: var(--signal); }
 
 .caption {
@@ -146,7 +154,8 @@
 .signals {
   display: grid;
   gap: var(--s-3);
-  grid-template-columns: repeat(auto-fit, minmax(226px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(226px, 100%), 1fr));
+  min-width: 0;
 }
 
 .signal {
@@ -157,6 +166,7 @@
   border-radius: 2px;
   background: color-mix(in oklab, var(--void) 34%, transparent);
   transition: border-color var(--t-quick) var(--ease-gear);
+  min-width: 0;
 }
 
 .signal[data-moved] { border-color: color-mix(in oklab, var(--hold) 46%, transparent); }
@@ -167,6 +177,7 @@
   align-items: baseline;
   justify-content: space-between;
   gap: var(--s-2);
+  min-width: 0;
 }
 
 .signalName {
@@ -266,4 +277,6 @@
 @media (max-width: 719px) {
   .root { padding: var(--s-3); }
   .clock { justify-items: start; text-align: left; }
+  .signalHead { align-items: flex-start; }
+  .signalValue { flex: 0 0 auto; }
 }
