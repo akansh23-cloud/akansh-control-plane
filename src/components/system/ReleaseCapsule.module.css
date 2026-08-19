@@ -1,12 +1,6 @@
 /* =====================================================================
    THE RELEASE CAPSULE
-
-   Machined graphite, not a glowing orb. The shell is a flat dark body with a
-   bright chamfer on the light side and a cast shadow underneath, so it reads
-   as a solid object sitting in the drawing rather than a sticker on top of it.
-
-   Every animated property here is a transform or an opacity. Position comes in
-   as --cap-x / --cap-y, written per frame by the runtime.
+   Dock-relative movement, composited as one layer. No moving blur/filter pass.
    ===================================================================== */
 
 .root {
@@ -14,16 +8,14 @@
   top: 0;
   left: 0;
   z-index: 92;
-  width: var(--cap-w, 132px);
-  height: var(--cap-h, 64px);
+  width: var(--cap-w, 144px);
+  height: var(--cap-h, 70px);
   transform: translate3d(var(--cap-x, 50vw), var(--cap-y, 60vh), 0);
   pointer-events: none;
   will-change: transform;
-  contain: layout style;
+  contain: layout paint style;
 }
 
-/* While the works are being commissioned or the finale owns the screen, the
-   capsule is drawn by those sequences instead. */
 :global(html[data-opening='commissioning']) .root,
 :global(body:has([role='dialog'][aria-labelledby='production-finale-title'])) .root {
   opacity: 0;
@@ -36,47 +28,66 @@
   width: 100%;
   height: 100%;
   padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
   pointer-events: auto;
   cursor: pointer;
-  filter:
-    drop-shadow(0 10px 18px rgb(2 8 10 / 0.55))
-    drop-shadow(0 1px 0 rgb(242 239 230 / 0.06));
-  transition: transform var(--t-quick) var(--ease-gear);
+  box-shadow:
+    0 12px 24px rgb(2 8 10 / 0.34),
+    0 2px 4px rgb(2 8 10 / 0.34),
+    inset 0 1px 0 rgb(242 239 230 / 0.04);
+  transform: translateZ(0);
+  transition:
+    transform 150ms var(--ease-gear),
+    box-shadow 180ms var(--ease-gear);
 }
 
-.body:hover { transform: translateY(-2px); }
-.body:active { transform: translateY(1px); }
+.body:hover {
+  transform: translate3d(0, -2px, 0);
+  box-shadow:
+    0 14px 28px rgb(2 8 10 / 0.38),
+    0 3px 6px rgb(2 8 10 / 0.32),
+    inset 0 1px 0 rgb(242 239 230 / 0.06);
+}
+
+.body:active { transform: translate3d(0, 1px, 0); }
+.body:focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; }
 
 .shell {
+  display: block;
   width: 100%;
   height: 100%;
   overflow: visible;
 }
 
-/* --- the machined body ---------------------------------------------- */
-
-/* Flat machined graphite. The chamfer does the lighting, not a gradient. */
-.hull { fill: #16252a; }
+.hull { fill: url(#capsule-shell); }
 
 .hullEdge {
   fill: none;
-  stroke: color-mix(in oklab, var(--bone) 34%, transparent);
-  stroke-width: 1.1;
+  stroke: color-mix(in oklab, var(--bone) 38%, transparent);
+  stroke-width: 1.15;
+}
+
+.chamfer {
+  fill: none;
+  stroke: color-mix(in oklab, var(--water-100) 16%, var(--bone) 12%);
+  stroke-width: 0.75;
+  stroke-linecap: square;
 }
 
 .lugs rect {
   fill: #21343a;
-  stroke: color-mix(in oklab, var(--bone) 22%, transparent);
+  stroke: color-mix(in oklab, var(--bone) 24%, transparent);
   stroke-width: 0.8;
   transition: fill var(--t-quick) var(--ease-gear);
 }
 
-/* Seated in a chamber: the lugs engage. */
-.root[data-tone='ok'] .lugs rect { fill: color-mix(in oklab, var(--live) 40%, #21343a); }
-.root[data-tone='fault'] .lugs rect { fill: color-mix(in oklab, var(--fault) 40%, #21343a); }
+.root[data-tone='ok'] .lugs rect { fill: color-mix(in oklab, var(--live) 38%, #21343a); }
+.root[data-tone='fault'] .lugs rect { fill: color-mix(in oklab, var(--fault) 38%, #21343a); }
 
 .ribs path {
-  stroke: color-mix(in oklab, var(--bone) 12%, transparent);
+  stroke: color-mix(in oklab, var(--bone) 13%, transparent);
   stroke-width: 1;
   fill: none;
 }
@@ -91,7 +102,11 @@
 .root[data-tone='fault'] .strip { fill: var(--fault); }
 .root[data-tone='ok'] .strip { fill: var(--live); }
 
-/* --- etched plate ---------------------------------------------------- */
+.plateWell {
+  fill: rgb(4 15 18 / 0.54);
+  stroke: color-mix(in oklab, var(--bone) 12%, transparent);
+  stroke-width: 0.7;
+}
 
 .plate text {
   font-family: var(--font-data);
@@ -100,42 +115,36 @@
 }
 
 .etchTitle {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 10.5px;
+  font-weight: 650;
   fill: var(--bone);
 }
 
 .etchBuild {
-  font-size: 9.5px;
-  fill: var(--muted);
-  letter-spacing: 0.1em;
+  font-size: 9px;
+  fill: var(--water-100);
+  letter-spacing: 0.11em;
 }
-
-/* --- indicators ------------------------------------------------------ */
 
 .lamps circle {
   fill: #0d181b;
   stroke: color-mix(in oklab, var(--bone) 20%, transparent);
   stroke-width: 0.8;
-  transition: fill 180ms var(--ease-gear);
+  transition: fill 150ms var(--ease-gear);
 }
 
-/* Status LEDs never change together — a real panel settles in sequence. */
-.root[data-tone='work'] .lampA { fill: var(--water-300); transition-delay: 0ms; }
-.root[data-tone='work'] .lampB { fill: color-mix(in oklab, var(--water-300) 55%, #0d181b); transition-delay: 90ms; }
-
-.root[data-tone='hold'] .lampA { fill: var(--hold); }
-.root[data-tone='hold'] .lampB { fill: var(--hold); transition-delay: 110ms; }
-
-.root[data-tone='fault'] .lampA { fill: var(--fault); }
-.root[data-tone='fault'] .lampB { fill: var(--fault); transition-delay: 70ms; }
-.root[data-tone='fault'] .lampC { fill: var(--fault); transition-delay: 140ms; }
-
-.root[data-tone='ok'] .lampA { fill: var(--live); }
-.root[data-tone='ok'] .lampB { fill: var(--live); transition-delay: 100ms; }
-.root[data-tone='ok'] .lampC { fill: var(--live); transition-delay: 200ms; }
-
-/* --- accumulated history --------------------------------------------- */
+.root[data-tone='work'] .lampA { fill: var(--water-300); }
+.root[data-tone='work'] .lampB { fill: color-mix(in oklab, var(--water-300) 55%, #0d181b); transition-delay: 70ms; }
+.root[data-tone='hold'] .lampA,
+.root[data-tone='hold'] .lampB { fill: var(--hold); }
+.root[data-tone='fault'] .lampA,
+.root[data-tone='fault'] .lampB,
+.root[data-tone='fault'] .lampC { fill: var(--fault); }
+.root[data-tone='ok'] .lampA,
+.root[data-tone='ok'] .lampB,
+.root[data-tone='ok'] .lampC { fill: var(--live); }
+.root[data-tone='ok'] .lampB { transition-delay: 70ms; }
+.root[data-tone='ok'] .lampC { transition-delay: 140ms; }
 
 .stamps path {
   fill: none;
@@ -147,59 +156,49 @@
 
 .stampWarn { stroke: var(--hold); }
 .stampSeal { stroke: var(--live); }
-
 .root[data-warned] .stampWarn { opacity: 0.9; }
 .root[data-cleared] .stampWarn { opacity: 0.35; }
 .root[data-sealed] .stampSeal { opacity: 0.9; }
 
-/* --- the scan sweep --------------------------------------------------- */
-
-/* Only exists while the capsule is actually being scanned. There is no
-   ambient shimmer anywhere on this object. */
 .scan {
   position: absolute;
-  inset: 8% 6%;
+  inset: 9% 7%;
   pointer-events: none;
   opacity: 0;
   background: linear-gradient(
     90deg,
     transparent 0%,
-    color-mix(in oklab, var(--water-100) 40%, transparent) 50%,
+    color-mix(in oklab, var(--water-100) 34%, transparent) 50%,
     transparent 100%
   );
-  mix-blend-mode: screen;
 }
 
 .root[data-status='scanning'] .scan {
   opacity: 1;
-  animation: capsule-scan 1.5s var(--ease-water) infinite;
+  animation: capsule-scan 1.25s var(--ease-release) infinite;
 }
 
 @keyframes capsule-scan {
-  0% { transform: translateX(-60%); opacity: 0; }
-  30% { opacity: 0.8; }
-  100% { transform: translateX(60%); opacity: 0; }
+  0% { transform: translate3d(-65%, 0, 0); opacity: 0; }
+  34% { opacity: 0.68; }
+  100% { transform: translate3d(65%, 0, 0); opacity: 0; }
 }
 
-/* Refusal: the body is shoved back and held. */
 .root[data-status='blocked'] .body {
-  transform: translateX(calc(var(--cap-refuse, 0) * -6px));
+  transform: translate3d(calc(var(--cap-refuse, 0) * -4px), 0, 0);
 }
-
-/* --- inspection tag --------------------------------------------------- */
 
 .tag {
   position: absolute;
   right: calc(100% + 12px);
   top: 50%;
-  transform: translateY(-50%);
+  transform: translate3d(0, -50%, 0);
   width: max-content;
   max-width: 300px;
   padding: 10px 14px;
-  background: color-mix(in oklab, var(--void) 92%, transparent);
+  background: color-mix(in oklab, var(--void) 96%, transparent);
   border: 1px solid var(--edge);
   border-radius: 3px;
-  backdrop-filter: blur(6px);
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--t-quick) var(--ease-gear);
@@ -256,10 +255,7 @@
   padding-top: 8px;
 }
 
-.tagRecord div {
-  display: grid;
-  gap: 1px;
-}
+.tagRecord div { display: grid; gap: 1px; }
 
 .tagRecord dt {
   font-family: var(--font-data);
@@ -274,10 +270,6 @@
   color: var(--bone-2);
 }
 
-/* --- docks ------------------------------------------------------------ */
-
-/* A dock is a seat, drawn faintly so the reader can see where the release is
-   going before it arrives. It occupies real layout space in its plate. */
 .dock {
   position: relative;
   width: 100%;
@@ -310,14 +302,10 @@
   color: var(--muted-2);
 }
 
-/* --- reduced motion --------------------------------------------------- */
-
 @media (prefers-reduced-motion: reduce) {
   .root[data-status='scanning'] .scan { animation: none; opacity: 0.4; }
   .body { transition: none; }
 }
-
-/* --- small screens ----------------------------------------------------- */
 
 @media (max-width: 719px) {
   .tag {
@@ -325,7 +313,7 @@
     left: 50%;
     top: auto;
     bottom: calc(100% + 10px);
-    transform: translateX(-50%);
+    transform: translate3d(-50%, 0, 0);
     max-width: min(72vw, 280px);
   }
 
