@@ -1,0 +1,42 @@
+/* Runtime performance guardrails.
+   Content must never disappear while IntersectionObserver or the main motion
+   scheduler catches up during a fast scroll. Motion is progressive enhancement;
+   readable content is the invariant. */
+
+[data-reveal='out'] {
+  opacity: 1 !important;
+  transform: none !important;
+  filter: none !important;
+}
+
+/* Fixed, viewport-sized painted backgrounds are disproportionately expensive
+   on tablets/phones and can produce checkerboarding while rapidly reversing
+   scroll direction. Keep the same artwork but attach it to the document. */
+@media (max-width: 1179px) {
+  body {
+    background-attachment: scroll !important;
+  }
+
+  .paper-grain {
+    display: none !important;
+  }
+}
+
+/* Large interactive drawings are independent paint regions. Containment stops
+   a changing gauge/trace from invalidating neighbouring chapters. */
+main section[id] {
+  contain: layout style paint;
+}
+
+/* The persistent controls and capsule are their own compositor surfaces. */
+[class*='OperatorChrome-module__'][class*='__root'],
+[data-capsule-root] {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+  }
+}
