@@ -10,6 +10,13 @@ function safeName(value: string) {
 
 async function settle(page: Page) {
   await page.waitForLoadState('domcontentloaded');
+
+  if (new URL(page.url()).pathname === '/cloud-ops') {
+    const commissioning = page.getByRole('status', { name: 'Commissioning the BLACKOUT incident room' });
+    await commissioning.waitFor({ state: 'visible', timeout: 1_000 }).catch(() => undefined);
+    await commissioning.waitFor({ state: 'detached', timeout: 4_000 }).catch(() => undefined);
+  }
+
   await page.evaluate(async () => {
     if ('fonts' in document) await document.fonts.ready;
     await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
@@ -58,14 +65,17 @@ test.describe('Responsive device contract', () => {
       const index = document.querySelector<HTMLButtonElement>('button[aria-controls="key-plate"]');
       const barNode = index?.parentElement;
       const portalNode = document.querySelector<HTMLButtonElement>('button[aria-label="Enter BLACKOUT Cloud Ops incident room"]');
+      const capsuleNode = document.querySelector<HTMLElement>('[data-capsule-root]');
       const barRect = barNode?.getBoundingClientRect();
       const portalRect = portalNode?.getBoundingClientRect();
+      const capsuleRect = capsuleNode?.getBoundingClientRect();
       return {
         width: window.innerWidth,
         height: window.innerHeight,
         rail: Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--rail')) || 0,
         bar: barRect ? { left: barRect.left, right: barRect.right, top: barRect.top, bottom: barRect.bottom, height: barRect.height } : null,
         portal: portalRect ? { left: portalRect.left, right: portalRect.right, top: portalRect.top, bottom: portalRect.bottom } : null,
+        capsule: capsuleRect ? { left: capsuleRect.left, right: capsuleRect.right, top: capsuleRect.top, bottom: capsuleRect.bottom } : null,
       };
     });
 
@@ -75,15 +85,31 @@ test.describe('Responsive device contract', () => {
       expect.soft(chrome.bar.left, 'operator bar left edge').toBeGreaterThanOrEqual(-1);
       expect.soft(chrome.bar.right, 'operator bar right edge').toBeLessThanOrEqual(chrome.width + 1);
       expect.soft(chrome.bar.bottom, 'operator bar bottom edge').toBeLessThanOrEqual(chrome.height + 1);
-      if (chrome.width <= 719) {
-        expect.soft(chrome.bar.height, 'mobile operator bar must stay inside the reserved rail').toBeLessThanOrEqual(chrome.rail + 2);
-      }
+      expect.soft(chrome.bar.height, 'operator bar must stay inside the reserved rail').toBeLessThanOrEqual(chrome.rail + 2);
     }
     if (chrome.portal) {
       expect.soft(chrome.portal.left, 'Cloud Ops launcher left edge').toBeGreaterThanOrEqual(-1);
       expect.soft(chrome.portal.right, 'Cloud Ops launcher right edge').toBeLessThanOrEqual(chrome.width + 1);
-      if (chrome.width <= 719 && chrome.bar) {
-        expect.soft(chrome.portal.bottom, 'Cloud Ops launcher must stay above operator chrome').toBeLessThanOrEqual(chrome.bar.top - 4);
+      expect.soft(chrome.portal.top, 'Cloud Ops launcher top edge').toBeGreaterThanOrEqual(-1);
+      expect.soft(chrome.portal.bottom, 'Cloud Ops launcher bottom edge').toBeLessThanOrEqual(chrome.height + 1);
+    }
+    if (chrome.width <= 719 && chrome.portal && chrome.capsule) {
+      const portalCapsuleOverlap = !(
+        chrome.portal.right <= chrome.capsule.left ||
+        chrome.portal.left >= chrome.capsule.right ||
+        chrome.portal.bottom <= chrome.capsule.top ||
+        chrome.portal.top >= chrome.capsule.bottom
+      );
+      expect.soft(portalCapsuleOverlap, 'mobile Cloud Ops launcher must not overlap the release capsule').toBeFalsy();
+    }
+
+    if (chrome.width <= 719) {
+      const experience = page.locator('#headwater').getByText('Experience', { exact: true }).first();
+      const box = await experience.boundingBox();
+      const lineHeight = await experience.evaluate((node) => Number.parseFloat(getComputedStyle(node).lineHeight));
+      expect(box).not.toBeNull();
+      if (box && Number.isFinite(lineHeight)) {
+        expect.soft(box.height, 'Experience label must remain on one line').toBeLessThanOrEqual(lineHeight * 1.25);
       }
     }
 
