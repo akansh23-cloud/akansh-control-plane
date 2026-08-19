@@ -1,5 +1,6 @@
 'use client';
 
+import type { CSSProperties } from 'react';
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './cloud-ops.module.css';
@@ -7,6 +8,8 @@ import styles from './cloud-ops.module.css';
 type Score = { reliability: number; security: number; cost: number; speed: number };
 type Choice = { label: string; detail: string; delta: Score; result: string };
 type Incident = { title: string; signal: string; context: string; choices: Choice[] };
+
+const initialScore: Score = { reliability: 62, security: 62, cost: 62, speed: 62 };
 
 const incidents: Incident[] = [
   {
@@ -66,12 +69,11 @@ const clamp = (n: number) => Math.max(0, Math.min(100, n));
 export default function CloudOpsGame() {
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const [score, setScore] = useState<Score>({ reliability: 62, security: 62, cost: 62, speed: 62 });
+  const [score, setScore] = useState<Score>(initialScore);
   const [result, setResult] = useState<string | null>(null);
   const [exiting, setExiting] = useState(false);
   const complete = step >= incidents.length;
   const incident = incidents[Math.min(step, incidents.length - 1)];
-
   const total = useMemo(() => Math.round((score.reliability + score.security + score.cost + score.speed) / 4), [score]);
 
   function choose(choice: Choice) {
@@ -95,8 +97,14 @@ export default function CloudOpsGame() {
     window.setTimeout(() => router.push('/'), 360);
   }
 
+  function restart() {
+    setStep(0);
+    setScore(initialScore);
+    setResult(null);
+  }
+
   return (
-    <main className={styles.root} data-exiting={exiting || undefined}>
+    <main id="main" className={styles.root} data-exiting={exiting || undefined}>
       <div className={styles.grid} aria-hidden="true" />
       <header className={styles.topbar}>
         <div>
@@ -145,11 +153,11 @@ export default function CloudOpsGame() {
         ) : (
           <section className={styles.verdict}>
             <p className={styles.kicker}>SIMULATION COMPLETE</p>
-            <div className={styles.ring} style={{ '--score': `${total * 3.6}deg` } as React.CSSProperties}><strong>{total}</strong><span>/100</span></div>
+            <div className={styles.ring} style={{ '--score': `${total * 3.6}deg` } as CSSProperties}><strong>{total}</strong><span>/100</span></div>
             <h2>{total >= 78 ? 'Production commander' : total >= 62 ? 'Reliable operator' : 'Keep the incident channel open'}</h2>
             <p>{total >= 78 ? 'You protected reliability without treating delivery speed as the only objective.' : 'Your system survived, but the trade-offs show where production judgment matters most.'}</p>
             <div className={styles.verdictActions}>
-              <button onClick={() => { setStep(0); setScore({ reliability: 62, security: 62, cost: 62, speed: 62 }); setResult(null); }}>RUN AGAIN</button>
+              <button onClick={restart}>RUN AGAIN</button>
               <button onClick={exit}>RETURN TO PORTFOLIO</button>
             </div>
           </section>
