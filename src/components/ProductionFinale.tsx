@@ -10,17 +10,23 @@ import { finaleEligible, STAGES } from '@/lib/lifecycle';
 import { usePrefersReducedMotion } from '@/lib/motion';
 import styles from './ProductionFinale.module.css';
 
+const PARTICLES = [
+  ['8%', '22%', '0s'], ['15%', '64%', '1.7s'], ['24%', '34%', '3.1s'],
+  ['34%', '74%', '0.8s'], ['43%', '18%', '4.2s'], ['52%', '67%', '2.2s'],
+  ['62%', '27%', '1.1s'], ['71%', '78%', '3.8s'], ['79%', '42%', '2.8s'],
+  ['88%', '20%', '4.8s'], ['92%', '70%', '1.9s'], ['57%', '48%', '5.4s'],
+] as const;
+
 /**
  * TIDEWATER — the payoff.
  *
  * Eligibility is owned entirely by the run lifecycle: this component holds no
- * "already played" flag of its own, which is precisely the bug that made V8
- * replay unreliable. A new run is a new finale, every time, with no stale
- * timer able to close the following cycle.
+ * "already played" flag of its own. A new run is a new finale, every time.
  *
- * It is a sequence, not a toast: the route draws itself from Headwater to
- * Tidewater, the artifact arrives, the gates lock behind it, observability
- * comes online, and only then does the verdict resolve into the mark.
+ * The visual sequence is intentionally compositor-led. The finale may be rich,
+ * but it must never bring back the scroll/runtime jank that the rest of the
+ * portfolio avoids: continuous effects are transforms/opacity only and exist
+ * only while this modal is mounted.
  */
 export function ProductionFinale() {
   const pathname = usePathname();
@@ -34,8 +40,6 @@ export function ProductionFinale() {
   const open = pathname === '/' && finaleEligible(run) && !run.openingActive;
   const runId = run.runId;
 
-  /* A new run is a new finale. The step ladder is reset during render, so no
-     frame of the previous run's ending can survive into this one. */
   if (open && playedRun !== runId) {
     setPlayedRun(runId);
     setStep(0);
@@ -45,7 +49,6 @@ export function ProductionFinale() {
     run.markFinalePlayed();
   }, [run]);
 
-  /* Choreography, keyed to this run. Every timer dies with the cycle. */
   useEffect(() => {
     if (!open) return;
     const marks = reduced ? [0, 30, 60, 90, 120] : [0, 420, 1350, 2250, 3050];
@@ -53,8 +56,6 @@ export function ProductionFinale() {
     return () => timers.forEach((timer) => window.clearTimeout(timer));
   }, [open, reduced, runId]);
 
-  /* Scroll lock, focus and Escape — all released on the same cleanup, so the
-     body can never be left locked by a finale that is no longer on screen. */
   useEffect(() => {
     if (!open) return;
     returnFocus.current = document.activeElement as HTMLElement | null;
@@ -77,6 +78,7 @@ export function ProductionFinale() {
 
   if (!open) return null;
 
+  const identity = capsuleIdentity(run.artifact);
   const gate = run.fault
     ? run.faultRemediated ? 'Refused, remediated, promoted' : 'Fault recorded'
     : 'Clean release path';
@@ -105,13 +107,43 @@ export function ProductionFinale() {
       tabIndex={-1}
     >
       <p className={styles.live} aria-live="polite">
-        The release capsule, {capsuleIdentity(run.artifact).build}, reached production.
+        The release capsule, {identity.build}, reached production.
       </p>
 
+      <div className={styles.ambient} aria-hidden="true">
+        <span className={styles.scanBeam} />
+        <span className={styles.edgeGlow} />
+        {PARTICLES.map(([left, top, delay], index) => (
+          <span
+            key={`${left}-${top}`}
+            className={styles.particle}
+            style={{
+              '--px': left,
+              '--py': top,
+              '--pd': delay,
+              '--ps': `${0.7 + (index % 4) * 0.22}`,
+            } as React.CSSProperties}
+          />
+        ))}
+      </div>
+
       <div className={styles.stage} aria-hidden="true">
+        <div className={styles.stageReadout}>
+          <span>CONTROL PLANE · PRODUCTION</span>
+          <span>RUN {String(runId).padStart(2, '0')} · {identity.build.toUpperCase()}</span>
+        </div>
+
         <svg viewBox="0 0 1000 420" preserveAspectRatio="xMidYMid meet">
           <path
+            className={styles.routeGlow}
+            d="M60 372H180V318H300V264H420V210H540V156H660V102H780V60H940"
+          />
+          <path
             className={styles.route}
+            d="M60 372H180V318H300V264H420V210H540V156H660V102H780V60H940"
+          />
+          <path
+            className={styles.routeFlow}
             d="M60 372H180V318H300V264H420V210H540V156H660V102H780V60H940"
           />
           {STAGES.map((item, index) => (
@@ -123,8 +155,6 @@ export function ProductionFinale() {
             <rect x="878" y="30" width="6" height="60" />
             <rect x="896" y="30" width="6" height="60" />
           </g>
-          {/* The capsule itself arrives here: it docks into the final chamber,
-              receives its production approval, and becomes part of the mark. */}
           <g className={styles.capsule}>
             <path d="M898 44 H962 L972 54 V66 L962 76 H898 L888 66 V54 Z" />
             <rect className={styles.capsuleStrip} x="896" y="50" width="5" height="20" />
@@ -137,7 +167,13 @@ export function ProductionFinale() {
             <circle cx="198" cy="46" r="4" />
           </g>
         </svg>
-        <span className={styles.monogram} aria-hidden="true">AM</span>
+
+        <div className={styles.radar}>
+          <span className={styles.radarRingA} />
+          <span className={styles.radarRingB} />
+          <span className={styles.radarSweep} />
+        </div>
+        <span className={styles.monogram}>AM</span>
       </div>
 
       <div className={styles.receipt}>
@@ -150,8 +186,7 @@ export function ProductionFinale() {
         <h2 id="production-finale-title">The same artifact made it through.</h2>
 
         <p className={styles.artifact}>
-          Release capsule · {capsuleIdentity(run.artifact).build} · run{' '}
-          {String(runId).padStart(2, '0')}
+          Release capsule · {identity.build} · run {String(runId).padStart(2, '0')}
         </p>
 
         <p className={styles.summary}>
@@ -161,20 +196,37 @@ export function ProductionFinale() {
         </p>
 
         <dl className={styles.record}>
-          <div><dt>Release gate</dt><dd>{gate}</dd></div>
-          <div><dt>Declared state</dt><dd>{declared}</dd></div>
-          <div><dt>Service path</dt><dd>{services}</dd></div>
-          <div><dt>Incident room</dt><dd>{incident}</dd></div>
+          <div data-kind="gate">
+            <span className={styles.recordIcon} aria-hidden="true">◇</span>
+            <dt>Release gate</dt><dd>{gate}</dd>
+          </div>
+          <div data-kind="state">
+            <span className={styles.recordIcon} aria-hidden="true">⚑</span>
+            <dt>Declared state</dt><dd>{declared}</dd>
+          </div>
+          <div data-kind="service">
+            <span className={styles.recordIcon} aria-hidden="true">⬡</span>
+            <dt>Service path</dt><dd>{services}</dd>
+          </div>
+          <div data-kind="incident">
+            <span className={styles.recordIcon} aria-hidden="true">⌁</span>
+            <dt>Incident room</dt><dd>{incident}</dd>
+          </div>
         </dl>
 
         <div className={styles.printer}>
-          <p className="u-mark">Operator receipt</p>
-          <RunReceipt />
+          <p className={styles.printerLabel}>Operator receipt</p>
+          <div className={styles.ticketStage}>
+            <span className={styles.ticketOrbitA} aria-hidden="true" />
+            <span className={styles.ticketOrbitB} aria-hidden="true" />
+            <span className={styles.ticketPulse} aria-hidden="true" />
+            <RunReceipt />
+          </div>
         </div>
 
         <div className={styles.actions}>
           <button type="button" className={styles.primary} onClick={dismiss}>
-            View run
+            View run <span aria-hidden="true">›</span>
           </button>
           <button
             type="button"
@@ -201,14 +253,14 @@ export function ProductionFinale() {
           <a className={styles.secondary} href={site.resumeRoute} onClick={dismiss}>
             Read résumé
           </a>
-          <a className={styles.secondary} href={`mailto:${contact.email}`}>
+          <a className={`${styles.secondary} ${styles.contact}`} href={`mailto:${contact.email}`}>
             Contact Akansh
           </a>
         </div>
       </div>
 
       <p className={styles.horizonMark} aria-hidden="true">
-        SOURCE → BUILD → GATES → REGISTRY → PRODUCTION → OBSERVABILITY
+        SOURCE · BUILD · GATES · REGISTRY · PRODUCTION · OBSERVABILITY
       </p>
     </div>
   );
