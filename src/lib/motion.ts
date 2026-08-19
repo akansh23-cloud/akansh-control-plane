@@ -385,7 +385,6 @@ export function useScrollChannel<T extends HTMLElement>(
 
     let top = 0;
     let height = 1;
-    let frame = 0;
 
     const measure = () => {
       const r = node.getBoundingClientRect();
@@ -394,7 +393,6 @@ export function useScrollChannel<T extends HTMLElement>(
     };
 
     const read = () => {
-      frame = 0;
       const vh = window.innerHeight;
       const o = optsRef.current;
       const p = (o.map ?? 'out') === 'out'
@@ -403,21 +401,20 @@ export function useScrollChannel<T extends HTMLElement>(
       rig.set(channel, p, o.family, o.tau);
     };
 
-    const scheduleRead = () => {
-      if (!frame) frame = requestAnimationFrame(read);
-    };
-    const remeasure = () => { measure(); scheduleRead(); };
+    /* Geometry is cached, so the passive scroll handler only reads scrollY and
+       writes a rig target. No layout read and no second frame scheduler. */
+    const onScroll = () => read();
+    const remeasure = () => { measure(); read(); };
 
     measure();
     read();
-    window.addEventListener('scroll', scheduleRead, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', remeasure, { passive: true });
     const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(remeasure) : null;
     ro?.observe(node);
     return () => {
-      if (frame) cancelAnimationFrame(frame);
       ro?.disconnect();
-      window.removeEventListener('scroll', scheduleRead);
+      window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', remeasure);
     };
   }, [rig, channel, optsRef]);
