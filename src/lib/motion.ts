@@ -171,8 +171,6 @@ export function useAxisDrag(
       (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
       setDragging(true);
       const at = positionFrom(e.clientX, e.clientY);
-      /* Near the handle: pick it up and keep the offset, so it does not jump
-         under the finger. Far from it: treat the track as a scrubber. */
       grabOffset.current =
         Math.abs(at - read()) < 0.16 ? read() - at : 0;
       onChange(clamp(at + grabOffset.current));
@@ -285,27 +283,11 @@ export type RevealOptions = {
   once?: boolean;
 };
 
-/**
- * Mark an element as revealed the first time it enters the viewport.
- *
- * The element gets `data-reveal="out"` immediately and `data-reveal="in"` when
- * it arrives. Everything after that is CSS: the transition, the stagger, the
- * distance. That division is deliberate — an entrance that is described in
- * CSS costs nothing per frame, survives `prefers-reduced-motion` without any
- * JavaScript branch, and cannot fight the rig for the compositor.
- *
- * It is not part of a rig on purpose. An entrance happens once and then never
- * again; giving it a spring and a frame budget would be paying every frame for
- * something that already finished.
- */
 export function useReveal<T extends HTMLElement>(options: RevealOptions = {}) {
   const { margin = '160px 0px 160px 0px', once = true } = options;
   const nodeRef = useRef<T | null>(null);
   const playedRef = useRef(false);
 
-  /* Content is never hidden waiting for JavaScript. Under load the old
-     observer path could leave a section at data-reveal=out until its 1.4s
-     fail-safe fired — exactly the blank-then-catch-up failure. */
   const ref = useCallback((node: T | null) => {
     nodeRef.current = node;
     if (node) node.dataset.reveal = 'in';
@@ -346,31 +328,25 @@ export function useReveal<T extends HTMLElement>(options: RevealOptions = {}) {
 /* Scroll                                                              */
 /* ------------------------------------------------------------------ */
 
-/**
- * Feed scroll progress through an element into a rig channel.
- *
- * The listener is passive and does nothing but write a number; the rig's own
- * loop is what smooths and paints it. That keeps the promise the runtime
- * makes — one frame loop in the whole application — while still giving
- * scroll-linked motion, which is the thing that makes a page feel like it is
- * being operated rather than merely scrolled past.
- *
- * Progress is 0 when the element's top reaches the bottom of the viewport and
- * 1 when its bottom reaches the top.
- */
 export type ScrollMap =
-  /** 0 while the element's top is at the top of the viewport, 1 once it has
-   *  scrolled fully out of the top. Correct for a block that starts on
-   *  screen, such as a hero — it does not begin part-played. */
   | 'out'
-  /** 0 as the element enters from the bottom, 1 as it leaves the top.
-   *  Correct for a block the reader passes through. */
   | 'through';
 
 export function useScrollChannel<T extends HTMLElement>(
   rig: Rig,
   channel: string,
-  options: { family?: MotionFamily; tau?: number; map?: ScrollMap } = {},
+  options: {
+    family?: MotionFamily;
+    tau?: number;
+    map?: ScrollMap;
+    /**
+     * Positional scroll-linked values should not chase scroll through a spring.
+     * In direct mode the shared runtime still owns the paint, but the channel
+     * itself is teleported to the current scroll position so there is no
+     * built-in lag or overshoot.
+     */
+    direct?: boolean;
+  } = {},
 ) {
   const nodeRef = useRef<T | null>(null);
   const optsRef = useLatest(options);
@@ -398,11 +374,11 @@ export function useScrollChannel<T extends HTMLElement>(
       const p = (o.map ?? 'out') === 'out'
         ? clamp((window.scrollY - top) / height)
         : clamp((window.scrollY + vh - top) / Math.max(1, height + vh));
-      rig.set(channel, p, o.family, o.tau);
+
+      if (o.direct) rig.jump(channel, p);
+      else rig.set(channel, p, o.family, o.tau);
     };
 
-    /* Geometry is cached, so the passive scroll handler only reads scrollY and
-       writes a rig target. No layout read and no second frame scheduler. */
     const onScroll = () => read();
     const remeasure = () => { measure(); read(); };
 
