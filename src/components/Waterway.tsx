@@ -91,21 +91,11 @@ export function Waterway() {
       setActive((current) => (current === next ? current : next));
     };
 
-    let frame = 0;
-    const onScroll = () => {
-      if (frame) return;
-      frame = window.requestAnimationFrame(() => {
-        frame = 0;
-        read();
-      });
-    };
-
     const first = window.setTimeout(read, 0);
-    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('scroll', read, { passive: true });
     return () => {
       window.clearTimeout(first);
-      if (frame) window.cancelAnimationFrame(frame);
-      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('scroll', read);
     };
   }, [rig, marks]);
 
