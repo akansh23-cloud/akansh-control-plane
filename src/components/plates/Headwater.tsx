@@ -26,6 +26,10 @@ import styles from './Headwater.module.css';
  * and the water carries only a slow, low-amplitude movement; it must never
  * wobble, bounce or react like a cursor effect while somebody is reading.
  *
+ * Fine-pointer wake is owned by the global operating environment. The former
+ * local `usePointerField` water displacement is intentionally not bound here:
+ * cursor velocity must not physically shake a large water surface.
+ *
  * It costs no extra page height, because the water is behind the type rather
  * than below it. The name floods in from the bottom on arrival. The level is
  * published as `--datum`, which the waterway down the left of every later
