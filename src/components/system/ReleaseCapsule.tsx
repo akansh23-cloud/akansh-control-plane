@@ -11,7 +11,6 @@ import {
   type CapsuleDockId,
 } from '@/lib/capsule';
 import {
-  useLatest,
   usePrefersReducedMotion,
   useRig,
   useViewport,
@@ -21,28 +20,31 @@ import styles from './ReleaseCapsule.module.css';
 /**
  * THE RELEASE CAPSULE.
  *
- * One object, carried through the entire experience. It is not a mascot and it
- * is not a loading spinner: it is the software release, drawn as the thing a
- * release actually is — a sealed carrier with a number etched into it, a
- * status strip, and marks it picks up along the way.
- *
- * How it moves.
- *
- * Plates register *docks*. The capsule is a fixed-position element that reads
- * the active dock's rectangle each frame and springs toward it, so travelling
- * between sections is continuous physical movement rather than a component
- * unmounting in one place and mounting in another. When no dock is on screen
- * it returns to its holding bay above the operator bar.
- *
- * Metal moves like metal: short travel, heavy easing, hard stop. The channel
- * families are the ones already declared in `runtime.ts`, so the capsule and
- * the water in the Flight are governed by the same physics.
+ * The capsule now follows a dock in dock-relative coordinates. Scrolling moves
+ * the dock and capsule together immediately; only the offset between old and
+ * new docks is animated. This removes the former spring-chase lag where the
+ * page moved first and the capsule floated behind it trying to catch up.
  */
 
-const BAY_SIZE = { w: 132, h: 64 };
-const BAY_SIZE_SMALL = { w: 104, h: 52 };
+const BAY_SIZE = { w: 144, h: 70 };
+const BAY_SIZE_SMALL = { w: 108, h: 54 };
 
-type DockGeometry = { id: CapsuleDockId; left: number; top: number; width: number; height: number };
+type DockGeometry = {
+  id: CapsuleDockId;
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+};
+
+type TargetGeometry = {
+  key: string;
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  seated: boolean;
+};
 
 export function ReleaseCapsule() {
   const pathname = usePathname();
@@ -59,108 +61,173 @@ export function ReleaseCapsule() {
 
   const rig = useRig({
     channels: {
-      x: { value: 0, family: 'mechanical', tau: 0.34 },
-      y: { value: 0, family: 'mechanical', tau: 0.34 },
-      w: { value: BAY_SIZE.w, family: 'mechanical', tau: 0.28 },
-      h: { value: BAY_SIZE.h, family: 'mechanical', tau: 0.28 },
-      /* Docking: 1 while seated in a plate, 0 while in the holding bay. */
-      seated: { value: 0, family: 'mechanical', tau: 0.3 },
-      /* Refusal shove. Rises when a gate blocks, decays when it clears. */
+      offsetX: { value: 0, family: 'mechanical', tau: 0.18 },
+      offsetY: { value: 0, family: 'mechanical', tau: 0.18 },
+      offsetW: { value: 0, family: 'mechanical', tau: 0.16 },
+      offsetH: { value: 0, family: 'mechanical', tau: 0.16 },
+      seated: { value: 0, family: 'mechanical', tau: 0.16 },
       refuse: { value: 0, family: 'failure' },
     },
     reduced,
   });
 
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const desiredDock: CapsuleDockId =
+    viewport === 'mobile' && env.dock !== 'flight' ? 'bay' : env.dock;
 
-  /* On a phone the capsule does not fly the length of every section — it holds
-     its bay and only seats into the Flight, where the mechanism it belongs to
-     actually is. Adapted for touch rather than shrunk from desktop. */
-  const desiredDock: CapsuleDockId = viewport === 'mobile' && env.dock !== 'flight' ? 'bay' : env.dock;
-  const dockRef = useLatest<CapsuleDockId>(desiredDock);
   const dockGeometry = useRef<DockGeometry | null>(null);
+  const targetRef = useRef<TargetGeometry | null>(null);
+  const targetKeyRef = useRef('__initial__');
+  const placedRef = useRef(false);
 
-  /* --------------------------------------------------------------- */
-  /* Tracking                                                         */
-  /* --------------------------------------------------------------- */
+  const resolveTarget = useCallback((): TargetGeometry => {
+    const small = viewport === 'mobile';
+    const bay = small ? BAY_SIZE_SMALL : BAY_SIZE;
+    const stored = dockGeometry.current;
 
-  /**
-   * One measured read per frame, at most, and only while the capsule has
-   * somewhere to be. Everything else the capsule does is a CSS variable
-   * written by the shared runtime — no React render is involved in movement.
-   */
+    if (desiredDock !== 'bay' && stored && stored.id === desiredDock && stored.width > 0) {
+      const left = stored.left - window.scrollX;
+      const top = stored.top - window.scrollY;
+      const width = Math.max(78, stored.width);
+      const height = Math.max(42, stored.height);
+      const onScreen = top + height > 8 && top < window.innerHeight - 8;
+
+      if (onScreen) {
+        return {
+          key: `dock:${desiredDock}`,
+          left,
+          top,
+          width,
+          height,
+          seated: true,
+        };
+      }
+    }
+
+    const railGap = small ? 108 : 84;
+    const sideGap = small ? 14 : 26;
+    return {
+      key: 'bay',
+      left: window.innerWidth - bay.w - sideGap,
+      top: window.innerHeight - bay.h - railGap,
+      width: bay.w,
+      height: bay.h,
+      seated: false,
+    };
+  }, [desiredDock, viewport]);
+
+  const syncTarget = useCallback(() => {
+    if (pathname !== '/') return;
+    const next = resolveTarget();
+    const node = rootRef.current;
+    const keyChanged = next.key !== targetKeyRef.current;
+
+    if (!placedRef.current || !node || reduced) {
+      rig.jump('offsetX', 0);
+      rig.jump('offsetY', 0);
+      rig.jump('offsetW', 0);
+      rig.jump('offsetH', 0);
+    } else if (keyChanged) {
+      /* One layout read only when the capsule changes seats. From that point
+         onward the new dock is the base coordinate and the old position is an
+         offset that decays to zero. Scroll can move the base without fighting
+         the transition. */
+      const current = node.getBoundingClientRect();
+      rig.jump('offsetX', current.left - next.left);
+      rig.jump('offsetY', current.top - next.top);
+      rig.jump('offsetW', current.width - next.width);
+      rig.jump('offsetH', current.height - next.height);
+      rig.set('offsetX', 0, 'mechanical', 0.18);
+      rig.set('offsetY', 0, 'mechanical', 0.18);
+      rig.set('offsetW', 0, 'mechanical', 0.16);
+      rig.set('offsetH', 0, 'mechanical', 0.16);
+    }
+
+    targetRef.current = next;
+    targetKeyRef.current = next.key;
+    placedRef.current = true;
+    rig.set('seated', next.seated ? 1 : 0, 'mechanical', 0.16);
+    rig.invalidate();
+  }, [pathname, reduced, resolveTarget, rig]);
+
+  /* Measure dock geometry only when layout can actually change it. Scroll uses
+     the cached document coordinate and never asks layout for a rectangle. */
   useEffect(() => {
     if (pathname !== '/') return;
+
     const measure = () => {
-      if (desiredDock === 'bay') { dockGeometry.current = null; rig.invalidate(); return; }
+      if (desiredDock === 'bay') {
+        dockGeometry.current = null;
+        syncTarget();
+        return;
+      }
+
       const target = env.dockElement(desiredDock);
-      if (!target || !target.isConnected) { dockGeometry.current = null; rig.invalidate(); return; }
+      if (!target || !target.isConnected) {
+        dockGeometry.current = null;
+        syncTarget();
+        return;
+      }
+
       const rect = target.getBoundingClientRect();
-      dockGeometry.current = { id: desiredDock, left: rect.left + window.scrollX, top: rect.top + window.scrollY, width: rect.width, height: rect.height };
-      rig.invalidate();
+      dockGeometry.current = {
+        id: desiredDock,
+        left: rect.left + window.scrollX,
+        top: rect.top + window.scrollY,
+        width: rect.width,
+        height: rect.height,
+      };
+      syncTarget();
     };
+
     measure();
     const target = desiredDock === 'bay' ? null : env.dockElement(desiredDock);
-    const ro = target && typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    const ro = target && typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(measure)
+      : null;
     if (target) ro?.observe(target);
-    if (typeof document !== 'undefined') ro?.observe(document.body);
+
     window.addEventListener('resize', measure, { passive: true });
-    return () => { ro?.disconnect(); window.removeEventListener('resize', measure); };
-  }, [desiredDock, env, pathname, rig]);
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [desiredDock, env, pathname, syncTarget]);
 
   useEffect(() => {
     if (pathname !== '/') return;
     const node = rootRef.current;
     if (!node) return;
+
     return rig.bindPaint(node, (el, r) => {
+      const target = targetRef.current;
+      if (!target) return;
       const element = el as HTMLElement;
-      const dockId = dockRef.current;
-      const target = dockGeometry.current;
-      const small = viewport === 'mobile';
-      const bay = small ? BAY_SIZE_SMALL : BAY_SIZE;
-      if (dockId !== 'bay' && target && target.id === dockId && target.width > 0) {
-        const left = target.left - window.scrollX;
-        const top = target.top - window.scrollY;
-        const onScreen = top + target.height > 8 && top < window.innerHeight - 8;
-        if (onScreen) {
-          r.set('x', left + target.width / 2, 'mechanical', 0.34);
-          r.set('y', top + target.height / 2, 'mechanical', 0.34);
-          r.set('w', Math.max(72, target.width), 'mechanical', 0.28);
-          r.set('h', Math.max(38, target.height), 'mechanical', 0.28);
-          r.set('seated', 1, 'mechanical');
-        } else parkInBay(r, bay, small);
-      } else parkInBay(r, bay, small);
-      const width = r.get('w');
-      const height = r.get('h');
+      const width = Math.max(1, target.width + r.get('offsetW'));
+      const height = Math.max(1, target.height + r.get('offsetH'));
+      const x = target.left + r.get('offsetX') - r.get('refuse') * 10;
+      const y = target.top + r.get('offsetY');
+
       element.style.setProperty('--cap-w', `${width.toFixed(2)}px`);
       element.style.setProperty('--cap-h', `${height.toFixed(2)}px`);
-      element.style.setProperty('--cap-x', `${(r.get('x') - width / 2 + r.get('refuse') * -14).toFixed(2)}px`);
-      element.style.setProperty('--cap-y', `${(r.get('y') - height / 2).toFixed(2)}px`);
+      element.style.setProperty('--cap-x', `${x.toFixed(2)}px`);
+      element.style.setProperty('--cap-y', `${y.toFixed(2)}px`);
       element.style.setProperty('--cap-seated', r.get('seated').toFixed(3));
       element.style.setProperty('--cap-refuse', r.get('refuse').toFixed(3));
     });
-  }, [dockRef, pathname, rig, viewport]);
+  }, [pathname, rig]);
 
-  /* A refusal is felt, not announced: the capsule is physically pushed back
-     from the gate and held there until the fault is cleared. */
   useEffect(() => {
-    if (status === 'blocked') {
-      rig.set('refuse', 1, 'failure');
-      rig.impulse('refuse', 2.4);
-    } else {
-      rig.set('refuse', 0, 'recovery');
-    }
+    if (status === 'blocked') rig.set('refuse', 1, 'failure');
+    else rig.set('refuse', 0, 'recovery', 0.34);
   }, [rig, status]);
 
   useEffect(() => {
-    const wake = () => rig.invalidate();
-    window.addEventListener('scroll', wake, { passive: true });
-    window.addEventListener('resize', wake);
-    return () => {
-      window.removeEventListener('scroll', wake);
-      window.removeEventListener('resize', wake);
-    };
-  }, [rig]);
+    if (pathname !== '/') return;
+    const onScroll = () => syncTarget();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [pathname, syncTarget]);
 
   const inspect = useCallback(() => setInspecting((open) => !open), []);
 
@@ -189,13 +256,19 @@ export function ReleaseCapsule() {
         onClick={inspect}
       >
         <svg className={styles.shell} viewBox="0 0 160 80" aria-hidden="true">
-          {/* docking lugs — the capsule seats into a chamber, it does not float */}
+          <defs>
+            <linearGradient id="capsule-shell" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#263b42" />
+              <stop offset="48%" stopColor="#16272c" />
+              <stop offset="100%" stopColor="#0b171b" />
+            </linearGradient>
+          </defs>
+
           <g className={styles.lugs}>
             <rect x="4" y="26" width="8" height="28" rx="1" />
             <rect x="148" y="26" width="8" height="28" rx="1" />
           </g>
 
-          {/* machined shell */}
           <path
             className={styles.hull}
             d="M20 8 H140 L152 20 V60 L140 72 H20 L8 60 V20 Z"
@@ -204,33 +277,30 @@ export function ReleaseCapsule() {
             className={styles.hullEdge}
             d="M20 8 H140 L152 20 V60 L140 72 H20 L8 60 V20 Z"
           />
+          <path className={styles.chamfer} d="M20 13 H136 L146 23 M14 57 L23 67 H138" />
 
-          {/* ribs — a carrier is stiffened, not smooth */}
           <g className={styles.ribs}>
-            <path d="M46 12 V68" />
-            <path d="M114 12 V68" />
+            <path d="M44 12 V68" />
+            <path d="M116 12 V68" />
           </g>
 
-          {/* status strip */}
           <rect className={styles.strip} x="20" y="14" width="8" height="52" rx="1" />
+          <rect className={styles.plateWell} x="51" y="20" width="60" height="38" rx="2" />
 
-          {/* etched plate */}
           <g className={styles.plate}>
-            <text x="56" y="34" className={styles.etchTitle}>RELEASE</text>
-            <text x="56" y="50" className={styles.etchBuild}>{identity.buildId}</text>
+            <text x="58" y="34" className={styles.etchTitle}>RELEASE</text>
+            <text x="58" y="50" className={styles.etchBuild}>{identity.buildId}</text>
           </g>
 
-          {/* operational indicators */}
           <g className={styles.lamps}>
             <circle className={styles.lampA} cx="132" cy="26" r="3.4" />
             <circle className={styles.lampB} cx="132" cy="40" r="3.4" />
             <circle className={styles.lampC} cx="132" cy="54" r="3.4" />
           </g>
 
-          {/* inspection marks — history, applied only once earned */}
           <g className={styles.stamps}>
-            <path className={styles.stampWarn} d="M62 60 h16 M70 56 v8" />
-            <path className={styles.stampSeal} d="M84 58 l5 5 l9 -11" />
+            <path className={styles.stampWarn} d="M62 62 h16 M70 58 v8" />
+            <path className={styles.stampSeal} d="M86 60 l5 5 l9 -11" />
           </g>
         </svg>
 
@@ -277,23 +347,6 @@ export function ReleaseCapsule() {
   );
 }
 
-function parkInBay(
-  r: { set: (n: string, v: number, f?: 'mechanical' | 'hydraulic') => void },
-  bay: { w: number; h: number },
-  small: boolean,
-) {
-  const railGap = small ? 108 : 84;
-  r.set('x', window.innerWidth - bay.w / 2 - (small ? 14 : 26), 'mechanical');
-  r.set('y', window.innerHeight - bay.h / 2 - railGap, 'mechanical');
-  r.set('w', bay.w, 'mechanical');
-  r.set('h', bay.h, 'mechanical');
-  r.set('seated', 0, 'mechanical');
-}
-
-/**
- * A place the capsule can be. Plates place one of these where the release
- * belongs in their drawing; the capsule finds it and seats into it.
- */
 export function CapsuleDock({
   id,
   className,
