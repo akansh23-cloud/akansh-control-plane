@@ -23,8 +23,8 @@ import styles from './Headwater.module.css';
  * The reader begins inside the chamber: the water is the ground the masthead
  * stands on, the gates are at either hand, and the level rises as they scroll.
  * The surface is deliberately calm. Scroll registration is critically damped
- * and the water carries only a slow, low-amplitude movement; it must never
- * wobble, bounce or react like a cursor effect while somebody is reading.
+ * and the water carries no ambient wobble; it must never bounce or react like
+ * a cursor effect while somebody is reading.
  *
  * Fine-pointer wake is owned by the global operating environment. The former
  * local `usePointerField` water displacement is intentionally not bound here:
@@ -72,11 +72,23 @@ export function Headwater() {
   const [arrived, setArrived] = useState(false);
 
   const rootRef = useRigRoot<HTMLElement>(rig, (visible) => {
-    rig.setClock(visible);
-    if (visible) rig.set('start', 1, 'release', 1.15);
+    if (!visible) {
+      rig.setClock(false);
+      return;
+    }
+    if (!arrived && !reduced) {
+      rig.setClock(true);
+      rig.set('start', 1, 'release', 1.15);
+    } else {
+      rig.setClock(false);
+      rig.set('start', 1, 'release', 1.15);
+    }
   });
 
-  useWatch(rig, (r) => r.get('start'), 0.94, 'up', () => setArrived(true));
+  useWatch(rig, (r) => r.get('start'), 0.94, 'up', () => {
+    setArrived(true);
+    rig.setClock(false);
+  });
 
   /* Reduced motion has no sequence to finish, so the works are simply already
      started: the same end state, reached without the journey. */
@@ -104,13 +116,16 @@ export function Headwater() {
   const surfaceLevel = (r: import('@/lib/motion').Rig) =>
     r.reduced ? 0.78 : 0.79 - r.get('scroll') * 0.44;
 
+  /* The waterline is shaped but not continuously animated. Its only visible
+     movement comes from the chamber level changing, so it reads as mass rather
+     than as a decorative waveform. */
   const surface = (r: import('@/lib/motion').Rig, close: boolean) =>
     disturbedSurface({
       x: 0,
       width: VB_W,
       surfaceY: surfaceLevel(r) * VB_H,
       bottomY: VB_H,
-      t: r.time * 0.22,
+      t: 0,
       amp: 1.8,
       wavelength: 620,
       samples,
