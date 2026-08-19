@@ -1,3 +1,5 @@
+@import './hydraulics.css';
+
 /* Runtime performance guardrails.
 
    This file must never change the compositing model of the hydraulic drawings.
