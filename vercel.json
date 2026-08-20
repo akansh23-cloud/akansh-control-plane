@@ -1,1 +1,1 @@
-{"$schema":"https://openapi.vercel.sh/vercel.json","framework":"vite","installCommand":"node reconstruct.mjs && cd app && npm ci","buildCommand":"cd app && npm test && npm run build","outputDirectory":"app/dist"}
+{"$schema":"https://openapi.vercel.sh/vercel.json","framework":"vite","installCommand":"node reconstruct.mjs && node patch-smoke.mjs && cd app && npm ci","buildCommand":"cd app && npm test && npm run build","outputDirectory":"app/dist"}
