@@ -109,14 +109,29 @@
   to { transform: translate3d(28px, 2px, 0); }
 }
 
-@media (max-width: 719px) {
+@media (max-width: 719px), (pointer: coarse) {
+  /* The hero sits behind the heaviest fixed chrome on touch devices. Keep the
+     two large water masses alive, but drop the continuously dashed current
+     field and glint sweep so scrolling does not compete with four extra SVG
+     paint/composite loops. The causal water level remains scroll-driven. */
   .waterMass { animation-duration: 9.6s; }
   .waveRear { animation-duration: 12s; }
   .waveFront { animation-duration: 8s; }
-  .currentField { opacity: 0.18; }
+
+  .surfaceGlint,
+  .currentField,
+  .currentLine {
+    animation: none !important;
+  }
+
+  .currentField {
+    display: none;
+    will-change: auto;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .waterScroll,
   .waterMass,
   .waveRear,
   .waveFront,
@@ -124,5 +139,6 @@
   .currentField,
   .currentLine {
     animation: none !important;
+    will-change: auto;
   }
 }
