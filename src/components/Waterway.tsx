@@ -68,13 +68,13 @@ export function Waterway() {
   }, [fallbackMark, rig]);
 
   useEffect(() => {
-    let frame = 0;
+    let pending = 0;
     const scheduleMeasure = () => {
-      if (frame) return;
-      frame = window.requestAnimationFrame(() => {
-        frame = 0;
+      if (pending) return;
+      pending = window.setTimeout(() => {
+        pending = 0;
         measure();
-      });
+      }, 0);
     };
 
     const first = window.setTimeout(scheduleMeasure, 0);
@@ -82,9 +82,9 @@ export function Waterway() {
     window.addEventListener('resize', scheduleMeasure, { passive: true });
 
     /* Interactive plates expand and contract after mount. Keep the physical
-       rail calibrated to the real document geometry without doing layout work
-       on scroll: ResizeObserver only schedules one measurement per frame when
-       the main journey itself changes size. */
+       rail calibrated to real document geometry without putting layout reads
+       in the scroll handler. ResizeObserver only schedules one deferred
+       measurement when the main journey's size actually changes. */
     const main = document.querySelector('main');
     const observer = typeof ResizeObserver === 'undefined'
       ? null
@@ -96,9 +96,9 @@ export function Waterway() {
     return () => {
       window.clearTimeout(first);
       window.clearTimeout(settle);
+      if (pending) window.clearTimeout(pending);
       window.removeEventListener('resize', scheduleMeasure);
       observer?.disconnect();
-      if (frame) window.cancelAnimationFrame(frame);
     };
   }, [measure]);
 
