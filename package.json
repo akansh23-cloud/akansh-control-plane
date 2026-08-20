@@ -1,1 +1,1 @@
-{"name":"akansh-control-plane-preview-wrapper","private":true,"version":"1.0.0","engines":{"node":">=24.15.0"},"scripts":{"preinstall":"node reconstruct.mjs","build":"cd app && npm ci && npm run build"}}
+{"name":"akansh-control-plane-cinematic-preview-wrapper","private":true,"version":"1.0.0","engines":{"node":">=24.15.0"},"scripts":{"build":"cd app && npm run build"}}
