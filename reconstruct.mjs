@@ -1,0 +1,12 @@
+import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import c0 from './chunks/c000.mjs';
+import c1 from './chunks/c001.mjs';
+import c2 from './chunks/c002.mjs';
+import c3 from './chunks/c003.mjs';
+const b64=[c0,c1,c2,c3].join('');
+const zip=Buffer.from(b64,'base64');
+rmSync('app',{recursive:true,force:true});mkdirSync('app',{recursive:true});
+writeFileSync('source.zip',zip);
+execFileSync('unzip',['-q','-o','source.zip','-d','app'],{stdio:'inherit'});
+console.log('reconstructed',zip.length,'bytes into app');
