@@ -1,25 +1,38 @@
-import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import c0 from './chunks/c000.mjs';
-import c1 from './chunks/c001.mjs';
-import c2 from './chunks/c002.mjs';
-import c3 from './chunks/c003.mjs';
-import c4 from './chunks/c004.mjs';
-import c5 from './chunks/c005.mjs';
-import c6 from './chunks/c006.mjs';
 import c7 from './chunks/c007.mjs';
 import c8 from './chunks/c008.mjs';
 import c9 from './chunks/c009.mjs';
-import c10 from './chunks/c010.mjs';
 import c11 from './chunks/c011.mjs';
 import c12 from './chunks/c012.mjs';
 
-const b64 = [c0,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12].join('');
+const read = (path) => readFileSync(path, 'utf8').trim();
+const parts = [
+  read('payload/c000.txt'),
+  read('payload/current-c001.txt'),
+  read('payload/current-c002.txt'),
+  read('payload/c003.txt'),
+  read('payload/c004.txt'),
+  read('payload/c005.txt'),
+  read('payload/c006.txt'),
+  c7,
+  c8,
+  c9,
+  read('payload/current-c010.txt'),
+  c11,
+  c12,
+];
+
+if (parts.some((part, index) => !part || typeof part !== 'string')) {
+  throw new Error('cinematic payload contains an empty or invalid chunk');
+}
+
+const b64 = parts.join('');
 const zip = Buffer.from(b64, 'base64');
 const sha = createHash('sha256').update(zip).digest('hex');
-const expectedSize = 163066;
-const expectedSha = '54b32af81e03bc51e6a269da78cc06c46835fc63242e46734306852236972f4b';
+const expectedSize = 149379;
+const expectedSha = '2d1d97567b982a86d2d9b67ab3a938d2d266e91b89c8b9e1f45b58589c9956fb';
 
 if (zip.length !== expectedSize || sha !== expectedSha) {
   throw new Error(`source archive integrity failure: size=${zip.length}, sha=${sha}`);
