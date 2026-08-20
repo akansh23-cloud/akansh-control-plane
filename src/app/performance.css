@@ -7,8 +7,9 @@
    UI onto GPU layers. Those optimisations isolated the plates from one another
    and could make the continuous water motion feel stepped under scroll.
 
-   Keep only the two safe protections below: readable content never waits for
-   IntersectionObserver, and expensive viewport paint is reduced on touch/tablet.
+   Keep only the safe protections below: readable content never waits for
+   IntersectionObserver, expensive viewport paint is reduced on touch/tablet,
+   and reduced-motion users resolve shared choreography almost immediately.
 */
 
 [data-reveal='out'] {
@@ -28,6 +29,16 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  :root {
+    /* Preserve the causal event path while collapsing shared visual travel.
+       Components that wait on these transitions still complete normally,
+       instead of being bypassed by a blanket animation:none rule. */
+    --t-tap: 1ms;
+    --t-quick: 1ms;
+    --t-move: 1ms;
+    --t-fill: 1ms;
+  }
+
   *, *::before, *::after {
     scroll-behavior: auto !important;
   }
