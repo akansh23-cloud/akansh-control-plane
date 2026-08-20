@@ -36,7 +36,11 @@ export function Waterway() {
     '--craft-y': (r) => `${r.get('flow') * spanRef.current.railHeight}px`,
   });
 
-  const [marks, setMarks] = useState<number[]>(() => journey.map((_, i) => i / 6));
+  const fallbackMark = useCallback(
+    (index: number) => index / Math.max(1, journey.length - 1),
+    [],
+  );
+  const [marks, setMarks] = useState<number[]>(() => journey.map((_, i) => fallbackMark(i)));
   const [active, setActive] = useState(0);
   const railNode = useRef<HTMLDivElement | null>(null);
 
@@ -54,24 +58,47 @@ export function Waterway() {
 
     setMarks(
       anchors.map((el, i) => {
-        if (!el) return i / journey.length;
+        if (!el) return fallbackMark(i);
         const r = el.getBoundingClientRect();
         const centre = r.top + window.scrollY + r.height * journey[i].offset;
         return Math.min(1, Math.max(0, (centre - top) / height));
       }),
     );
     rig.invalidate();
-  }, [rig]);
+  }, [fallbackMark, rig]);
 
   useEffect(() => {
-    const first = window.setTimeout(measure, 0);
-    const settle = window.setTimeout(measure, 900);
-    const onResize = () => measure();
-    window.addEventListener('resize', onResize, { passive: true });
+    let frame = 0;
+    const scheduleMeasure = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        measure();
+      });
+    };
+
+    const first = window.setTimeout(scheduleMeasure, 0);
+    const settle = window.setTimeout(scheduleMeasure, 900);
+    window.addEventListener('resize', scheduleMeasure, { passive: true });
+
+    /* Interactive plates expand and contract after mount. Keep the physical
+       rail calibrated to the real document geometry without doing layout work
+       on scroll: ResizeObserver only schedules one measurement per frame when
+       the main journey itself changes size. */
+    const main = document.querySelector('main');
+    const observer = typeof ResizeObserver === 'undefined'
+      ? null
+      : new ResizeObserver(scheduleMeasure);
+    if (main) observer?.observe(main);
+
+    document.fonts?.ready.then(scheduleMeasure).catch(() => undefined);
+
     return () => {
       window.clearTimeout(first);
       window.clearTimeout(settle);
-      window.removeEventListener('resize', onResize);
+      window.removeEventListener('resize', scheduleMeasure);
+      observer?.disconnect();
+      if (frame) window.cancelAnimationFrame(frame);
     };
   }, [measure]);
 
