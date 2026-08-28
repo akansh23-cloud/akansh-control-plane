@@ -16,15 +16,23 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  /* Written by the rig. --datum is the surface height, 0…1 from the top. */
-  --datum: 0.79;
+  /* The water is a band anchored to the foot of the chamber. Its height is
+     fixed, so the surface is always the same distance above the route and
+     never rises into the masthead, whatever the viewport makes of the text
+     above it. */
+  --hero-water: clamp(250px, 30vh, 340px);
+  /* Written by the rig. --datum is the surface height within the band,
+     0…1 from the band's top. */
+  --datum: 0.2;
 }
 
 .svg {
   position: absolute;
-  inset: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
-  height: 100%;
+  height: var(--hero-water);
 }
 
 /* A scrim over the water only, so type crossing the waterline keeps its
@@ -34,8 +42,8 @@
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(var(--datum) * 100%);
   bottom: 0;
+  height: calc(var(--hero-water) * (1 - var(--datum)));
   background: linear-gradient(
     180deg,
     color-mix(in oklab, var(--void) 34%, transparent),
@@ -264,7 +272,11 @@
 .actions :global(.ctl) {
   width: 100%;
   padding-inline: var(--s-3);
-  /* The water passes behind these on every viewport now: solid ground. */
+}
+
+/* Links carry solid ground because water can pass behind them. The primary
+   action keeps its machinery-yellow fill from the shared control. */
+.actions :global(.ctl:not([data-primary])) {
   background: color-mix(in oklab, var(--void) 84%, var(--panel-2));
 }
 
@@ -290,8 +302,7 @@
   column-gap: var(--s-4);
   row-gap: 2px;
   padding: var(--s-4);
-  background: color-mix(in oklab, var(--void) 82%, var(--panel));
-  backdrop-filter: blur(8px);
+  background: color-mix(in oklab, var(--void) 88%, var(--panel));
   border: 1px solid color-mix(in oklab, var(--water-100) 22%, transparent);
   border-left: 2px solid var(--signal);
   border-radius: 4px;

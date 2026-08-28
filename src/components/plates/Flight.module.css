@@ -11,14 +11,14 @@
 
 .root {
   display: grid;
-  /* The drawing is the plate. It takes the full width on the first row and
-     the operator and context sit beneath it — previously it was squeezed
-     into a middle column between them and became the smallest thing on the
-     screen. */
-  grid-template-columns: minmax(240px, 0.9fr) minmax(0, 1.1fr);
+  /* The controls and the drawing share the screen: press Run or arm a fault
+     on the left and the chambers fill on the right. The drawing is the
+     wider column and stays pinned while the log on the left grows, so the
+     mechanism is never scrolled out of view by its own status panel. */
+  grid-template-columns: minmax(280px, 0.72fr) minmax(0, 2fr);
   grid-template-areas:
-    'mechanism mechanism'
-    'operator  context'
+    'operator  mechanism'
+    'context   mechanism'
     'fittings  fittings';
   gap: clamp(18px, 2.2vw, 34px);
   align-items: start;
@@ -118,6 +118,8 @@
   display: grid;
   gap: var(--s-3);
   min-width: 0;
+  position: sticky;
+  top: var(--s-4);
 }
 
 .works {
@@ -126,9 +128,9 @@
   --rise: calc((100% - var(--h)) / 8);
   --flow: 0;
   position: relative;
-  aspect-ratio: 2.35;
+  aspect-ratio: 1.8;
   min-height: 300px;
-  max-height: 58vh;
+  max-height: calc(100vh - var(--rail) - 120px);
   background:
     linear-gradient(180deg, color-mix(in oklab, var(--void) 60%, transparent), var(--water-900));
   border: 1px solid var(--rule);
@@ -601,14 +603,15 @@
 
 @media (max-width: 1179px) {
   .root {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.4fr);
     grid-template-areas:
-      'mechanism mechanism'
-      'operator context'
+      'operator mechanism'
+      'context  context'
       'fittings fittings';
   }
 
-  .works { max-height: 48vh; aspect-ratio: 2; }
+  .mechanism { position: static; }
+  .works { max-height: 52vh; aspect-ratio: 1.5; }
 }
 
 /* ---------------------------------------------------------------------
@@ -618,9 +621,13 @@
 @media (max-width: 719px) {
   .root {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: 'operator' 'mechanism' 'context' 'fittings';
+    /* The ladder first, the controls directly under it: a thumb on Run has
+       the chambers filling just above it. */
+    grid-template-areas: 'mechanism' 'operator' 'context' 'fittings';
     gap: var(--s-5);
   }
+
+  .mechanism { position: static; }
 
   .works {
     aspect-ratio: auto;

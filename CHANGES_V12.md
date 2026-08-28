@@ -109,3 +109,71 @@ Things most likely to need a touch:
   `next/dynamic` calls in `page.tsx`.
 - `tests/content.test.ts` — the new `site` evidence card follows every rule
   the suite enforces, but the suite is the judge.
+
+---
+
+# V12.1 — CORRECTIONS FROM THE V12 SCREENSHOTS
+
+Five regressions the V12 preview showed, with their causes.
+
+1. **"Run a release" rendered black.** A hero rule that gave the link
+   buttons solid ground (`.actions .ctl { background: … }`) had the same
+   specificity as the shared `.ctl[data-primary]` and loaded later, so it
+   erased the yellow fill and left void-on-void text. The ground rule is
+   now `.ctl:not([data-primary])`.
+
+2. **Water on the thesis text.** The V12 level (0.60 of the hero's height)
+   depended on the hero's height, which changes with every viewport. The
+   water is now a band of fixed height anchored to the foot of the chamber,
+   with the surface a fixed distance above the route. It cannot reach the
+   masthead. Scroll travel reduced so the surface never climbs into the
+   text while the hero leaves.
+
+3. **Capsule lag and wrong seating.** The capsule kept a stored copy of its
+   dock's page coordinates and decided from that whether it was on screen;
+   the copy went stale when the Flight token climbed or the layout above
+   changed, and every scroll event snapped the target back to the stale copy
+   one frame before the paint corrected it — visible as flicker and lag.
+   There is no stored copy any more: seating and position both read the
+   dock's live rectangle (one read per scroll frame; one per paint frame
+   while seated).
+
+4. **Flight controls could not see the drawing.** V12 put the drawing on
+   its own full-width row above the controls, so pressing Run or arming a
+   fault scrolled the chambers out of view. Restored to controls-beside-
+   drawing, with the drawing as the wide column and `position: sticky` so
+   it stays in view while the log grows; on phones the ladder sits directly
+   above the controls. The hero's Run lands centred on the drawing itself.
+   The duplicate "What you are doing" copy is gone.
+
+5. **Refit grip covered the rows.** The V12 clamp kept the grip inside the
+   frame but put it on top of the first column at the start of travel. The
+   frame now has gutters either side of the rows, so the grip's whole travel
+   is in clear space.
+
+6. **Trace pulse out of sync with the readout.** Pre-existing: the pulse
+   rode a spring toward its target (slow to leave, fast in the middle) while
+   the station readout fired on linear timers, so the two agreed only at the
+   ends. Both now use the same wall clock.
+
+7. **Performance.** Removed the things V12 added that cost paint on every
+   scroll: `backdrop-filter` blur on the operator bar and on every plate's
+   title block; `content-visibility: auto` on plates; blur on the hero
+   stats; the water band's third layer. The sticky title block is gone (it
+   also floated over its own chapter title). The Cloud Ops beacon moved to
+   the bottom-left, off the Flight's Promote chamber.
+
+## Verified here
+
+No browser and no package registry in this environment. What was checked:
+
+- `tsc` (global 6.0, `--strict --isolatedModules`) over the twenty edited
+  TS/TSX files: no syntax or structural errors. The only diagnostics are
+  unresolved packages, which is expected without `node_modules`.
+- Every `styles.x` reference in every TSX resolves to a class in its module
+  (41 CSS files, all brace-balanced; no `:global` in the plain sheet).
+- E2E selectors that touch changed UI (`Run a release` scoped to `#flight`,
+  the Cloud Ops launcher, capsule visibility) still resolve.
+
+What was **not** checked: the rendered result. Run `npm ci && npm run ci`
+and the Playwright suite before merging, and please send a recording.

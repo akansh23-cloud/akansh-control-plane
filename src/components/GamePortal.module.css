@@ -1,7 +1,10 @@
 .portal {
   position: fixed;
-  top: max(18px, env(safe-area-inset-top));
-  right: 18px;
+  /* Bottom-left, above the operator rail: nothing is drawn there. Top-right
+     was sitting on the Flight's Promote chamber and the Basin's diagram. */
+  top: auto;
+  left: 18px;
+  bottom: calc(var(--rail) + 16px + env(safe-area-inset-bottom, 0px));
   z-index: 58;
   display: grid;
   grid-template-columns: auto auto auto;

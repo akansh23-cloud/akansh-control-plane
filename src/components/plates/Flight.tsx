@@ -382,9 +382,10 @@ export function Flight() {
         data-xray-label="Fault injection"
         data-xray-duty="Three real gates that can refuse this release"
       >
+        {/* The Operation strip above the plate already states the task; this
+            panel is the controls. */}
         <p className={styles.task}>
-          <span className="u-mark">What you are doing</span>
-          Sending one immutable image through the delivery gates.
+          <span className="u-mark">Operate the flight</span>
         </p>
 
         <div className={styles.primaryRow}>
@@ -426,6 +427,7 @@ export function Flight() {
       <div
         ref={pointerRef}
         className={styles.mechanism}
+        id="flight-mechanism"
         data-xray="system security"
         data-xray-label="Release flight"
         data-xray-duty="Nine chambers · one image, built once and promoted unchanged"

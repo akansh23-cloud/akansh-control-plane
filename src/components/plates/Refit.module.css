@@ -27,7 +27,9 @@
 
 .field {
   position: relative;
-  padding: var(--s-4) 0 var(--s-4);
+  /* Gutters either side of the rows, so the grip can sit at the ends of
+     its travel without covering the first or last column. */
+  padding: var(--s-4) clamp(32px, 4.5vw, 60px);
   background: linear-gradient(
     180deg,
     color-mix(in oklab, var(--panel) 90%, transparent),
@@ -262,9 +264,9 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  /* Clamped so the grip is never clipped by the frame: at seam = 0 it used
-     to hang half outside the overflow and read as a 2px tick. */
-  left: clamp(28px, var(--seam) * 100%, calc(100% - 28px));
+  /* Clamped so the grip is never clipped by the frame, and the frame's
+     gutters keep it off the text at either end of its travel. */
+  left: clamp(30px, var(--seam) * 100%, calc(100% - 30px));
   width: 56px;
   margin-left: -28px;
   display: grid;

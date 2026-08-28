@@ -99,11 +99,23 @@ export function TraceRequest() {
 
   /* The pulse rides the drawn geometry rather than an invented coordinate
      system, so the route and the request can never disagree. */
+  /* The pulse and the readout share one clock. The readout's hops fire at
+     total × hop.at on wall time; the pulse's position is the same fraction
+     of the same wall time, so the dot is on a station at the instant the
+     station lights. (It used to ride a spring towards 1 — slow to leave,
+     fast in the middle — and drifted behind or ahead of every hop.) */
+  const startedAt = useRef<number | null>(null);
+  const totalRef = useRef(2600);
+
   useEffect(() => {
     const node = pulseRef.current;
     if (!node) return;
     return rig.bindPaint(node, (el, r) => {
-      const t = Math.min(1, Math.max(0, r.get('t')));
+      const began = startedAt.current;
+      const linear = began === null
+        ? r.get('t')
+        : (performance.now() - began) / totalRef.current;
+      const t = Math.min(1, Math.max(0, linear));
       /* A degraded route physically diverges: the pulse leaves the main line
          at the gateway and rejoins it after the monolith has answered. */
       const onBranch = degradedRef.current && t > 0.48 && t < 0.86;
@@ -132,6 +144,7 @@ export function TraceRequest() {
 
     const list = hopsRef.current;
     const total = reduced ? 600 : 2600;
+    totalRef.current = total;
 
     /* Deterministic choreography: each hop is reached at its own position on
        the route, so the pulse and the readout are the same event. */
@@ -156,13 +169,21 @@ export function TraceRequest() {
         setCompletedDegraded(degradedRef.current);
         run.traceRan(degradedRef.current);
         env.bus.emit({ type: 'TRACE_COMPLETE', degraded: degradedRef.current });
+        startedAt.current = null;
+        rig.jump('t', 1);
+        rig.setClock(false);
       }, total + 120),
     );
 
     if (reduced) {
+      startedAt.current = null;
       rig.jump('t', 1);
     } else {
-      rig.set('t', 1, 'release', total / 1000);
+      /* Wall-clock drive: the rig's clock keeps the paint callback running
+         every frame until the run completes. */
+      startedAt.current = performance.now();
+      rig.setClock(true);
+      rig.invalidate();
     }
   }, [degradedRef, env, hopsRef, reduced, rig, run]);
 

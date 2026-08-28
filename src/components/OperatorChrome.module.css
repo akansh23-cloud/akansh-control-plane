@@ -32,9 +32,9 @@
   gap: 0;
   min-height: var(--rail);
   padding-bottom: env(safe-area-inset-bottom, 0px);
-  background: color-mix(in oklab, var(--void) 88%, var(--water-900));
-  -webkit-backdrop-filter: blur(14px) saturate(1.1);
-  backdrop-filter: blur(14px) saturate(1.1);
+  background: color-mix(in oklab, var(--void) 97%, var(--water-900));
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
   border-top: 1px solid var(--rule-strong);
   box-shadow:
     inset 0 1px 0 var(--edge-hi),

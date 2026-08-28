@@ -34,12 +34,11 @@ import motion from './HeadwaterMotion.module.css';
 
 const VB_W = 1200;
 const VB_H = 800;
-/* The resting water level, as a fraction of the chamber height. 0.79 put the
-   surface below the first viewport on every desktop, so the landing page read
-   as an empty tank. The surface now sits under the masthead, and the stats
-   and the route below it stand on raised cards so nothing textual is
-   submerged. */
-const BASE_LEVEL = 0.6;
+/* The resting surface, as a fraction of the water band's height (the band
+   is anchored to the foot of the chamber; see .works in the module CSS).
+   0.2 puts the surface a little above the route and well below the
+   masthead on every viewport. */
+const BASE_LEVEL = 0.2;
 const BOTTOM = VB_H + 380;
 
 /* Every surface is periodic in WAVE, and each path is drawn wide enough that
@@ -55,7 +54,7 @@ const WATER_FILL = periodicSurface({
   width: OVERSCAN_W,
   surfaceY: BASE_LEVEL * VB_H,
   bottomY: BOTTOM,
-  amp: 5.5,
+  amp: 9,
   wavelength: WAVE,
   phase: 0.4,
   samples: 120,
@@ -67,7 +66,7 @@ const WATER_REAR = periodicSurface({
   width: OVERSCAN_W,
   surfaceY: BASE_LEVEL * VB_H + 6,
   bottomY: BOTTOM,
-  amp: 4.2,
+  amp: 7,
   wavelength: WAVE,
   phase: 2.1,
   samples: 120,
@@ -79,7 +78,7 @@ const WATER_FRONT = periodicSurface({
   width: OVERSCAN_W,
   surfaceY: BASE_LEVEL * VB_H - 1,
   bottomY: BOTTOM,
-  amp: 6.4,
+  amp: 10,
   wavelength: WAVE,
   phase: 4.4,
   samples: 120,
@@ -119,11 +118,18 @@ export function Headwater() {
      performs the run on the same command the console uses. */
   const sendRelease = useCallback(() => {
     if (!run.launched) run.launch();
-    run.goTo('flight');
+    /* Land on the drawing itself, centred, so the chambers filling is the
+       first thing on screen when the run begins. */
+    const mechanism = document.getElementById('flight-mechanism');
+    if (mechanism) {
+      mechanism.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
+    } else {
+      run.goTo('flight');
+    }
     window.setTimeout(() => {
       env?.bus.emit({ type: 'COMMAND', command: 'release:run' });
-    }, 260);
-  }, [env, run]);
+    }, reduced ? 0 : 420);
+  }, [env, reduced, run]);
 
   const rig = useRig({
     channels: {
@@ -163,9 +169,11 @@ export function Headwater() {
   });
   const revealRef = useReveal<HTMLDivElement>({ margin: '0px' });
 
-  const travel = viewport === 'tablet' ? 0.4 : 0.44;
+  /* How far the surface rises as the reader scrolls away — a fraction of
+     the band, so it never climbs into the text above it. */
+  const travel = viewport === 'tablet' ? 0.16 : 0.18;
   const surfaceLevel = (r: import('@/lib/motion').Rig) =>
-    r.reduced ? 0.78 : BASE_LEVEL - r.get('scroll') * travel;
+    r.reduced ? BASE_LEVEL : BASE_LEVEL - r.get('scroll') * travel;
 
   const worksRef = useVars<HTMLDivElement>(rig, {
     '--datum': (r) => surfaceLevel(r),

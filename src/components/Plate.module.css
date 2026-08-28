@@ -4,13 +4,7 @@
   position: relative;
   padding-block: var(--band);
   border-top: 1px solid var(--rule-faint);
-  /* Off-screen chapters are not laid out or painted until they approach the
-     viewport. The intrinsic size keeps the scrollbar honest; `auto` remembers
-     the real height once a chapter has been rendered. Scroll-spy, reveals
-     and the capsule docks all still work because geometry APIs force layout
-     on demand for `auto`. */
-  content-visibility: auto;
-  contain-intrinsic-size: auto 1400px;
+
   /* Set by Headwater and read by the waterway below, so the route between
      chapters lines up with the water level the visitor left behind. */
   --datum-fallback: 0.5;
@@ -97,9 +91,6 @@
   /* A title block, not a breadcrumb. The plate number is the largest mark
      on the page after the chapter title, and it stays visible while the
      chapter scrolls so a reader always knows which plate they are on. */
-  position: sticky;
-  top: var(--s-3);
-  z-index: 5;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   column-gap: var(--s-4);
@@ -112,8 +103,6 @@
   font-stretch: 87.5%;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  background: color-mix(in oklab, var(--ground) 82%, transparent);
-  backdrop-filter: blur(6px);
 }
 
 .no {

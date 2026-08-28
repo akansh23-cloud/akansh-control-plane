@@ -30,14 +30,6 @@ import motion from './ReleaseCapsuleMotion.module.css';
 const BAY_SIZE = { w: 144, h: 70 };
 const BAY_SIZE_SMALL = { w: 108, h: 54 };
 
-type DockGeometry = {
-  id: CapsuleDockId;
-  left: number;
-  top: number;
-  width: number;
-  height: number;
-};
-
 type TargetGeometry = {
   key: string;
   left: number;
@@ -81,46 +73,49 @@ export function ReleaseCapsule() {
      release travelling the works; a phone reader is owed the same object. */
   const desiredDock: CapsuleDockId = dock;
 
-  const dockGeometry = useRef<DockGeometry | null>(null);
   const targetRef = useRef<TargetGeometry | null>(null);
   const targetKeyRef = useRef('__initial__');
   const placedRef = useRef(false);
 
+  /* Where the capsule should be right now, from the dock's live rectangle.
+     V11 kept a stored copy of the dock's page coordinates and decided from
+     that whether the dock was on screen; the copy went stale the moment the
+     dock moved (the Flight's token climbs the chambers) or anything above it
+     changed height, and every scroll event snapped the target back to the
+     stale copy before the next paint corrected it — which is what read as
+     lag and flicker. There is no copy any more. One rectangle read per
+     scroll frame, and one per paint frame while seated, is the whole cost. */
   const resolveTarget = useCallback((): TargetGeometry => {
     const small = viewport === 'mobile';
     const bay = small ? BAY_SIZE_SMALL : BAY_SIZE;
     const railGap = small ? 108 : 84;
     const sideGap = small ? 14 : 26;
-    const stored = dockGeometry.current;
 
-    if (desiredDock !== 'bay' && stored && stored.id === desiredDock && stored.width > 0) {
-      const left = stored.left - window.scrollX;
-      const top = stored.top - window.scrollY;
-      const width = Math.max(78, stored.width);
-      const height = Math.max(42, stored.height);
-      const chromeSafeBottom = window.innerHeight - railGap;
-      /* Hysteresis. Seating requires the whole dock to be on screen; once
-         seated the capsule stays with its dock until the dock is well past
-         the edge. Without this the target flipped dock→bay→dock on every
-         scroll event as a dock crossed the viewport boundary, and the
-         capsule flew between the corner and the plate. */
-      const seatedNow = targetKeyRef.current === `dock:${desiredDock}`;
-      const slack = seatedNow ? height * 1.2 : 0;
-      const onScreen = seatedNow
-        ? top + height > -slack && top < window.innerHeight + slack
-        : top + height > 8 &&
-          top < window.innerHeight - 8 &&
-          top + height <= chromeSafeBottom;
+    if (desiredDock !== 'bay') {
+      const seat = dockElement(desiredDock);
+      if (seat && seat.isConnected) {
+        const rect = seat.getBoundingClientRect();
+        if (rect.width > 0) {
+          const width = Math.max(78, rect.width);
+          const height = Math.max(42, rect.height);
+          const top = rect.top;
+          const chromeSafeBottom = window.innerHeight - railGap;
+          /* Hysteresis. Seating needs the whole dock on screen; a seated
+             capsule stays with its dock until the dock is well past the
+             edge, so the target cannot flip dock→bay→dock as a dock crosses
+             the viewport boundary. */
+          const seatedNow = targetKeyRef.current === `dock:${desiredDock}`;
+          const slack = seatedNow ? height * 1.2 : 0;
+          const onScreen = seatedNow
+            ? top + height > -slack && top < window.innerHeight + slack
+            : top + height > 8 &&
+              top < window.innerHeight - 8 &&
+              top + height <= chromeSafeBottom;
 
-      if (onScreen) {
-        return {
-          key: `dock:${desiredDock}`,
-          left,
-          top,
-          width,
-          height,
-          seated: true,
-        };
+          if (onScreen) {
+            return { key: `dock:${desiredDock}`, left: rect.left, top, width, height, seated: true };
+          }
+        }
       }
     }
 
@@ -132,7 +127,7 @@ export function ReleaseCapsule() {
       height: bay.h,
       seated: false,
     };
-  }, [desiredDock, viewport]);
+  }, [desiredDock, dockElement, viewport]);
 
   const syncTarget = useCallback(() => {
     if (pathname !== '/') return;
@@ -165,58 +160,32 @@ export function ReleaseCapsule() {
     targetKeyRef.current = next.key;
     placedRef.current = true;
     rig.set('seated', next.seated ? 1 : 0, 'mechanical', 0.16);
-    /* A settled rig stops painting. While the capsule is seated its dock may
-       move under it (the Flight token climbs the chambers), so keep the clock
-       running — that is what makes the paint callback read the dock's live
-       rectangle every frame. In the bay there is nothing to follow. */
+    /* A settled rig stops painting. While seated the dock may move under the
+       capsule (the Flight token climbs), so the clock stays on and the paint
+       callback re-reads the dock every frame. In the bay there is nothing to
+       follow. */
     rig.setClock(next.seated && !reduced);
     rig.invalidate();
   }, [pathname, reduced, resolveTarget, rig]);
 
-  /* Measure dock geometry only when the dock itself or layout can change it.
-     Environment state such as X-Ray, tour, sound and chaos must not tear down
-     this observer or transiently unregister the dock. */
+  /* Re-seat whenever the dock changes, the window resizes, or the layout
+     around a dock changes size. Environment state (X-Ray, tour, sound, chaos)
+     never tears this down. */
   useEffect(() => {
     if (pathname !== '/') return;
-
-    const measure = () => {
-      if (desiredDock === 'bay') {
-        dockGeometry.current = null;
-        syncTarget();
-        return;
-      }
-
-      const target = dockElement(desiredDock);
-      if (!target || !target.isConnected) {
-        dockGeometry.current = null;
-        syncTarget();
-        return;
-      }
-
-      const rect = target.getBoundingClientRect();
-      dockGeometry.current = {
-        id: desiredDock,
-        left: rect.left + window.scrollX,
-        top: rect.top + window.scrollY,
-        width: rect.width,
-        height: rect.height,
-      };
-      syncTarget();
-    };
-
-    measure();
-    const target = desiredDock === 'bay' ? null : dockElement(desiredDock);
-    const ro = target && typeof ResizeObserver !== 'undefined'
-      ? new ResizeObserver(measure)
+    syncTarget();
+    const onResize = () => syncTarget();
+    window.addEventListener('resize', onResize, { passive: true });
+    const main = document.getElementById('main');
+    const ro = main && typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(() => syncTarget())
       : null;
-    if (target) ro?.observe(target);
-
-    window.addEventListener('resize', measure, { passive: true });
+    if (main) ro?.observe(main);
     return () => {
       ro?.disconnect();
-      window.removeEventListener('resize', measure);
+      window.removeEventListener('resize', onResize);
     };
-  }, [desiredDock, dockElement, pathname, syncTarget]);
+  }, [desiredDock, pathname, syncTarget]);
 
   useEffect(() => {
     if (pathname !== '/') return;
@@ -246,7 +215,6 @@ export function ReleaseCapsule() {
               width: Math.max(78, rect.width),
               height: Math.max(42, rect.height),
             };
-            targetRef.current = base;
           }
         }
       }

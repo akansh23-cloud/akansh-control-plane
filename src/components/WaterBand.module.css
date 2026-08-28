@@ -27,7 +27,9 @@
 }
 
 .mass { animation: band-flow 26s linear infinite; }
-.rear { animation: band-flow 19s linear infinite; animation-delay: -7s; }
+/* Two moving layers, not three: the rear crest costs a compositor layer per
+   plate and reads as noise at this height. */
+.rear { display: none; }
 .front { animation: band-flow 13s linear infinite; }
 
 .lineRear {

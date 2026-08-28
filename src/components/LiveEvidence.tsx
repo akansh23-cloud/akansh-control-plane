@@ -63,8 +63,8 @@ export function LiveEvidence({ repo, compact = false }: { repo: string; compact?
       <p className={styles.root} data-state="none" data-compact={compact || undefined}>
         <span className={styles.stamp}>Public repository</span>
         <span className={styles.line}>
-          Live status not fetched in this build — run <code>npm run evidence</code> with
-          network access, or check the repository directly.
+          Live status was not available when this build was made. The repository
+          is public and can be checked directly.
         </span>
       </p>
     );
