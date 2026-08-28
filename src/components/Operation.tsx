@@ -57,7 +57,7 @@ export function Operation({ objective, doing, matters, action, next }: Operation
         {target ? (
           <button
             type="button"
-            className={styles.continue}
+            className={`ctl ${styles.continue}`}
             onClick={() => {
               if (!run.launched) run.launch();
               run.goTo(next);

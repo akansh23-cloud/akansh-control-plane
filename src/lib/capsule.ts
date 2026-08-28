@@ -80,10 +80,12 @@ export const CAPSULE_DOCKS = [
   'bay',
   'headwater',
   'flight',
+  'refit',
   'basin',
   'split',
   'gauges',
   'watch',
+  'vault',
   'tidewater',
 ] as const;
 

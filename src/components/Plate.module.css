@@ -4,6 +4,13 @@
   position: relative;
   padding-block: var(--band);
   border-top: 1px solid var(--rule-faint);
+  /* Off-screen chapters are not laid out or painted until they approach the
+     viewport. The intrinsic size keeps the scrollbar honest; `auto` remembers
+     the real height once a chapter has been rendered. Scroll-spy, reveals
+     and the capsule docks all still work because geometry APIs force layout
+     on demand for `auto`. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 1400px;
   /* Set by Headwater and read by the waterway below, so the route between
      chapters lines up with the water level the visitor left behind. */
   --datum-fallback: 0.5;
@@ -71,6 +78,8 @@
    interaction ahead of the reference card and the tablet can put them
    side by side — without either composition being a compromise. */
 .inner {
+  position: relative;
+  z-index: 1;
   width: min(100% - var(--gutter) * 2, var(--shell));
   margin-inline: auto;
   display: grid;
@@ -85,25 +94,45 @@
 }
 
 .cartouche {
-  display: flex;
-  flex-wrap: wrap;
+  /* A title block, not a breadcrumb. The plate number is the largest mark
+     on the page after the chapter title, and it stays visible while the
+     chapter scrolls so a reader always knows which plate they are on. */
+  position: sticky;
+  top: var(--s-3);
+  z-index: 5;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--s-4);
   align-items: baseline;
-  gap: var(--s-3);
+  width: fit-content;
+  max-width: 100%;
+  padding: var(--s-2) var(--s-3) var(--s-2) 0;
   font-family: var(--font-data);
   font-size: var(--step--2);
   font-stretch: 87.5%;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+  background: color-mix(in oklab, var(--ground) 82%, transparent);
+  backdrop-filter: blur(6px);
 }
 
 .no {
+  grid-row: 1 / span 2;
+  font-family: var(--font-display);
+  font-size: var(--step-3);
+  font-weight: 700;
+  font-stretch: 88%;
+  letter-spacing: -0.02em;
+  line-height: 0.9;
   color: var(--signal);
-  font-weight: 600;
-  padding-right: var(--s-3);
-  border-right: 1px solid var(--rule);
+  padding-right: var(--s-4);
+  border-right: 1px solid var(--rule-strong);
 }
 
-.name { color: var(--bone); }
+.name {
+  color: var(--bone);
+  font-weight: 600;
+}
 
 .sub {
   color: var(--muted);
@@ -135,12 +164,32 @@
 
 .note {
   order: 4;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--s-3);
+  align-items: start;
   padding-top: var(--s-4);
   border-top: 1px solid var(--rule-faint);
-  max-width: 68ch;
-  font-size: var(--step--1);
+  max-width: 76ch;
+  font-size: var(--step--2);
   line-height: 1.5;
   color: var(--muted-2);
+}
+
+/* A title-block stamp. The long sentence stays for anyone who wants it, but
+   the eye reads the stamp and moves on. */
+.note::before {
+  content: 'Model · not live data';
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--signal-2);
+  border: 1px solid color-mix(in oklab, var(--signal-2) 60%, transparent);
+  border-radius: 2px;
+  padding: 3px 8px;
 }
 
 /* Tablet and up: the title and the reference card share a row, so the head

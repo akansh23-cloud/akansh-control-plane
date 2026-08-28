@@ -9,6 +9,7 @@ import {
   useState,
 } from 'react';
 import { Fold } from '@/components/Fold';
+import { LiveEvidence } from '@/components/LiveEvidence';
 import { InspectionField } from '@/components/InspectionField';
 import {
   mapEdges,
@@ -548,6 +549,7 @@ export function Basin() {
         </a>
         <span className={styles.deployNote}>{mapProject.deployment}</span>
       </p>
+      <LiveEvidence repo="akansh23-cloud/migration-verification" />
     </div>
   );
 }

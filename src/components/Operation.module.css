@@ -8,10 +8,14 @@
   gap: clamp(12px, 2vw, 28px);
   align-items: start;
   margin-bottom: var(--s-5);
-  padding: var(--s-4) var(--s-4) var(--s-4) 0;
-  border-top: 1px solid var(--rule-strong);
-  border-bottom: 1px solid var(--rule);
-  background: linear-gradient(90deg, color-mix(in oklab, var(--water-700) 16%, transparent), transparent 62%);
+  padding: var(--s-4) var(--s-4) var(--s-4) var(--s-4);
+  border: 1px solid var(--edge);
+  border-left: 3px solid var(--signal);
+  border-radius: 4px;
+  background:
+    linear-gradient(90deg, color-mix(in oklab, var(--water-700) 16%, transparent), transparent 62%),
+    var(--surface);
+  box-shadow: var(--shadow-raised);
 }
 
 .root[data-done] {
@@ -60,21 +64,9 @@
 }
 
 .continue {
-  min-height: 44px;
-  padding: 0 var(--s-4);
-  background: transparent;
-  border: 1px solid var(--rule-strong);
-  border-radius: 3px;
-  color: var(--bone-2);
-  font-family: var(--font-data);
-  font-size: 0.68rem;
-  letter-spacing: 0.08em;
-  cursor: pointer;
+  /* Composes the shared .ctl control; only the wrap rule is local. */
   white-space: nowrap;
 }
-
-.continue:hover { border-color: var(--signal); color: var(--signal); }
-.continue:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
 
 @media (max-width: 1023px) {
   .root {

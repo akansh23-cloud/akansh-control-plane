@@ -274,6 +274,50 @@ export function disturbedSurface(o: SurfaceOptions): string {
   return toPath(n, o.close ?? false, o.x, o.width, o.bottomY);
 }
 
+export type PeriodicSurfaceOptions = {
+  /** Left edge of the path, in viewBox units. */
+  x: number;
+  /** Total width of the path. Should be several wavelengths wide. */
+  width: number;
+  surfaceY: number;
+  bottomY: number;
+  /** Fundamental wavelength. The path repeats exactly every `wavelength`. */
+  wavelength: number;
+  amp: number;
+  /** Phase offset in radians, so layered surfaces do not crest together. */
+  phase?: number;
+  samples?: number;
+  close?: boolean;
+};
+
+/**
+ * A surface that is exactly periodic in `wavelength`. Translating the path
+ * horizontally by one wavelength produces an identical picture, which is what
+ * lets a compositor-only CSS animation loop it forever without a visible seam
+ * or a reversal. Two harmonics (1× and 2×) keep the crests from reading as a
+ * pure sine while preserving the period.
+ */
+export function periodicSurface(o: PeriodicSurfaceOptions): string {
+  const n = Math.max(8, Math.min(200, Math.round(o.samples ?? 96)));
+  const phase = o.phase ?? 0;
+  let d = 'M ';
+  for (let i = 0; i <= n; i += 1) {
+    const f = i / n;
+    const px = o.x + o.width * f;
+    const k = (px / o.wavelength) * Math.PI * 2;
+    const y =
+      o.surfaceY +
+      Math.sin(k + phase) * o.amp +
+      Math.sin(k * 2 + phase * 1.7 + 0.9) * o.amp * 0.32;
+    d += `${px.toFixed(1)},${y.toFixed(1)}`;
+    if (i < n) d += ' L ';
+  }
+  if (o.close) {
+    d += ` L ${(o.x + o.width).toFixed(1)},${o.bottomY.toFixed(1)} L ${o.x.toFixed(1)},${o.bottomY.toFixed(1)} Z`;
+  }
+  return d;
+}
+
 /* ------------------------------------------------------------------ */
 /* Architecture routing                                                */
 /* ------------------------------------------------------------------ */

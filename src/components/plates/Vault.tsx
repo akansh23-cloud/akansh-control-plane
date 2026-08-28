@@ -11,7 +11,16 @@ import {
   useVars,
   useViewport,
 } from '@/lib/motion';
+import { LiveEvidence } from '@/components/LiveEvidence';
 import styles from './Vault.module.css';
+
+/* Cards whose claim is a public repository get the repository's live state
+   under the evidence line. Fetched at build time; never typed by hand. */
+const LIVE_REPO: Record<string, string> = {
+  map: 'akansh23-cloud/migration-verification',
+  split: 'akansh23-cloud/career-autopilot',
+  site: 'akansh23-cloud/akansh-control-plane',
+};
 
 /**
  * PLATE 08 — THE VAULT. Every strong claim, opened up.
@@ -145,6 +154,7 @@ export function Vault() {
                 <div className={`${styles.field} ${styles.evidence}`}>
                   <p className="u-mark">Evidence</p>
                   <p className={styles.text}>{c.evidence}</p>
+                  {LIVE_REPO[c.id] ? <LiveEvidence repo={LIVE_REPO[c.id]} /> : null}
                   {c.seeAlso ? (
                     <a className={styles.link} href={c.seeAlso.href}>
                       {c.seeAlso.label}

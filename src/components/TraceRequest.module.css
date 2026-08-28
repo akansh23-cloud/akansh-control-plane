@@ -214,6 +214,10 @@
 @media (max-width: 719px) {
   .root { padding: var(--s-3); }
   .stationLabel { font-size: 15px; }
+  /* Eight stations across 360px were an unreadable strip. The drawing keeps
+     a legible width and the field scrolls sideways under the finger. */
+  .field { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .drawing { min-width: 720px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

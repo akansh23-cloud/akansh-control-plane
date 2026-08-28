@@ -72,12 +72,12 @@ export function CommissioningIntro() {
 
     const marks = reduced
       ? [0, 0, 0, 0, 0, 0, 0, 0]
-      : [0, 260, 900, 1500, 2150, 2900, 3700, 4600];
+      : [0, 140, 420, 720, 1040, 1400, 1780, 2200];
 
     const timers = marks.map((at, index) =>
       window.setTimeout(() => setStep(index), at),
     );
-    const exit = window.setTimeout(finish, reduced ? 80 : 5400);
+    const exit = window.setTimeout(finish, reduced ? 80 : 2600);
     const focus = reduced ? null : window.setTimeout(() => skipRef.current?.focus(), 90);
 
     const onKey = (event: KeyboardEvent) => {

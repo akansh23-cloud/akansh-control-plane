@@ -180,3 +180,39 @@
 @media (min-width: 1180px) {
   .toolkit { gap: var(--s-6); }
 }
+
+/* ---------------- the incident room card ---------------- */
+
+.incidentRoom {
+  display: grid;
+  gap: var(--s-1);
+  margin-top: var(--s-4);
+  padding: var(--s-4) var(--s-5);
+  border: 1px solid color-mix(in oklab, var(--signal) 48%, var(--edge));
+  border-left: 3px solid var(--signal);
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--void) 86%, var(--water-900));
+  color: var(--bone);
+  text-decoration: none;
+  transition: border-color var(--t-tap) var(--ease-gear), background var(--t-tap) var(--ease-gear);
+}
+
+.incidentRoom:hover,
+.incidentRoom:focus-visible {
+  border-color: var(--signal);
+  background: color-mix(in oklab, var(--water-900) 40%, var(--void));
+}
+
+.incidentRoomTitle {
+  font-family: var(--font-display);
+  font-weight: 620;
+  font-size: var(--step-1);
+  line-height: 1.15;
+}
+
+.incidentRoomNote {
+  font-size: var(--step--1);
+  line-height: 1.45;
+  color: var(--muted);
+  max-width: 48ch;
+}

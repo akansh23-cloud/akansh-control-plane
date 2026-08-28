@@ -262,7 +262,9 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  left: calc(var(--seam) * 100%);
+  /* Clamped so the grip is never clipped by the frame: at seam = 0 it used
+     to hang half outside the overflow and read as a 2px tick. */
+  left: clamp(28px, var(--seam) * 100%, calc(100% - 28px));
   width: 56px;
   margin-left: -28px;
   display: grid;
@@ -273,8 +275,9 @@
 }
 
 .grip {
-  width: 28px;
-  height: 56px;
+  width: 30px;
+  height: 64px;
+  border: 1px solid color-mix(in oklab, var(--void) 40%, transparent);
   border-radius: 3px;
   background: var(--signal);
   box-shadow: 0 6px 22px color-mix(in oklab, var(--void) 76%, transparent);
@@ -305,6 +308,21 @@
 .field[data-dragging] .grip { transform: scale(1.08); }
 .field[data-dragging] .handleMark,
 .handle:focus-visible .handleMark { opacity: 1; }
+
+/* Arrow glyphs so the grip reads as draggable before it is touched. */
+.grip::before {
+  content: '◂ ▸';
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-data);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--void);
+  pointer-events: none;
+}
+.grip { position: relative; }
 
 .handle:focus-visible .grip {
   outline: 2px solid var(--bone);
@@ -364,6 +382,8 @@
 /* On a phone the four-column table is unreadable, so each row becomes a small
    block with its own labels. Nothing is dropped. */
 @media (max-width: 719px) {
+  .table { display: block; width: 100%; }
+  .caption { display: block; width: 100%; max-width: none; }
   .table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
   .table tr {
     display: grid;

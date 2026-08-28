@@ -1,3 +1,22 @@
+/* =====================================================================
+   HEADWATER — water motion.
+
+   Every surface path is periodic in one wavelength (520 user units, see
+   WAVE in Headwater.tsx) and is drawn wide enough to overscan the chamber by
+   two wavelengths on each side. Each layer is translated by exactly one
+   wavelength with a linear, infinite, one-directional animation: at the end
+   of the cycle the picture is identical to the start, so the loop is
+   seamless and the water never stops or reverses. Three layers at three
+   speeds give the surface depth; the slow vertical breath is a separate,
+   phase-offset animation on the fill so the crest line and the mass do not
+   move in lockstep.
+
+   Nothing here touches layout: transforms and opacity only, on the
+   compositor. Translate values are in user units because transform-box is
+   view-box, which is what keeps the loop exact under a non-uniform
+   preserveAspectRatio.
+   ===================================================================== */
+
 .waterScroll {
   transform: translate3d(0, var(--water-shift, 0%), 0);
   transform-box: view-box;
@@ -8,23 +27,30 @@
 .waterMass,
 .waveRear,
 .waveFront,
-.currentField {
+.currentField,
+.currentLine {
   transform-box: view-box;
-  transform-origin: 50% 79%;
+  transform-origin: 0 0;
   will-change: transform;
 }
 
+/* The body of water. Drifts downstream slowly and breathes a little. */
 .waterMass {
-  animation: water-breathe 7.6s cubic-bezier(.45, .05, .55, .95) infinite alternate;
+  animation:
+    flow-one-wave 22s linear infinite,
+    water-breathe 7.6s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite alternate;
 }
 
+/* Rear crest line: slower, behind, softer. */
 .waveRear {
   opacity: 0.34;
-  animation: wave-rear 10.5s ease-in-out infinite alternate;
+  animation: flow-one-wave 17s linear infinite;
+  animation-delay: -6s;
 }
 
+/* Front crest line: the fastest layer, the one the eye reads as "the flow". */
 .waveFront {
-  animation: wave-front 6.2s ease-in-out infinite alternate;
+  animation: flow-one-wave 11s linear infinite;
 }
 
 .surfaceRear {
@@ -50,9 +76,9 @@
   animation: glint-flow 4.2s linear infinite;
 }
 
+/* Subsurface currents: three lines at three depths, each its own speed. */
 .currentField {
-  opacity: 0.28;
-  animation: current-drift 8.8s ease-in-out infinite alternate;
+  opacity: 0.3;
 }
 
 .currentLine {
@@ -61,37 +87,36 @@
   stroke-width: 0.9;
   stroke-dasharray: 72 58;
   vector-effect: non-scaling-stroke;
-  animation: current-flow 5.4s linear infinite;
+  animation:
+    flow-one-wave 14s linear infinite,
+    current-flow 5.4s linear infinite;
 }
 
 .currentLine:nth-child(2) {
   opacity: 0.7;
   stroke-dasharray: 42 76;
-  animation-duration: 7.1s;
-  animation-direction: reverse;
+  animation-duration: 19s, 7.1s;
+  animation-delay: -4s, 0s;
 }
 
 .currentLine:nth-child(3) {
   opacity: 0.5;
   stroke-dasharray: 94 64;
-  animation-duration: 8.3s;
+  animation-duration: 26s, 8.3s;
+  animation-delay: -9s, 0s;
 }
 
+/* One wavelength downstream, then the same picture again. */
+@keyframes flow-one-wave {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-520px, 0, 0); }
+}
+
+/* Applied as a second animation on the mass; composes with the drift. Kept
+   tiny so the level reads as steady with a living surface, not as sloshing. */
 @keyframes water-breathe {
-  0% { transform: translate3d(-12px, 1px, 0) scaleY(1); }
-  52% { transform: translate3d(7px, -3px, 0) scaleY(1.006); }
-  100% { transform: translate3d(18px, 2px, 0) scaleY(0.997); }
-}
-
-@keyframes wave-rear {
-  from { transform: translate3d(-46px, -2px, 0); }
-  to { transform: translate3d(48px, 3px, 0); }
-}
-
-@keyframes wave-front {
-  0% { transform: translate3d(38px, 1px, 0); }
-  45% { transform: translate3d(-18px, -4px, 0); }
-  100% { transform: translate3d(-52px, 2px, 0); }
+  0% { translate: 0 1px; }
+  100% { translate: 0 -2px; }
 }
 
 @keyframes glint-flow {
@@ -104,22 +129,15 @@
   to { stroke-dashoffset: -260; }
 }
 
-@keyframes current-drift {
-  from { transform: translate3d(-24px, 0, 0); }
-  to { transform: translate3d(28px, 2px, 0); }
-}
-
+/* Touch devices: keep the three surface layers alive (they are the whole
+   point of the plate) but drop the dashed current lines and the glint, which
+   are the expensive stroke-dash loops. */
 @media (max-width: 719px), (pointer: coarse) {
-  /* The hero sits behind the heaviest fixed chrome on touch devices. Keep the
-     two large water masses alive, but drop the continuously dashed current
-     field and glint sweep so scrolling does not compete with four extra SVG
-     paint/composite loops. The causal water level remains scroll-driven. */
-  .waterMass { animation-duration: 9.6s; }
-  .waveRear { animation-duration: 12s; }
-  .waveFront { animation-duration: 8s; }
+  .waterMass { animation-duration: 28s, 9.6s; }
+  .waveRear { animation-duration: 22s; }
+  .waveFront { animation-duration: 15s; }
 
   .surfaceGlint,
-  .currentField,
   .currentLine {
     animation: none !important;
   }

@@ -145,6 +145,22 @@ export const evidenceCards: EvidenceCard[] = [
     seeAlso: { label: 'Plate 05 — The Split', href: '#split' },
   },
   {
+    id: 'site',
+    kind: 'project',
+    claim: 'This site is a working application with a build gate and a performance budget.',
+    context:
+      'The portfolio itself: Next.js and TypeScript, hand-built SVG, one animation runtime, and a content layer that every plate, the résumé and the PDF render from.',
+    did: [
+      'Gate the build on a typecheck, the accuracy test suite and an asset-freshness check, so a fact cannot change without the generated artefacts following it.',
+      'Fetch the live state of the public repositories at build time, so the evidence on this page is read from GitHub rather than typed.',
+      'Hold the site to a performance budget in CI — Lighthouse against the built pages, with the thresholds in lighthouserc.json — so a slow release is refused like any other.',
+    ],
+    stack: ['Next.js', 'TypeScript', 'Vitest', 'Playwright', 'Lighthouse CI', 'GitHub Actions', 'Vercel'],
+    evidence:
+      'Fully checkable: the repository is public, the workflow that enforces the gates is in .github/workflows, and the budget thresholds are committed. The live readings under this card are fetched, not written.',
+    seeAlso: { label: 'Plate 02 — The Flight', href: '#flight' },
+  },
+  {
     id: 'certs',
     kind: 'credential',
     claim: 'AZ-104, AZ-900 and AWS Cloud Practitioner are held.',

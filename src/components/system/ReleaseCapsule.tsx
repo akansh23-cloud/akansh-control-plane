@@ -77,8 +77,9 @@ export function ReleaseCapsule() {
   });
 
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const desiredDock: CapsuleDockId =
-    viewport === 'mobile' && dock !== 'flight' ? 'bay' : dock;
+  /* Every plate now carries a dock, on every viewport. The capsule is one
+     release travelling the works; a phone reader is owed the same object. */
+  const desiredDock: CapsuleDockId = dock;
 
   const dockGeometry = useRef<DockGeometry | null>(null);
   const targetRef = useRef<TargetGeometry | null>(null);
@@ -98,10 +99,18 @@ export function ReleaseCapsule() {
       const width = Math.max(78, stored.width);
       const height = Math.max(42, stored.height);
       const chromeSafeBottom = window.innerHeight - railGap;
-      const onScreen =
-        top + height > 8 &&
-        top < window.innerHeight - 8 &&
-        top + height <= chromeSafeBottom;
+      /* Hysteresis. Seating requires the whole dock to be on screen; once
+         seated the capsule stays with its dock until the dock is well past
+         the edge. Without this the target flipped dock→bay→dock on every
+         scroll event as a dock crossed the viewport boundary, and the
+         capsule flew between the corner and the plate. */
+      const seatedNow = targetKeyRef.current === `dock:${desiredDock}`;
+      const slack = seatedNow ? height * 1.2 : 0;
+      const onScreen = seatedNow
+        ? top + height > -slack && top < window.innerHeight + slack
+        : top + height > 8 &&
+          top < window.innerHeight - 8 &&
+          top + height <= chromeSafeBottom;
 
       if (onScreen) {
         return {
@@ -156,6 +165,11 @@ export function ReleaseCapsule() {
     targetKeyRef.current = next.key;
     placedRef.current = true;
     rig.set('seated', next.seated ? 1 : 0, 'mechanical', 0.16);
+    /* A settled rig stops painting. While the capsule is seated its dock may
+       move under it (the Flight token climbs the chambers), so keep the clock
+       running — that is what makes the paint callback read the dock's live
+       rectangle every frame. In the bay there is nothing to follow. */
+    rig.setClock(next.seated && !reduced);
     rig.invalidate();
   }, [pathname, reduced, resolveTarget, rig]);
 
@@ -213,10 +227,34 @@ export function ReleaseCapsule() {
       const target = targetRef.current;
       if (!target) return;
       const element = el as HTMLElement;
-      const width = Math.max(1, target.width + r.get('offsetW'));
-      const height = Math.max(1, target.height + r.get('offsetH'));
-      const x = target.left + r.get('offsetX') - r.get('refuse') * 10;
-      const y = target.top + r.get('offsetY');
+
+      /* A seated capsule follows its dock live. The Flight's dock climbs the
+         chambers every frame while a release runs, and any plate above the
+         dock can change height; a stored rectangle is stale the moment
+         either happens. One rect read per frame is the price of a capsule
+         that is actually where the drawing says it is. */
+      let base = target;
+      if (target.seated && desiredDock !== 'bay') {
+        const seat = dockElement(desiredDock);
+        if (seat && seat.isConnected) {
+          const rect = seat.getBoundingClientRect();
+          if (rect.width > 0) {
+            base = {
+              ...target,
+              left: rect.left,
+              top: rect.top,
+              width: Math.max(78, rect.width),
+              height: Math.max(42, rect.height),
+            };
+            targetRef.current = base;
+          }
+        }
+      }
+
+      const width = Math.max(1, base.width + r.get('offsetW'));
+      const height = Math.max(1, base.height + r.get('offsetH'));
+      const x = base.left + r.get('offsetX') - r.get('refuse') * 10;
+      const y = base.top + r.get('offsetY');
 
       element.style.setProperty('--cap-w', `${width.toFixed(2)}px`);
       element.style.setProperty('--cap-h', `${height.toFixed(2)}px`);
@@ -225,7 +263,7 @@ export function ReleaseCapsule() {
       element.style.setProperty('--cap-seated', r.get('seated').toFixed(3));
       element.style.setProperty('--cap-refuse', r.get('refuse').toFixed(3));
     });
-  }, [pathname, rig]);
+  }, [desiredDock, dockElement, pathname, rig]);
 
   useEffect(() => {
     if (status === 'blocked') rig.set('refuse', 1, 'failure');
@@ -234,9 +272,19 @@ export function ReleaseCapsule() {
 
   useEffect(() => {
     if (pathname !== '/') return;
-    const onScroll = () => syncTarget();
+    let frame = 0;
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        syncTarget();
+      });
+    };
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
   }, [pathname, syncTarget]);
 
   const inspect = useCallback(() => setInspecting((open) => !open), []);

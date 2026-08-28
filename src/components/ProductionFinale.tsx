@@ -49,7 +49,7 @@ export function ProductionFinale() {
 
   useEffect(() => {
     if (!open) return;
-    const marks = reduced ? [0, 30, 60, 90, 120] : [0, 420, 1350, 2250, 3050];
+    const marks = reduced ? [0, 30, 60, 90, 120] : [0, 160, 620, 1100, 1550];
     const timers = marks.map((at, index) => window.setTimeout(
       () => setSequence({ runId, step: index }),
       at,

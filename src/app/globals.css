@@ -1,4 +1,15 @@
 /* =====================================================================
+   THE WORKS — the whole stylesheet.
+
+   V12 folded the version-numbered sheets (v7 → v10), hydraulics, performance
+   and mobile into this one file, in the exact order they used to be
+   imported, so the cascade is unchanged. Sections are marked with the file
+   they came from. The next pass should merge each section into the token
+   system or the owning component module; the reason it is one file now is
+   so that there is one place to do that from.
+   ===================================================================== */
+
+/* =====================================================================
    THE WORKS — visual identity, second build.
 
    The first build drew the site as a survey plate on stone paper: a small
@@ -23,7 +34,7 @@
   --bone: #F2EFE6;
   --bone-2: #D5DCDA;
   --muted: #93A6A8;
-  --muted-2: #6E8285;
+  --muted-2: #7E9396;
 
   /* --- water --- */
   --water-900: #08272E;
@@ -48,6 +59,20 @@
   --rule: color-mix(in oklab, var(--bone) 13%, transparent);
   --rule-strong: color-mix(in oklab, var(--bone) 26%, transparent);
   --rule-faint: color-mix(in oklab, var(--bone) 7%, transparent);
+
+  /* --- light. Premium is mostly light: a top-edge highlight where a raised
+     surface catches it, and a soft shadow underneath. One recipe, used by
+     every panel on the site. --- */
+  --edge-hi: color-mix(in oklab, var(--bone) 9%, transparent);
+  --surface: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--panel-2) 62%, transparent),
+    color-mix(in oklab, var(--panel) 78%, transparent)
+  );
+  --shadow-raised:
+    inset 0 1px 0 var(--edge-hi),
+    0 1px 0 color-mix(in oklab, var(--void) 60%, transparent),
+    0 18px 40px -28px color-mix(in oklab, var(--void) 90%, transparent);
 
   /* --- type --- */
   --font-display: 'Bricolage Grotesque Variable', 'Bricolage Grotesque',
@@ -86,7 +111,7 @@
   --shell: 1360px;
 
   /* Section rhythm: earned by content, never by 100vh. */
-  --band: clamp(38px, 7vw, 112px);
+  --band: clamp(34px, 5vw, 72px);
 
   /* --- motion --- */
   --ease-water: cubic-bezier(0.22, 0.61, 0.36, 1);
@@ -121,7 +146,8 @@ html {
 
 body {
   margin: 0;
-  background: var(--bg);
+  background:
+    linear-gradient(180deg, var(--ground-2) 0, var(--ground) 100vh, var(--ground) 100%);
   color: var(--fg);
   font-family: var(--font-body);
   font-size: var(--step-0);
@@ -269,13 +295,10 @@ img { max-width: 100%; height: auto; }
 
 /* A raised surface. Everything readable sits on one of these. */
 .card {
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--panel) 92%, var(--bone) 3%),
-    var(--panel)
-  );
+  background: var(--surface);
   border: 1px solid var(--edge);
-  border-radius: 3px;
+  border-radius: 4px;
+  box-shadow: var(--shadow-raised);
 }
 
 /* Controls. 44px minimum on every axis — this is the fix for "tiny
@@ -421,61 +444,9 @@ img { max-width: 100%; height: auto; }
 }
 
 
-/* =====================================================================
-   Entrance choreography.
-
-   One rule set drives every arrival on the page. A container marked by
-   useReveal flips from `out` to `in`, and its direct children rise into
-   place on a stagger. Because it is CSS, it costs nothing per frame and it
-   disappears entirely under prefers-reduced-motion — where the content is
-   simply already there, which is the correct behaviour rather than a
-   degraded one.
-   ===================================================================== */
-
-[data-reveal] > * {
-  transition:
-    opacity 620ms var(--ease-release),
-    transform 720ms var(--ease-release),
-    clip-path 720ms var(--ease-release);
-}
-
-[data-reveal='out'] > * {
-  opacity: 0;
-  transform: translate3d(0, 18px, 0);
-}
-
-[data-reveal='in'] > * {
-  opacity: 1;
-  transform: none;
-}
-
-/* Stagger. Nine steps is enough for any block on this page; anything past
-   that arrives with the ninth rather than waiting a full second. */
-[data-reveal] > *:nth-child(1) { transition-delay: 0ms; }
-[data-reveal] > *:nth-child(2) { transition-delay: 70ms; }
-[data-reveal] > *:nth-child(3) { transition-delay: 140ms; }
-[data-reveal] > *:nth-child(4) { transition-delay: 210ms; }
-[data-reveal] > *:nth-child(5) { transition-delay: 280ms; }
-[data-reveal] > *:nth-child(6) { transition-delay: 350ms; }
-[data-reveal] > *:nth-child(7) { transition-delay: 410ms; }
-[data-reveal] > *:nth-child(8) { transition-delay: 460ms; }
-[data-reveal] > *:nth-child(n + 9) { transition-delay: 500ms; }
-
-/* A flood reveal: the line is uncovered from the bottom up, the way a
-   chamber fills. Used on the masthead, and only there. */
-.u-flood {
-  clip-path: inset(0 0 0 0);
-}
-
-[data-reveal='out'] .u-flood {
-  clip-path: inset(0 0 100% 0);
-  opacity: 1;
-  transform: none;
-}
-
-[data-reveal='in'] .u-flood {
-  clip-path: inset(0 0 0 0);
-}
+/* Entrance choreography is owned by useReveal in lib/motion.ts (a single
+   WAAPI rise on first intersection). The old [data-reveal='out'] stagger was
+   never reached — the hook sets 'in' on mount — and has been removed. */
 
 /* =====================================================================
    Micro-interaction: controls behave like machined parts.
@@ -528,13 +499,6 @@ img { max-width: 100%; height: auto; }
 .ctl:disabled::before { transform: scaleY(0); }
 
 @media (prefers-reduced-motion: reduce) {
-  [data-reveal='out'] > *,
-  [data-reveal='out'] .u-flood {
-    opacity: 1;
-    transform: none;
-    clip-path: none;
-  }
-
   .ctl::before { transition: none; }
 }
 
@@ -553,5 +517,1137 @@ img { max-width: 100%; height: auto; }
     animation-iteration-count: 1 !important;
     transition-duration: 1ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+
+/* =====================================================================
+   ▼ formerly v7.css
+   ===================================================================== */
+
+/* V7 cross-cutting responsive corrections.
+
+   Component modules still own their drawings. These rules are intentionally
+   limited to semantics that span the finished application and were exposed by
+   the full browser matrix. */
+
+/* At the tablet/laptop transition the Basin control grid gives its longest
+   label a 151px content box while Martian Mono needs ~158px with the module's
+   12px side padding. Keep the same type and hit target; reclaim 8px from
+   padding instead of truncating, shrinking type, or allowing overflow. */
+#basin [role='tab'] {
+  padding-inline: 8px;
+}
+
+/* Mobile Safari pays heavily for multiple large fixed backdrop-filter surfaces.
+   More importantly, collapsed operator controls should not cover the work they
+   are meant to help someone inspect. Keep the controls opaque and compact until
+   the visitor explicitly opens them; an open panel may use the full safe width. */
+@media (max-width: 899px) {
+  body aside[aria-label='Living release run'] {
+    width: auto;
+    max-width: calc(100vw - 18px);
+  }
+
+  body aside[aria-label='Living release run']:has(#living-release-panel:not([hidden])) {
+    width: min(330px, calc(100vw - 18px));
+  }
+
+  body aside[aria-label='Living release run'] > button {
+    width: min(228px, calc(100vw - 18px));
+    min-height: 46px;
+    grid-template-columns: 30px minmax(0, 1fr);
+    background: #0a171a;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: 0 8px 22px rgb(0 0 0 / 0.34);
+  }
+
+  body aside[aria-label='Living release run']:has(#living-release-panel:not([hidden])) > button {
+    width: 100%;
+  }
+
+  body aside[aria-label='Living release run'] > button > :last-child {
+    display: none;
+  }
+
+  #living-release-panel {
+    background: #071114;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: 0 14px 36px rgb(0 0 0 / 0.42);
+  }
+
+  body aside[aria-label='Optional operator challenge'] {
+    width: auto;
+    max-width: calc(100vw - 18px);
+  }
+
+  body aside[aria-label='Optional operator challenge'] > button {
+    width: auto;
+    min-width: 178px;
+    min-height: 44px;
+    grid-template-columns: 30px auto;
+    gap: 8px;
+    padding: 6px 9px;
+    background: #071114;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: 0 8px 22px rgb(0 0 0 / 0.34);
+  }
+
+  body aside[aria-label='Optional operator challenge'] > button small {
+    display: none;
+  }
+
+  body aside[aria-label='Blackwater operator challenge'] {
+    width: min(330px, calc(100vw - 18px));
+  }
+
+  body aside[aria-label='Blackwater operator challenge'] > button,
+  #blackwater-drill-panel {
+    background: #071114;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: 0 12px 32px rgb(0 0 0 / 0.4);
+  }
+}
+
+
+/* =====================================================================
+   ▼ formerly v8.css
+   ===================================================================== */
+
+/* =====================================================================
+   LOCKWORKS V8 — EXPERIENCE DENSITY + CHROME CONTRACT
+
+   V7 component modules remain responsible for each engineering drawing. This
+   layer owns the cross-cutting contract the finished application needs:
+   responsive density, persistent chrome, viewport composition and the few
+   structural corrections that only become visible when all plates coexist.
+   ===================================================================== */
+
+:root {
+  --rail: 56px;
+  --chrome-h: calc(var(--rail) + env(safe-area-inset-bottom, 0px));
+  --chrome-gap: clamp(14px, 2.2vw, 28px);
+  --band: clamp(30px, 4vw, 64px);
+  --gutter: clamp(16px, 4vw, 62px);
+
+  /* A calmer display scale. Body/data floors are unchanged; only the display
+     end stops behaving as though every laptop were a 4K exhibition wall. */
+  --step-2: clamp(1.28rem, 1.17rem + 0.45vw, 1.62rem);
+  --step-3: clamp(1.62rem, 1.38rem + 0.95vw, 2.34rem);
+  --step-4: clamp(2.12rem, 1.66rem + 1.9vw, 3.55rem);
+  --step-5: clamp(2.72rem, 1.9rem + 3.6vw, 5.45rem);
+}
+
+html {
+  scroll-padding-top: clamp(18px, 3vh, 34px);
+  scroll-padding-bottom: calc(var(--chrome-h) + var(--chrome-gap));
+}
+
+body {
+  padding-bottom: calc(var(--chrome-h) + var(--chrome-gap));
+}
+
+#headwater,
+#flight,
+#refit,
+#basin,
+#split,
+#gauges,
+#watch,
+#vault,
+#tidewater {
+  scroll-margin-top: clamp(18px, 3vh, 34px);
+  scroll-margin-bottom: calc(var(--chrome-h) + var(--chrome-gap));
+}
+
+/* V8 chrome and Flight layout blocks were removed in V9: both targeted a
+   component structure that no longer exists (four floating fixed layers, and
+   a Flight composition whose status panel carried its own scrollbar). What
+   remains below is the plate work that is still correct. Chrome now lives in
+   OperatorChrome.module.css and v9.css. */
+
+
+/* ---------------------------------------------------------------------
+   PLATE 03 — THE REFIT
+   --------------------------------------------------------------------- */
+
+#refit div:has(> [role='slider'][aria-label^='Modernisation seam']) {
+  padding-block: 10px !important;
+}
+
+#refit div:has(> [role='slider'][aria-label^='Modernisation seam']) > div:first-child {
+  margin-bottom: 8px !important;
+  padding-inline: 12px !important;
+  line-height: 1.35 !important;
+}
+
+#refit div:has(> [role='slider'][aria-label^='Modernisation seam']) > ol > li {
+  min-height: 58px;
+  padding: 8px 12px !important;
+  gap: 10px !important;
+}
+
+#refit div:has(> [role='slider'][aria-label^='Modernisation seam']) > ol > li > span:nth-child(2) > span[data-face] {
+  padding: 7px 10px !important;
+}
+
+#refit div:has(> [role='slider'][aria-label^='Modernisation seam']) > ol > li > span:nth-child(2) > span[data-face] > span:last-child {
+  font-size: clamp(15px, 1.18vw, 18px) !important;
+  line-height: 1.08 !important;
+  overflow-wrap: normal !important;
+}
+
+#refit div:has(> [role='slider'][aria-label^='Modernisation seam']) > ol > li > span:nth-child(3) {
+  font-size: clamp(12px, 0.92vw, 14px) !important;
+  line-height: 1.32 !important;
+}
+
+@media (min-width: 720px) {
+  #refit div:has(> [role='slider'][aria-label^='Modernisation seam']) > ol > li {
+    grid-template-columns: minmax(100px, 0.48fr) minmax(178px, 0.9fr) minmax(0, 1.12fr) !important;
+  }
+}
+
+@media (min-width: 1180px) {
+  #refit div:has(> [role='slider'][aria-label^='Modernisation seam']) > ol > li {
+    grid-template-columns: minmax(108px, 0.46fr) minmax(196px, 0.88fr) minmax(220px, 1.18fr) !important;
+    padding: 8px 14px !important;
+  }
+
+  #refit table {
+    font-size: 12px !important;
+  }
+
+  #refit table th,
+  #refit table td {
+    padding-block: 6px !important;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Laptop density: composition changes because height is scarce, not because
+   someone globally zoomed the page.
+   --------------------------------------------------------------------- */
+
+@media (min-width: 900px) and (max-height: 820px) {
+  :root {
+    --rail: 52px;
+    --band: clamp(28px, 3.5vw, 48px);
+    --gutter: clamp(18px, 3.4vw, 48px);
+  }
+
+  .u-prose {
+    font-size: var(--step-0) !important;
+    line-height: 1.45 !important;
+  }
+
+}
+
+/* ---------------------------------------------------------------------
+   Motion narrative: semantic state changes the engineering atmosphere. These
+   are CSS state transitions, not new animation loops and not decorative noise.
+   --------------------------------------------------------------------- */
+
+html[data-run-drift='true'] #basin {
+  background-image: linear-gradient(90deg, color-mix(in oklab, var(--hold) 4%, transparent), transparent 34%);
+}
+
+html[data-run-service-down='true'] #split {
+  background-image: linear-gradient(90deg, transparent 0 48%, color-mix(in oklab, var(--hold) 5%, transparent) 48% 52%, transparent 52%);
+}
+
+html[data-run-telemetry='critical'] #gauges,
+html[data-run-phase='degraded'] #watch {
+  background-image: radial-gradient(80% 42% at 50% 20%, color-mix(in oklab, var(--fault) 5%, transparent), transparent 72%);
+}
+
+html[data-run-phase='production'] #tidewater {
+  background-image: radial-gradient(110% 62% at 50% 8%, color-mix(in oklab, var(--water-300) 9%, transparent), transparent 72%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #flight [data-phase]:has(> :nth-child(4) > ol) > :nth-child(4) > ol > li {
+    transform: none !important;
+  }
+}
+
+
+/* =====================================================================
+   ▼ formerly v9.css
+   ===================================================================== */
+
+/* =====================================================================
+   LOCKWORKS V9 — THE CHROME CONTRACT
+
+   V8 had four fixed layers competing for the foot of the screen and a Flight
+   composition that grew its own scrollbar. V9 states the contract once:
+
+   · exactly one fixed operator layer, `--rail` tall, and the document
+     reserves that height so no control can ever be covered;
+   · only one drawer is open at a time, and the drawer that is open sits
+     directly on top of the bar rather than floating beside it;
+   · the opening and the finale own the viewport while they are on it, and
+     everything else gets out of the way;
+   · 1366x768 is a first-class composition, not a scaled 1920.
+   ===================================================================== */
+
+:root {
+  /* Total height of the operator chrome. Everything else is measured from it. */
+  --rail: 60px;
+  --chrome-h: calc(var(--rail) + env(safe-area-inset-bottom, 0px));
+  --chrome-gap: clamp(12px, 1.8vw, 24px);
+}
+
+html {
+  scroll-padding-top: clamp(16px, 3vh, 32px);
+  scroll-padding-bottom: calc(var(--chrome-h) + var(--chrome-gap));
+}
+
+body {
+  /* The reserved band. This is why the bar can never hide the last line of
+     the page — the page is simply that much shorter than the viewport. */
+  padding-bottom: calc(var(--chrome-h) + var(--chrome-gap));
+}
+
+#headwater,
+#flight,
+#refit,
+#basin,
+#split,
+#gauges,
+#watch,
+#vault,
+#tidewater {
+  scroll-margin-top: clamp(16px, 3vh, 32px);
+  scroll-margin-bottom: calc(var(--chrome-h) + var(--chrome-gap));
+}
+
+/* ---------------------------------------------------------------------
+   Lifecycle: who owns the screen
+   --------------------------------------------------------------------- */
+
+/* While the works are being commissioned the page behind is held still, but
+   it is never removed — the gates open onto it. */
+html[data-opening='commissioning'] body {
+  overflow: hidden;
+}
+
+/* First paint, before React exists.
+
+   The bootstrap in layout.tsx decides whether this visit is commissioned; this
+   rule is what makes that decision visible immediately, so the page cannot
+   flash its content and then be covered. It is deliberately inert to the
+   pointer, and the bootstrap's own timeout clears the attribute if hydration
+   never arrives — a delayed hydration can never lock the visitor out. */
+html[data-opening='commissioning'] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 199;
+  pointer-events: none;
+  background: radial-gradient(120% 80% at 50% 58%, #0A171B 0%, #050B0D 62%, #03080A 100%);
+}
+
+/* The finale is a payoff, not a toast: nothing else may sit on top of it. */
+body:has([role='dialog'][aria-labelledby='production-finale-title']) [data-drawer],
+body:has([role='dialog'][aria-labelledby='production-finale-title']) .paper-grain {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------------
+   Responsive rail
+   --------------------------------------------------------------------- */
+
+@media (max-width: 719px) {
+  :root {
+    /* Two rows: 44px of state, 48px of primary action. */
+    --rail: 92px;
+    --band: clamp(28px, 7vw, 46px);
+  }
+}
+
+/* Short laptops — 1366x768 and 1280x800 — get a compact bar rather than a
+   compressed page. */
+@media (min-width: 720px) and (max-height: 780px) {
+  :root {
+    --rail: 54px;
+    --band: clamp(30px, 4.4vw, 60px);
+  }
+}
+
+@media (min-width: 720px) and (max-height: 620px) {
+  :root { --rail: 48px; }
+}
+
+/* ---------------------------------------------------------------------
+   Density at laptop widths
+
+   The display scale from V8 still assumed an exhibition wall. At 1366 the
+   plate headers were eating a third of the viewport before any mechanism was
+   visible, which is what made the Flight feel like an afterthought.
+   --------------------------------------------------------------------- */
+
+@media (min-width: 1180px) and (max-width: 1500px) {
+  :root {
+    --step-3: clamp(1.5rem, 1.3rem + 0.7vw, 1.95rem);
+    --step-4: clamp(1.95rem, 1.6rem + 1.2vw, 2.7rem);
+    --step-5: clamp(2.4rem, 1.9rem + 2.2vw, 3.9rem);
+    --band: clamp(30px, 3.2vw, 56px);
+    --gutter: clamp(24px, 3.4vw, 54px);
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Overflow safety
+
+   Nothing in the experience is allowed to widen the document. This is a
+   guard, not a layout: any component that trips it is a defect.
+   --------------------------------------------------------------------- */
+
+html,
+body {
+  max-width: 100%;
+}
+
+main {
+  overflow-x: clip;
+}
+
+/* ---------------------------------------------------------------------
+   Focus
+
+   Cinematic and keyboard-operable are not in tension. Every interactive
+   element in the works shows where it is.
+   --------------------------------------------------------------------- */
+
+:where(a, button, [role='slider'], [tabindex]):focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+
+/* =====================================================================
+   ▼ formerly v10.css
+   ===================================================================== */
+
+/* =====================================================================
+   LOCKWORKS V10 — THE LIVING INFRASTRUCTURE
+
+   V9 established the chrome contract: one fixed operator layer, one drawer at
+   a time, no nested scrollbars, 1366×768 as a first-class composition. None of
+   that changes here.
+
+   What V10 adds is a *world* around it. Four numbers describe the state of the
+   system at any moment, written once per frame by the runtime onto the
+   document element:
+
+     --sys-pressure    how much is being held back
+     --sys-flow        how fast the system is moving
+     --sys-turbulence  how disturbed it is
+     --sys-energy      the delayed downstream consequence
+
+   Plus a pointer field (--ptr-x / --ptr-y / --ptr-v) and one state word:
+
+     data-world = standby | commissioning | operating | production
+
+   The rule every effect in this file obeys: nothing moves on its own. With no
+   run, no scrolling and no pointer, every value below settles to rest and the
+   page becomes completely still.
+   ===================================================================== */
+
+:root {
+  /* Resting values, so the page is correct before the runtime has spoken. */
+  --sys-pressure: 0.12;
+  --sys-flow: 0.16;
+  --sys-turbulence: 0;
+  --sys-energy: 0.1;
+  --ptr-x: 0.5;
+  --ptr-y: 0.5;
+  --ptr-v: 0;
+
+  /* How alive the environment reads. Production raises it; nothing else does. */
+  --world-lift: 0;
+}
+
+/* ---------------------------------------------------------------------
+   THE PRESSURE SPINE
+
+   A single hairline down the left edge of the document that carries the
+   system's state. It is the quietest possible way to make pressure visible
+   everywhere without decorating anything.
+   --------------------------------------------------------------------- */
+
+/* The pressure spine (a fixed 2px hairline down the left edge) was removed
+   in V12: one fewer fixed layer, and the pressure model is still visible in
+   the bar's needle. */
+
+/* ---------------------------------------------------------------------
+   THE WORLD
+
+   Before production the works are being commissioned: restrained lighting,
+   dormant telemetry, low energy. After production they are operational — not
+   brighter, not celebratory. Online, stable, and under load.
+   --------------------------------------------------------------------- */
+
+html[data-world='operating'] { --world-lift: 0.35; }
+html[data-world='production'] { --world-lift: 1; }
+
+body {
+  /* A single low pool of light that rises when the system comes online, over
+     a sky that is a shade lighter than the ground at the top of the page. */
+  background-image:
+    radial-gradient(
+      120% 70% at 50% 88%,
+      color-mix(
+        in oklab,
+        var(--water-900) calc(18% + var(--world-lift) * 26%),
+        transparent
+      ) 0%,
+      transparent 62%
+    ),
+    linear-gradient(180deg, var(--ground-2) 0, var(--ground) 100vh, var(--ground) 100%);
+  background-attachment: scroll;
+  transition: background-image 1200ms var(--ease-water);
+}
+
+/* Telemetry comes online with production: the lamps across the works stop
+   being diagrams of lamps and start reporting. */
+html[data-world='production'] .lamp[data-state='ok']::before {
+  box-shadow:
+    0 0 0 4px color-mix(in oklab, currentColor 24%, transparent),
+    0 0 14px color-mix(in oklab, currentColor 46%, transparent);
+}
+
+/* Routes pulse once the system is operational — driven by downstream energy,
+   which only exists after a gate has actually released. */
+html[data-world='production'] main {
+  --route-pulse: calc(var(--sys-energy) * 1);
+}
+
+/* ---------------------------------------------------------------------
+   MATERIAL RESPONSE
+
+   Raised surfaces catch a little more light as system energy rises. This is
+   deliberately at the threshold of noticeable: it should read as the room
+   changing, never as the cards animating.
+   --------------------------------------------------------------------- */
+
+.card {
+  border-color: color-mix(
+    in oklab,
+    var(--edge),
+    var(--water-300) calc(var(--world-lift) * 14%)
+  );
+}
+
+/* Controls sit a fraction prouder when the system is under pressure — the
+   panel is live, so its switches feel loaded. */
+.ctl {
+  box-shadow: 0 0 0 0 transparent,
+    inset 0 -0.5px 0 color-mix(in oklab, var(--water-300) 18%, transparent);
+}
+
+/* Scroll performance: the grain blend is decorative and costly on touch/tablet. */
+@media (max-width: 1179px), (pointer: coarse) {
+  .paper-grain { display: none; }
+}
+
+/* ---------------------------------------------------------------------
+   X-RAY
+
+   The interface is pushed back rather than removed: it stays legible enough
+   to keep your place, and the annotation layer sits above it. Nothing is
+   blurred — blur would make the page unreadable, which is the opposite of
+   what an inspection mode is for.
+   --------------------------------------------------------------------- */
+
+html:is([data-xray='system'], [data-xray='network'], [data-xray='security'], [data-xray='state'])
+  main {
+  opacity: 0.42;
+  filter: saturate(0.35);
+  transition: opacity 180ms var(--ease-gear), filter 180ms var(--ease-gear);
+}
+
+html:is([data-xray='system'], [data-xray='network'], [data-xray='security'], [data-xray='state'])
+  main
+  [data-xray] {
+  opacity: 1;
+  filter: none;
+}
+
+main,
+main [data-xray] {
+  transition: opacity 220ms var(--ease-gear), filter 220ms var(--ease-gear);
+}
+
+/* ---------------------------------------------------------------------
+   CHAOS
+
+   An injected fault is visible at the level of the whole document, because a
+   fault is a property of the system and not of one panel. One hairline of
+   fault colour at the top edge — no flashing, no alarm.
+   --------------------------------------------------------------------- */
+
+html[data-chaos='active'] body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 120;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--fault) 80%, transparent) 30%,
+    color-mix(in oklab, var(--fault) 80%, transparent) 70%,
+    transparent
+  );
+  opacity: calc(0.5 + var(--sys-turbulence) * 0.5);
+}
+
+/* ---------------------------------------------------------------------
+   THE CAPSULE SEAT ON THE FLIGHT
+
+   The Flight used to draw its own artifact token. There is one release now,
+   so the token becomes an empty seat that the global capsule flies into: the
+   drawing keeps the space, the object is the capsule.
+   --------------------------------------------------------------------- */
+
+[data-capsule-seat] {
+  background: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+[data-capsule-seat] > [data-capsule-dock] {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border: none;
+  background: none;
+}
+
+/* ---------------------------------------------------------------------
+   MORPHING RESUME TRANSITION
+
+   The capsule is a plate; the résumé is a plate. Where the browser supports
+   view transitions the same named element carries between the two documents,
+   so navigating reads as one surface turning into another rather than a page
+   swap. Where it does not, navigation is simply instant — which is the right
+   fallback, because nobody should wait for a cinematic to read a CV.
+   --------------------------------------------------------------------- */
+
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(release-capsule),
+::view-transition-new(release-capsule) {
+  animation-duration: 320ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  mix-blend-mode: normal;
+}
+
+::view-transition-group(release-capsule) {
+  animation-duration: 320ms;
+}
+
+/* The résumé sheet is the surface the capsule becomes. */
+.resume-sheet {
+  view-transition-name: release-capsule;
+}
+
+/* ---------------------------------------------------------------------
+   AUTOPILOT
+
+   While the tour is driving, the region it is describing is the only thing at
+   full contrast. It is a spotlight made of restraint rather than of light.
+   --------------------------------------------------------------------- */
+
+html[data-tour='running'] main > * {
+  transition: opacity 420ms var(--ease-gear);
+}
+
+html[data-tour='running'] main > *:not([data-current]) {
+  opacity: 0.5;
+}
+
+/* ---------------------------------------------------------------------
+   REDUCED MOTION
+
+   Not "everything off". The states still change, the information is still
+   there, and pressure is still indicated — it simply stops travelling.
+   --------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  body {
+    background-attachment: scroll;
+    transition: none;
+  }
+
+  body::after {
+    transform: none;
+    transition: none;
+  }
+
+  html[data-tour='running'] main > * { transition: none; }
+}
+
+/* ---------------------------------------------------------------------
+   COARSE POINTERS
+
+   Pointer wake is meaningless on touch, so it is removed rather than
+   simulated. Everything else on this page works identically.
+   --------------------------------------------------------------------- */
+
+@media (hover: none), (pointer: coarse) {
+  body { background-attachment: scroll; }
+}
+
+
+/* =====================================================================
+   ▼ formerly hydraulics.css
+   ===================================================================== */
+
+/*
+ * Mobile-safe hydraulic motion.
+ *
+ * The decorative SVG remains the drawing and the scroll datum remains the
+ * source of truth. This layer exists only to make the water visibly alive on
+ * browsers that are inconsistent about CSS transforms on nested SVG <g>
+ * elements (notably mobile WebKit). It animates two ordinary pseudo-elements:
+ * a narrow surface band and a subsurface current sheet. Both are compositor-
+ * friendly and never rebuild SVG geometry.
+ */
+
+#headwater > header > div[aria-hidden='true']:first-child::before {
+  content: '';
+  position: absolute;
+  z-index: 3;
+  left: -18%;
+  width: 136%;
+  top: calc(var(--datum, 0.79) * 100% - 17px);
+  height: 42px;
+  pointer-events: none;
+  opacity: 0.92;
+  background:
+    radial-gradient(
+      ellipse 52px 12px at 50% 100%,
+      transparent 0 64%,
+      rgb(182 235 241 / 0.72) 66% 69%,
+      transparent 72%
+    ) 0 1px / 104px 25px repeat-x,
+    radial-gradient(
+      ellipse 78px 15px at 50% 100%,
+      transparent 0 66%,
+      rgb(82 174 188 / 0.58) 68% 71%,
+      transparent 74%
+    ) 37px 10px / 156px 31px repeat-x,
+    linear-gradient(
+      90deg,
+      transparent 0 6%,
+      rgb(207 245 249 / 0.26) 10%,
+      transparent 16% 31%,
+      rgb(151 221 230 / 0.22) 38%,
+      transparent 46% 100%
+    ) 0 0 / 240px 100% repeat-x;
+  animation:
+    hydraulic-surface-flow 2.7s linear infinite,
+    hydraulic-surface-bob 3.6s ease-in-out infinite alternate,
+    hydraulic-surface-breathe 5.4s ease-in-out infinite;
+  will-change: transform, background-position, opacity;
+}
+
+/* Replace the passive scrim with a moving current sheet while preserving the
+   same contrast gradient over the water. The sheet is deliberately wider
+   than the viewport so its compositor translation never exposes an edge. */
+#headwater > header > div[aria-hidden='true']:first-child::after {
+  left: -18%;
+  right: -18%;
+  z-index: 2;
+  background:
+    repeating-linear-gradient(
+      104deg,
+      transparent 0 54px,
+      rgb(105 201 214 / 0.07) 56px 57px,
+      transparent 60px 112px
+    ),
+    repeating-linear-gradient(
+      76deg,
+      transparent 0 82px,
+      rgb(188 236 242 / 0.045) 84px 86px,
+      transparent 88px 164px
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--void) 34%, transparent),
+      color-mix(in oklab, var(--void) 62%, transparent)
+    );
+  animation:
+    hydraulic-current-drift 5.8s ease-in-out infinite alternate,
+    hydraulic-current-pulse 4.6s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes hydraulic-surface-flow {
+  from {
+    background-position: 0 1px, 37px 10px, 0 0;
+  }
+  to {
+    background-position: 208px 1px, -275px 10px, 240px 0;
+  }
+}
+
+@keyframes hydraulic-surface-bob {
+  0% { transform: translate3d(-1.8%, -2px, 0); }
+  48% { transform: translate3d(0.8%, 3px, 0); }
+  100% { transform: translate3d(2.1%, -1px, 0); }
+}
+
+@keyframes hydraulic-surface-breathe {
+  0%, 100% { opacity: 0.76; }
+  45% { opacity: 0.98; }
+  72% { opacity: 0.86; }
+}
+
+@keyframes hydraulic-current-drift {
+  from { transform: translate3d(-2.8%, 0, 0); }
+  to { transform: translate3d(2.8%, 2px, 0); }
+}
+
+@keyframes hydraulic-current-pulse {
+  0%, 100% { opacity: 0.72; }
+  50% { opacity: 1; }
+}
+
+/* Phones need *more legible* motion, not less motion. The amplitude stays
+   small, but the surface cadence is fast enough to be unmistakable. */
+@media (max-width: 719px), (pointer: coarse) {
+  #headwater > header > div[aria-hidden='true']:first-child::before {
+    top: calc(var(--datum, 0.79) * 100% - 20px);
+    height: 48px;
+    opacity: 1;
+    background-size: 86px 24px, 132px 30px, 184px 100%;
+    animation-duration: 2.15s, 3.1s, 4.4s;
+  }
+
+  #headwater > header > div[aria-hidden='true']:first-child::after {
+    animation-duration: 4.6s, 3.8s;
+  }
+}
+
+/* Reduced motion is reduced, not a dead hydraulic drawing. Keep only a slow,
+   low-amplitude current so the system still reads as water without rapid
+   oscillation. */
+@media (prefers-reduced-motion: reduce) {
+  #headwater > header > div[aria-hidden='true']:first-child::before {
+    opacity: 0.52;
+    animation-duration: 9s, 12s, 11s;
+  }
+
+  #headwater > header > div[aria-hidden='true']:first-child::after {
+    opacity: 0.62;
+    animation-duration: 14s, 11s;
+  }
+
+  /* The fixed journey rail used to become completely static under the same
+     preference. Retain one slow current pass instead of switching it off. */
+  div[data-route='journey'] > span:nth-child(2)::before {
+    animation: hydraulic-rail-safe 5.6s linear infinite !important;
+  }
+
+  div[data-route='journey'] > span:nth-child(2)::after {
+    animation: none !important;
+  }
+}
+
+@keyframes hydraulic-rail-safe {
+  from { background-position: 0 0; }
+  to { background-position: 0 24px; }
+}
+
+
+/* =====================================================================
+   ▼ formerly performance.css
+   ===================================================================== */
+
+
+/* Runtime performance guardrails.
+
+   This file must never change the compositing model of the hydraulic drawings.
+   The first version used section-wide paint containment and forced persistent
+   UI onto GPU layers. Those optimisations isolated the plates from one another
+   and could make the continuous water motion feel stepped under scroll.
+
+   Keep only the safe protections below: readable content never waits for
+   IntersectionObserver, expensive viewport paint is reduced on touch/tablet,
+   and reduced-motion users resolve shared choreography almost immediately.
+*/
+
+@media (max-width: 1179px), (pointer: coarse) {
+  body {
+    background-attachment: scroll !important;
+  }
+
+  .paper-grain {
+    display: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    /* Preserve the causal event path while collapsing shared visual travel.
+       Components that wait on these transitions still complete normally,
+       instead of being bypassed by a blanket animation:none rule. */
+    --t-tap: 1ms;
+    --t-quick: 1ms;
+    --t-move: 1ms;
+    --t-fill: 1ms;
+  }
+
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+  }
+}
+
+
+/* =====================================================================
+   ▼ formerly mobile.css
+   ===================================================================== */
+
+/* Cross-device composition safeguards. The fixed operator chrome has five
+   direct controls on tablet/desktop: stage, run, depth, system strip and the
+   next operation. Give each one a real grid track so the fifth control can
+   never auto-flow into a phantom second row. */
+div:has(> [role='group'][aria-label='System controls']) {
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.25fr) auto auto minmax(150px, 15vw) !important;
+}
+
+/* Below laptop widths the Cloud Ops room is reached from the Tidewater card
+   and the index drawer. A floating beacon over a phone's content column was
+   covering headings and stealing taps; it is not drawn there any more. */
+@media (max-width: 1179px) {
+  button[aria-label='Enter BLACKOUT Cloud Ops incident room'] {
+    display: none !important;
+  }
+}
+
+/* At the portrait-tablet breakpoint the final two long station names collide.
+   Observability is the destination, so keep it and remove the redundant
+   Production label while retaining its tick in the physical route. */
+@media (min-width: 720px) and (max-width: 900px) {
+  #headwater ol > li:nth-child(5) > span:last-child {
+    display: none;
+  }
+}
+
+/* Compact secondary chrome before laptop widths get tight. The tap targets
+   remain full size; only redundant words disappear. */
+@media (max-width: 1499px) and (min-width: 720px) {
+  [role='group'][aria-label='System controls'] button > span:last-child {
+    display: none !important;
+  }
+
+  button[aria-controls='key-plate'] > span:last-child,
+  button[aria-controls='living-release-panel'] > span:last-child {
+    display: none !important;
+  }
+}
+
+/* Mobile-only composition contract. Desktop/tablet geometry is intentionally
+   preserved apart from the operator-rail hardening above. */
+@media (max-width: 719px) {
+  :root {
+    /* OperatorChrome is two rows on phones (44 + 48px). Reserve its real height. */
+    --rail: 94px;
+    --gutter: clamp(16px, 4.8vw, 22px);
+  }
+
+  html {
+    scroll-padding-bottom: calc(var(--rail) + var(--s-4) + env(safe-area-inset-bottom, 0px));
+  }
+
+  body {
+    min-width: 0;
+    overflow-x: clip;
+  }
+
+  main,
+  main > *,
+  main section,
+  main header {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* Fixed operator chrome must never consume a phantom third row on phones.
+     SystemStrip is removed from grid flow and seats inside the right side of
+     the second row. This keeps the bar at the 94px height reserved above. */
+  div:has(> [role='group'][aria-label='System controls']) {
+    position: relative;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+
+  div:has(> [role='group'][aria-label='System controls']) > [role='group'][aria-label='System controls'] {
+    position: absolute;
+    right: 6px;
+    bottom: max(2px, env(safe-area-inset-bottom, 0px));
+    z-index: 3;
+    height: 44px;
+    background: color-mix(in oklab, var(--void) 98%, var(--water-900));
+  }
+
+  div:has(> [role='group'][aria-label='System controls']) > button:last-child {
+    padding-right: 232px;
+    justify-content: flex-start;
+    justify-items: start;
+    text-align: left;
+  }
+
+  /* The capsule is smaller on phones so it cannot cover stage labels. The
+     scale is folded into the capsule's own transform (see
+     ReleaseCapsule.module.css) so it cannot drift off its dock. */
+  [data-capsule-root] { --cap-scale: 0.82; }
+
+  /* The Flight is a vertical machine on phones. Its water layer is positioned,
+     so the static labels used to be painted underneath it and disappeared.
+     Raise the labels above the water and compact the nine chambers slightly. */
+  #flight ol[aria-label='Release stages'] > li[data-kind][data-state] {
+    height: 42px !important;
+    min-height: 42px;
+  }
+
+  #flight ol[aria-label='Release stages'] > li[data-kind][data-state] > span:last-child {
+    position: relative !important;
+    z-index: 2;
+    min-width: 0;
+    color: var(--bone);
+  }
+
+  #flight ol[aria-label='Release stages'] > li[data-kind][data-state] > span:last-child span {
+    position: relative;
+    z-index: 2;
+  }
+
+  /* Generic hardening for the remaining engineering views. Large technical
+     payloads may scroll inside their own surface but may never widen the page. */
+  main pre,
+  main code {
+    max-width: 100%;
+    overflow-wrap: normal;
+  }
+
+  main pre {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  main table {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  main svg,
+  main canvas {
+    max-width: 100%;
+  }
+
+  main button,
+  main input,
+  main select,
+  main textarea {
+    min-width: 0;
+  }
+
+  /* Headwater's operator facts retain their two-column scan pattern, but the
+     engraved labels get enough room to stay whole at 360px. */
+  #headwater header ul > li {
+    grid-template-columns: 110px minmax(0, 1fr);
+    gap: var(--s-2);
+  }
+
+  #headwater header ul > li > span:first-child {
+    white-space: nowrap;
+  }
+
+  /* Recruiter-scale facts must read as facts, not compressed desktop rows. */
+  #headwater header dl {
+    width: 100%;
+  }
+
+  #headwater header dl > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 5px;
+    padding: 14px;
+  }
+
+  #headwater header dl > div > dt {
+    grid-row: auto;
+    font-size: clamp(2rem, 11vw, 2.8rem);
+    line-height: 1;
+  }
+
+  #headwater header dl > div > dd {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  #headwater h1 {
+    max-width: 100%;
+    font-size: clamp(3.4rem, 19vw, 5rem);
+    overflow-wrap: normal;
+  }
+
+  /* Chapter headers and prose stay inside the viewport even with browser text scaling. */
+  main h2,
+  main h3,
+  main p,
+  main dd,
+  main li {
+    min-width: 0;
+    overflow-wrap: break-word;
+  }
+
+  #flight h2 {
+    font-size: clamp(1.9rem, 9.5vw, 2.65rem);
+    line-height: 1.02;
+  }
+
+  /* The horizontal route is useful, but long station labels may never create page overflow. */
+  #headwater ol {
+    max-width: calc(100% - var(--gutter) * 2);
+  }
+}
+
+@media (max-width: 390px) {
+  #headwater header dl > div {
+    padding: 12px;
+  }
+
+  #headwater h1 {
+    font-size: clamp(3rem, 18vw, 4.4rem);
+  }
+
+  div:has(> [role='group'][aria-label='System controls']) > button:last-child {
+    padding-right: 224px;
+  }
+
+  #headwater header ul > li {
+    grid-template-columns: 106px minmax(0, 1fr);
   }
 }

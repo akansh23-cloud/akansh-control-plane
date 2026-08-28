@@ -1,0 +1,74 @@
+/* A row of engraved readings under a public project: verified when, pushed
+   when, CI outcome. The tone lamp is the only colour. */
+
+.root {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--s-3);
+  margin: 0;
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--edge);
+  border-left: 2px solid var(--water-300);
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--panel) 70%, transparent);
+}
+
+.root[data-state='none'] {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  border-left-color: var(--rule-strong);
+}
+
+.root[data-compact] { padding: var(--s-2) var(--s-3); gap: var(--s-2); }
+
+.cell { display: grid; gap: 2px; min-width: 0; }
+
+.stamp {
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.value,
+.line {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--step--1);
+  font-stretch: 87.5%;
+  color: var(--bone-2);
+  overflow-wrap: anywhere;
+}
+
+.line { font-family: var(--font-body); color: var(--muted); }
+.line code { font-family: var(--font-data); color: var(--bone-2); }
+
+.value a { color: inherit; }
+
+.cell[data-tone='ok'] .value::before,
+.cell[data-tone='fault'] .value::before,
+.cell[data-tone='hold'] .value::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--live);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--live) 22%, transparent);
+  vertical-align: 1px;
+}
+
+.cell[data-tone='fault'] .value::before {
+  background: var(--fault);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--fault) 22%, transparent);
+}
+
+.cell[data-tone='hold'] .value::before {
+  background: var(--hold);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--hold) 22%, transparent);
+}

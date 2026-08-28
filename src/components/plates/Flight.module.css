@@ -11,10 +11,15 @@
 
 .root {
   display: grid;
-  grid-template-columns: minmax(220px, 0.82fr) minmax(0, 1.7fr) minmax(240px, 1fr);
+  /* The drawing is the plate. It takes the full width on the first row and
+     the operator and context sit beneath it — previously it was squeezed
+     into a middle column between them and became the smallest thing on the
+     screen. */
+  grid-template-columns: minmax(240px, 0.9fr) minmax(0, 1.1fr);
   grid-template-areas:
-    'operator mechanism context'
-    'fittings fittings  fittings';
+    'mechanism mechanism'
+    'operator  context'
+    'fittings  fittings';
   gap: clamp(18px, 2.2vw, 34px);
   align-items: start;
 }
@@ -121,9 +126,9 @@
   --rise: calc((100% - var(--h)) / 8);
   --flow: 0;
   position: relative;
-  aspect-ratio: 1.68;
-  min-height: 260px;
-  max-height: 44vh;
+  aspect-ratio: 2.35;
+  min-height: 300px;
+  max-height: 58vh;
   background:
     linear-gradient(180deg, color-mix(in oklab, var(--void) 60%, transparent), var(--water-900));
   border: 1px solid var(--rule);
@@ -290,12 +295,12 @@
 
 .scaleNote {
   font-family: var(--font-data);
-  font-size: 0.6rem;
+  font-size: var(--step--2);
   letter-spacing: 0.1em;
   color: var(--muted-2);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* Wrap, never truncate: the last three stages used to be cut off. */
+  white-space: normal;
+  text-wrap: balance;
 }
 
 /* ---------------------------------------------------------------------
@@ -598,12 +603,12 @@
   .root {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     grid-template-areas:
-      'operator context'
       'mechanism mechanism'
+      'operator context'
       'fittings fittings';
   }
 
-  .works { max-height: 40vh; }
+  .works { max-height: 48vh; aspect-ratio: 2; }
 }
 
 /* ---------------------------------------------------------------------

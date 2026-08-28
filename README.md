@@ -18,8 +18,16 @@ motion families and the rules for adding to it.
 `npm run build` cannot ship a factual regression. `prebuild` runs, in order:
 
 ```
-typecheck  →  vitest (70 accuracy tests)  →  asset freshness
+evidence  →  typecheck  →  vitest (accuracy tests)  →  asset freshness
 ```
+
+`evidence` (`scripts/fetch-evidence.mjs`) reads the public repositories from
+the GitHub API and writes `src/content/evidence-live.json`, which the Basin,
+the Split and the Vault render as "Verified <date>" readings. It never
+invents a value: with no network the UI says so. Set `EVIDENCE_STRICT=1` in
+the production pipeline so a release cannot ship without fresh evidence.
+CI also runs a Lighthouse budget (`lighthouserc.json`) against the built
+site on every push.
 
 The asset gate (`scripts/check-assets.mjs`) hashes the content layer and every
 generator, and refuses the build if the résumé PDF or the Open Graph image were
@@ -80,18 +88,21 @@ nothing is hidden on arrival.
 
 ### Design system
 
-Deliberately not dark-mode-and-cyan, and deliberately not Inter.
+Deliberately not dark-mode-and-cyan, and deliberately not Inter — but it is
+dark. The second build inverted the original stone-paper drawing set: the
+ground is wet graphite, the type is bone, water is the only cool colour and
+machinery yellow the only warm one. The tokens live in `src/app/globals.css`.
 
-- **Surface** — wet limestone (`#F1F2EB` → `#A2A89B`), with paper grain.
-- **Ink** — slate (`#0F1719` → `#6C7A7E`).
-- **Water** — cold teal (`#0E2C33` → `#6FA8AF`).
-- **One accent** — machinery yellow `#E8B62C`, the colour lock gear is painted.
-- **Type** — Bricolage Grotesque Variable (display, with the width axis driven
-  by the water level), Instrument Sans Variable (body), Martian Mono Variable
-  (data and engraved labels). All self-hosted; nothing is fetched from Google.
+- **Ground** — graphite (`#070D0F` → `#142A2F`), with paper grain on desktop.
+- **Ink** — bone (`#F2EFE6` → `#7E9396`). Small print is never below 4.5:1.
+- **Water** — cold teal (`#08272E` → `#8FCBD4`).
+- **One accent** — machinery yellow `#F0BE3A`, the colour lock gear is painted.
+- **Type** — Bricolage Grotesque Variable (display, width axis), Instrument
+  Sans Variable (body), Martian Mono Variable (data and engraved labels). All
+  self-hosted; nothing is fetched from Google.
 - **Motion** — three easings that mean different things: `--ease-water` for
-  anything settling under gravity, `--ease-gear` for machinery, `--ease-release`
-  for the moment a gate lets go.
+  anything settling under gravity, `--ease-gear` for machinery,
+  `--ease-release` for the moment a gate lets go. See `MOTION.md`.
 
 ---
 

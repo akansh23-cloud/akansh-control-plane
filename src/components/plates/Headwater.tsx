@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useJourney } from '@/components/JourneySystem';
+import { useMaybeEnvironment } from '@/components/system/Environment';
 import { barclays, contact, journey, profile, scale, site } from '@/content';
-import { disturbedSurface } from '@/lib/geometry';
+import { periodicSurface } from '@/lib/geometry';
 import {
   usePrefersReducedMotion,
   useReveal,
@@ -32,57 +34,68 @@ import motion from './HeadwaterMotion.module.css';
 
 const VB_W = 1200;
 const VB_H = 800;
-const BASE_LEVEL = 0.79;
-const OVERSCAN_X = -180;
-const OVERSCAN_W = 1560;
+/* The resting water level, as a fraction of the chamber height. 0.79 put the
+   surface below the first viewport on every desktop, so the landing page read
+   as an empty tank. The surface now sits under the masthead, and the stats
+   and the route below it stand on raised cards so nothing textual is
+   submerged. */
+const BASE_LEVEL = 0.6;
 const BOTTOM = VB_H + 380;
 
-const WATER_FILL = disturbedSurface({
+/* Every surface is periodic in WAVE, and each path is drawn wide enough that
+   a CSS translate of exactly one wavelength shows an identical picture: that
+   is what lets the water run continuously in one direction with no seam and
+   no reversal, on the compositor, with nothing recomputed per frame. */
+const WAVE = 520;
+const OVERSCAN_X = -WAVE * 2;
+const OVERSCAN_W = VB_W + WAVE * 4;
+
+const WATER_FILL = periodicSurface({
   x: OVERSCAN_X,
   width: OVERSCAN_W,
   surfaceY: BASE_LEVEL * VB_H,
   bottomY: BOTTOM,
-  t: 0.25,
   amp: 5.5,
-  wavelength: 460,
-  samples: 52,
+  wavelength: WAVE,
+  phase: 0.4,
+  samples: 120,
   close: true,
 });
 
-const WATER_REAR = disturbedSurface({
+const WATER_REAR = periodicSurface({
   x: OVERSCAN_X,
   width: OVERSCAN_W,
-  surfaceY: BASE_LEVEL * VB_H + 7,
+  surfaceY: BASE_LEVEL * VB_H + 6,
   bottomY: BOTTOM,
-  t: 2.1,
   amp: 4.2,
-  wavelength: 340,
-  samples: 52,
+  wavelength: WAVE,
+  phase: 2.1,
+  samples: 120,
   close: false,
 });
 
-const WATER_FRONT = disturbedSurface({
+const WATER_FRONT = periodicSurface({
   x: OVERSCAN_X,
   width: OVERSCAN_W,
   surfaceY: BASE_LEVEL * VB_H - 1,
   bottomY: BOTTOM,
-  t: 4.4,
   amp: 6.4,
-  wavelength: 520,
-  samples: 52,
+  wavelength: WAVE,
+  phase: 4.4,
+  samples: 120,
   close: false,
 });
 
 const CURRENT_LINES = [46, 92, 142].map((depth, i) =>
-  disturbedSurface({
+  periodicSurface({
     x: OVERSCAN_X,
     width: OVERSCAN_W,
     surfaceY: BASE_LEVEL * VB_H + depth,
     bottomY: BOTTOM,
-    t: 1.3 + i * 2.25,
     amp: 2.2 + i * 0.45,
-    wavelength: 370 + i * 90,
-    samples: 44,
+    wavelength: WAVE,
+    phase: 1.3 + i * 2.25,
+    samples: 96,
     close: false,
   }),
 );
@@ -97,6 +110,20 @@ export function Headwater() {
   const reduced = usePrefersReducedMotion();
   const tier = useTier();
   const viewport = useViewport();
+  const run = useJourney();
+  const env = useMaybeEnvironment();
+
+  /* The first interaction is the thing this site is best at. One press
+     sends the release out of the headwater and up the flight: the page
+     travels to Plate 02 and the Flight — which owns the mechanism —
+     performs the run on the same command the console uses. */
+  const sendRelease = useCallback(() => {
+    if (!run.launched) run.launch();
+    run.goTo('flight');
+    window.setTimeout(() => {
+      env?.bus.emit({ type: 'COMMAND', command: 'release:run' });
+    }, 260);
+  }, [env, run]);
 
   const rig = useRig({
     channels: {
@@ -257,7 +284,16 @@ export function Headwater() {
         <p className={`u-prose ${styles.thesis}`}>{profile.thesis}</p>
 
         <nav className={`ctl-row ${styles.actions}`} aria-label="Primary">
-          <a className="ctl" data-primary="" href={site.resumeRoute}>
+          <button
+            type="button"
+            className={`ctl ${styles.send}`}
+            data-primary=""
+            onClick={sendRelease}
+          >
+            <span className={styles.sendMark} aria-hidden="true" />
+            Run a release
+          </button>
+          <a className="ctl" href={site.resumeRoute}>
             Résumé
           </a>
           <a className="ctl" href={`mailto:${contact.email}`}>

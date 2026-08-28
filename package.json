@@ -5,7 +5,8 @@
   "description": "The Lockworks — personal engineering portfolio for Akansh Mowar (DevOps / Platform / Cloud Engineer).",
   "scripts": {
     "dev": "next dev",
-    "prebuild": "npm run audit:source && npm run typecheck && npm run test && npm run assets:check",
+    "prebuild": "npm run evidence && npm run audit:source && npm run typecheck && npm run test && npm run assets:check",
+    "evidence": "node scripts/fetch-evidence.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",

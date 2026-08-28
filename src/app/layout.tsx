@@ -3,12 +3,6 @@ import '@fontsource-variable/bricolage-grotesque/wdth.css';
 import '@fontsource-variable/instrument-sans/index.css';
 import '@fontsource-variable/martian-mono/wdth.css';
 import './globals.css';
-import './v7.css';
-import './v8.css';
-import './v9.css';
-import './v10.css';
-import './performance.css';
-import './mobile.css';
 import { CommissioningIntro } from '@/components/CommissioningIntro';
 import { GamePortal } from '@/components/GamePortal';
 import { JourneyProvider } from '@/components/JourneySystem';
@@ -80,7 +74,7 @@ export const viewport: Viewport = {
     { media: '(prefers-color-scheme: light)', color: '#E6E8DF' },
     { media: '(prefers-color-scheme: dark)', color: '#0A1215' },
   ],
-  colorScheme: 'light',
+  colorScheme: 'dark',
 };
 
 const personSchema = {

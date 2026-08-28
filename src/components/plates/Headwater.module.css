@@ -193,7 +193,7 @@
 
 .name {
   display: grid;
-  font-size: clamp(3.75rem, 1.6rem + 9.6vw, 9.5rem);
+  font-size: clamp(3.5rem, 1.6rem + 10.5vw, 12rem);
   color: var(--bone);
   margin-block: var(--s-1) 0;
   text-shadow: 0 10px 40px color-mix(in oklab, var(--void) 70%, transparent);
@@ -243,11 +243,35 @@
   gap: var(--s-2);
 }
 
-.actions :global(.ctl) { width: 100%; padding-inline: var(--s-3); }
+/* The one primary action on the page. Wider than the links, and it carries
+   the machinery-yellow mark of the release it sends. */
+.send {
+  grid-column: 1 / -1;
+  min-height: 52px;
+  font-size: var(--step--1);
+  letter-spacing: 0.14em;
+}
+
+.sendMark {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--void);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--void) 30%, transparent);
+  flex: none;
+}
+
+.actions :global(.ctl) {
+  width: 100%;
+  padding-inline: var(--s-3);
+  /* The water passes behind these on every viewport now: solid ground. */
+  background: color-mix(in oklab, var(--void) 84%, var(--panel-2));
+}
 
 @media (min-width: 560px) {
   .actions { display: flex; flex-wrap: wrap; }
   .actions :global(.ctl) { width: auto; padding-inline: var(--s-5); }
+  .actions .send { padding-inline: var(--s-6); }
 }
 
 /* ---------------- scale facts ---------------- */
@@ -266,11 +290,12 @@
   column-gap: var(--s-4);
   row-gap: 2px;
   padding: var(--s-4);
-  background: color-mix(in oklab, var(--void) 78%, transparent);
-  backdrop-filter: blur(6px);
+  background: color-mix(in oklab, var(--void) 82%, var(--panel));
+  backdrop-filter: blur(8px);
   border: 1px solid color-mix(in oklab, var(--water-100) 22%, transparent);
   border-left: 2px solid var(--signal);
-  border-radius: 3px;
+  border-radius: 4px;
+  box-shadow: var(--shadow-raised);
   transition:
     transform var(--t-quick) var(--ease-release),
     border-color var(--t-quick) var(--ease-gear);
@@ -391,9 +416,11 @@
 /* Six labels will not fit across a phone; three tell the same story, and the
    channel down the side of the page carries the rest. */
 @media (max-width: 719px) {
-  .station:nth-child(2) .stationLabel,
-  .station:nth-child(4) .stationLabel,
-  .station:nth-child(5) .stationLabel { display: none; }
+  /* Six stations do not fit on one row at 360px; alternate them over two
+     rows rather than hiding half of the route. */
+  .stations { height: 48px; }
+  .station:nth-child(even) .stationLabel { top: 28px; }
+  .station:nth-child(even) .tick { height: 24px; }
   .gauge, .gear { display: none; }
   .wall { width: 8px; }
 }
@@ -418,27 +445,30 @@
   .thesis { grid-column: 1; grid-row: 4; }
 
   .meta {
-    grid-column: 2;
-    grid-row: 2 / span 3;
-    align-self: end;
-    grid-template-columns: minmax(0, 1fr);
+    grid-column: 1;
+    grid-row: 6;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--s-4);
-    padding: 0 0 var(--s-2) var(--s-5);
-    border-top: 0;
+    padding: var(--s-3) 0 0;
+    border-top: 1px solid var(--rule);
     border-bottom: 0;
-    border-left: 1px solid var(--rule);
   }
 
   .meta li { grid-template-columns: minmax(0, 1fr); gap: 2px; }
   .metaValue { font-size: var(--step-1); }
 
-  .actions { grid-column: 1 / -1; grid-row: 5; }
+  .actions { grid-column: 1; grid-row: 5; }
 
+  /* The three big numbers stand in the right column, stacked, rather than
+     as a strip under everything. That is what fills the half of the hero
+     that used to be an empty tank on wide screens. */
   .scale {
-    grid-column: 1 / -1;
-    grid-row: 6;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-column: 2;
+    grid-row: 2 / span 4;
+    align-self: end;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--s-3);
+    margin-top: 0;
   }
 
   .stat { grid-template-columns: minmax(0, 1fr); row-gap: var(--s-2); }

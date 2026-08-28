@@ -178,6 +178,17 @@ export function Tidewater() {
             GitHub
           </a>
         </nav>
+
+        {/* The incident room lives here on phones and tablets, where the
+            floating beacon used to cover the content column. */}
+        <a className={styles.incidentRoom} href="/cloud-ops">
+          <span className="u-mark">Play Cloud Ops</span>
+          <span className={styles.incidentRoomTitle}>Enter the incident room</span>
+          <span className={styles.incidentRoomNote}>
+            A production fault, a pager, and the platform&rsquo;s own signals. Find
+            the cause without guessing.
+          </span>
+        </a>
       </div>
     </div>
   );

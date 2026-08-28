@@ -37,13 +37,20 @@
 
 .gauge {
   display: grid;
-  gap: var(--s-2);
+  /* A staff gauge cut into the wall: the tube on the left, the reading and
+     its meaning to the right. This is the plate's metaphor, drawn. */
+  grid-template-columns: 22px minmax(0, 1fr);
+  grid-template-rows: auto auto auto 1fr;
+  column-gap: var(--s-4);
+  row-gap: var(--s-2);
   align-content: start;
   min-width: 0;
+  min-height: 176px;
   padding: var(--s-4);
   border: 1px solid var(--edge);
-  border-radius: 3px;
-  background: color-mix(in oklab, var(--panel) 62%, transparent);
+  border-radius: 4px;
+  background: var(--surface);
+  box-shadow: var(--shadow-raised);
 }
 
 .gaugeName {
@@ -79,24 +86,78 @@
   color: var(--muted);
 }
 
+.gaugeName,
+.gaugeValue,
+.gaugeMeaning,
+.gaugeSeen { grid-column: 2; }
+
+/* The tube. Engraved ticks every tenth, a brighter one every half. */
 .gaugeBar {
-  height: 6px;
+  grid-column: 1;
+  grid-row: 1 / span 4;
+  position: relative;
+  align-self: stretch;
+  width: 22px;
+  min-height: 120px;
+  border: 1px solid var(--edge);
   border-radius: 2px;
-  background: color-mix(in oklab, var(--bone) 10%, transparent);
+  background:
+    repeating-linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--bone) 26%, transparent) 0 1px,
+      transparent 1px 10%
+    ),
+    linear-gradient(90deg, color-mix(in oklab, var(--void) 70%, transparent), color-mix(in oklab, var(--panel-2) 80%, transparent));
+  background-blend-mode: normal;
   overflow: hidden;
 }
 
-.gaugeBar span {
-  display: block;
-  height: 100%;
-  width: calc(var(--v, 0) * 100%);
-  background: var(--water-300);
-  transition: width var(--t-quick) var(--ease-water);
+.gaugeBar::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 50%;
+  top: 50%;
+  height: 1px;
+  background: color-mix(in oklab, var(--bone) 40%, transparent);
 }
 
-.gauge[data-id='errors'] .gaugeBar span { background: var(--fault); }
-.gauge[data-id='readiness'] .gaugeBar span { background: var(--live); }
-.gauge[data-id='latency'] .gaugeBar span { background: var(--hold); }
+.gaugeBar span {
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  bottom: 3px;
+  height: calc(var(--v, 0) * (100% - 6px));
+  border-radius: 1px;
+  background: linear-gradient(180deg, color-mix(in oklab, var(--water-100) 70%, var(--water-300)), var(--water-500));
+  box-shadow: 0 0 10px color-mix(in oklab, var(--water-300) 50%, transparent);
+  transition: height var(--t-move) var(--ease-water);
+}
+
+/* The level line at the top of the fill. */
+.gaugeBar span::after {
+  content: '';
+  position: absolute;
+  left: -3px;
+  right: -3px;
+  top: 0;
+  height: 2px;
+  background: var(--bone);
+  opacity: 0.85;
+}
+
+.gauge[data-id='errors'] .gaugeBar span {
+  background: linear-gradient(180deg, color-mix(in oklab, var(--fault) 75%, var(--bone)), var(--fault));
+  box-shadow: 0 0 10px color-mix(in oklab, var(--fault) 50%, transparent);
+}
+.gauge[data-id='readiness'] .gaugeBar span {
+  background: linear-gradient(180deg, color-mix(in oklab, var(--live) 75%, var(--bone)), var(--live));
+  box-shadow: 0 0 10px color-mix(in oklab, var(--live) 50%, transparent);
+}
+.gauge[data-id='latency'] .gaugeBar span {
+  background: linear-gradient(180deg, color-mix(in oklab, var(--hold) 75%, var(--bone)), var(--hold));
+  box-shadow: 0 0 10px color-mix(in oklab, var(--hold) 50%, transparent);
+}
 
 .gaugeMeaning {
   font-size: var(--step--1);

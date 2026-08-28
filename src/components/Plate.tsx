@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import { plateBriefs } from '@/content';
 import { useReveal } from '@/lib/motion';
+import { WaterBand } from './WaterBand';
 import styles from './Plate.module.css';
 
 type PlateProps = {
@@ -18,6 +19,9 @@ type PlateProps = {
   children: ReactNode;
   /** Small print under the drawing — simulation notices live here. */
   note?: ReactNode;
+  /** Stand the plate on water. The dashboard plates use this so the whole
+      set reads as one drawing. */
+  water?: boolean;
 };
 
 /**
@@ -41,6 +45,7 @@ export function Plate({
   tone = 'ground',
   children,
   note,
+  water = false,
 }: PlateProps) {
   const revealHead = useReveal<HTMLElement>();
   /* The chapter in two lines, for the sixty-second reader. It is rendered on
@@ -55,6 +60,7 @@ export function Plate({
       aria-labelledby={`${id}-title`}
     >
       <span className={styles.waterway} aria-hidden="true" />
+      {water ? <WaterBand plate={id} /> : null}
 
       <div className={styles.inner}>
         <header ref={revealHead} className={styles.head}>

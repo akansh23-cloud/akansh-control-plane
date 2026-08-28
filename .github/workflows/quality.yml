@@ -20,6 +20,26 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run ci
+        env:
+          # Production cannot ship without fresh evidence; PRs may.
+          EVIDENCE_STRICT: ${{ github.ref == 'refs/heads/main' && '1' || '0' }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  budget:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx next build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+      - name: Performance budget (Lighthouse CI)
+        run: npx --yes @lhci/cli@0.14.x autorun --config=lighthouserc.json
 
   browser:
     runs-on: ubuntu-latest

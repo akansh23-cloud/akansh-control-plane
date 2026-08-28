@@ -10,8 +10,9 @@
   padding: var(--s-4);
   border: 1px solid var(--edge);
   border-left: 2px solid var(--signal);
-  border-radius: 3px;
-  background: color-mix(in oklab, var(--panel) 62%, transparent);
+  border-radius: 4px;
+  background: var(--surface);
+  box-shadow: var(--shadow-raised);
 }
 
 .roleTitle {

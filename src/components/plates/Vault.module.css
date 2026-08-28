@@ -21,9 +21,10 @@
 .drawer {
   border: 1px solid var(--edge);
   border-left: 2px solid var(--edge);
-  border-radius: 3px;
-  background: color-mix(in oklab, var(--panel) 50%, transparent);
-  transition: border-color var(--t-quick) var(--ease-gear);
+  border-radius: 4px;
+  background: var(--surface);
+  box-shadow: var(--shadow-raised);
+  transition: border-color var(--t-quick) var(--ease-gear), box-shadow var(--t-quick) var(--ease-gear);
 }
 
 .drawer[data-open] {

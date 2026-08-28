@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { Fold } from '@/components/Fold';
+import { LiveEvidence } from '@/components/LiveEvidence';
 import { careerProject } from '@/content';
 import {
   usePointerField,
@@ -226,6 +227,7 @@ export function Split() {
           {careerProject.liveLabel}
         </a>
       </p>
+      <LiveEvidence repo="akansh23-cloud/career-autopilot" />
     </div>
   );
 }

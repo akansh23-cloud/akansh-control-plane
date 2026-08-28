@@ -10,7 +10,9 @@
   z-index: 92;
   width: var(--cap-w, 144px);
   height: var(--cap-h, 70px);
-  transform: translate3d(var(--cap-x, 50vw), var(--cap-y, 60vh), 0);
+  transform: translate3d(var(--cap-x, 50vw), var(--cap-y, 60vh), 0)
+    scale(var(--cap-scale, 1));
+  transform-origin: 0 0;
   pointer-events: none;
   will-change: transform;
   contain: layout paint style;

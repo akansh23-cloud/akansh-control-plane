@@ -1,0 +1,74 @@
+.root {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: clamp(72px, 11vh, 140px);
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+  --band-top: var(--water-500);
+  --band-bottom: var(--water-900);
+  opacity: 0.9;
+  transition: opacity 600ms var(--ease-water);
+}
+
+.svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.mass,
+.rear,
+.front {
+  transform-box: view-box;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.mass { animation: band-flow 26s linear infinite; }
+.rear { animation: band-flow 19s linear infinite; animation-delay: -7s; }
+.front { animation: band-flow 13s linear infinite; }
+
+.lineRear {
+  fill: none;
+  stroke: rgb(102 184 198 / 0.22);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.lineFront {
+  fill: none;
+  stroke: rgb(166 220 228 / 0.7);
+  stroke-width: 1.4;
+  vector-effect: non-scaling-stroke;
+}
+
+@keyframes band-flow {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-520px, 0, 0); }
+}
+
+/* Run state tints the water. The attributes are written by JourneySystem. */
+:global(html[data-run-drift='true']) .root[data-plate='basin'] {
+  --band-top: var(--hold);
+}
+:global(html[data-run-service-down='true']) .root[data-plate='split'] {
+  --band-top: var(--hold);
+}
+:global(html[data-run-telemetry='critical']) .root[data-plate='gauges'],
+:global(html[data-run-phase='degraded']) .root[data-plate='watch'] {
+  --band-top: var(--fault);
+}
+:global(html[data-world='production']) .root {
+  --band-top: var(--water-300);
+}
+
+@media (max-width: 719px), (pointer: coarse) {
+  .root { height: 64px; opacity: 0.75; }
+  .rear { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mass, .rear, .front { animation: none; will-change: auto; }
+}

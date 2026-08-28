@@ -177,13 +177,13 @@
 .dns { left: 23%; top: 13%; }
 .ingress { left: 24%; top: 57%; }
 .checkout { left: 45%; top: 31%; }
-.payments { left: 65%; top: 12%; }
-.kafka { left: 66%; top: 63%; }
+.payments { left: 62%; top: 10%; }
+.kafka { left: 62%; top: 64%; }
 .database { right: 3%; top: 36%; }
 
 .zone { width: 86px; min-height: 52px; padding: 7px 8px; border-style: dashed; opacity: 0.86; }
-.azA { right: 20%; top: 3%; }
-.azB { right: 20%; bottom: 4%; }
+.azA { right: 3%; top: 4%; }
+.azB { right: 3%; bottom: 5%; }
 
 .topology[data-scenario='dns-fracture'] .dns,
 .topology[data-scenario='certificate-expiry'] .edge,

@@ -1,20 +1,12 @@
+import dynamic from 'next/dynamic';
 import { Brief } from '@/components/Brief';
-import { IncidentTimeMachine } from '@/components/IncidentTimeMachine';
 import { TechTerm } from '@/components/TechTerm';
-import { TraceRequest } from '@/components/TraceRequest';
 import { CapsuleDock } from '@/components/system/ReleaseCapsule';
 import { Operation } from '@/components/Operation';
 import { Plate } from '@/components/Plate';
 import { Waterway } from '@/components/Waterway';
-import { Basin } from '@/components/plates/Basin';
 import { Flight } from '@/components/plates/Flight';
-import { Gauges } from '@/components/plates/Gauges';
 import { Headwater } from '@/components/plates/Headwater';
-import { Refit } from '@/components/plates/Refit';
-import { Split } from '@/components/plates/Split';
-import { Tidewater } from '@/components/plates/Tidewater';
-import { Vault } from '@/components/plates/Vault';
-import { Watch } from '@/components/plates/Watch';
 import {
   barclays,
   careerProject,
@@ -27,6 +19,24 @@ import {
 } from '@/content';
 import styles from './page.module.css';
 
+/* Performance is a plate. The Headwater and the Flight are the first screen
+   and the first interaction, so they ship in the main bundle; everything
+   below them is still server-rendered (nothing is hidden from a crawler or
+   a reader with JavaScript off) but its client code arrives in its own
+   chunk when the reader gets there. */
+const Refit = dynamic(() => import('@/components/plates/Refit').then((m) => m.Refit));
+const Basin = dynamic(() => import('@/components/plates/Basin').then((m) => m.Basin));
+const Split = dynamic(() => import('@/components/plates/Split').then((m) => m.Split));
+const Gauges = dynamic(() => import('@/components/plates/Gauges').then((m) => m.Gauges));
+const Watch = dynamic(() => import('@/components/plates/Watch').then((m) => m.Watch));
+const Vault = dynamic(() => import('@/components/plates/Vault').then((m) => m.Vault));
+const Tidewater = dynamic(() => import('@/components/plates/Tidewater').then((m) => m.Tidewater));
+const TraceRequest = dynamic(() =>
+  import('@/components/TraceRequest').then((m) => m.TraceRequest),
+);
+const IncidentTimeMachine = dynamic(() =>
+  import('@/components/IncidentTimeMachine').then((m) => m.IncidentTimeMachine),
+);
 const plate = (id: string) => plates.find((p) => p.id === id)!;
 
 export default function Home() {
@@ -115,10 +125,14 @@ export default function Home() {
             next="basin"
           />
           <Refit />
+          <div className={styles.capsuleBay}>
+            <CapsuleDock id="refit" label="Capsule held while the works are rebuilt" />
+          </div>
         </Plate>
 
         <Plate
           id="basin"
+          water
           no={plate('basin').no}
           name={plate('basin').name}
           sub={plate('basin').sub}
@@ -165,6 +179,7 @@ export default function Home() {
 
         <Plate
           id="split"
+          water
           no={plate('split').no}
           name={plate('split').name}
           sub={plate('split').sub}
@@ -202,6 +217,7 @@ export default function Home() {
 
         <Plate
           id="gauges"
+          water
           no={plate('gauges').no}
           name={plate('gauges').name}
           sub={plate('gauges').sub}
@@ -232,6 +248,7 @@ export default function Home() {
 
         <Plate
           id="watch"
+          water
           no={plate('watch').no}
           name={plate('watch').name}
           sub={plate('watch').sub}
@@ -282,6 +299,9 @@ export default function Home() {
           }
         >
           <Vault />
+          <div className={styles.capsuleBay}>
+            <CapsuleDock id="vault" label="Capsule with its evidence" />
+          </div>
         </Plate>
 
         <Plate

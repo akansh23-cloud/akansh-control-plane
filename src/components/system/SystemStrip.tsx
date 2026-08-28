@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useEnvironment } from '@/components/system/Environment';
 import styles from './SystemStrip.module.css';
 
@@ -19,6 +19,13 @@ export function SystemStrip() {
   const env = useEnvironment();
   const gauge = useRef<HTMLSpanElement | null>(null);
 
+  /* V12: the four instruments live behind one "Lab" switch. A first-time
+     reader sees a bar with four things on it, not ten; the instruments are
+     one press away and stay open while any of them is in use. */
+  const [labOpen, setLabOpen] = useState(false);
+  const inUse = env.xray || env.soundOn || env.touring || env.consoleOpen;
+  const open = labOpen || inUse;
+
   /* The pressure needle is written per frame by the runtime, never by React. */
   useEffect(() => {
     const node = gauge.current;
@@ -36,6 +43,22 @@ export function SystemStrip() {
       <button
         type="button"
         className={styles.btn}
+        aria-pressed={open}
+        aria-expanded={open}
+        onClick={() => setLabOpen((v) => !v)}
+        title="Lab — X-Ray, sound, tour and the console"
+      >
+        <svg viewBox="0 0 16 16" aria-hidden="true" className={styles.glyph}>
+          <path d="M6 2.5h4M7 2.5v4.2L3.6 12a1 1 0 0 0 .9 1.5h7a1 1 0 0 0 .9-1.5L9 6.7V2.5" />
+          <path d="M5.2 10h5.6" />
+        </svg>
+        <span className={styles.label}>Lab</span>
+      </button>
+
+      {open ? (
+      <button
+        type="button"
+        className={styles.btn}
         aria-pressed={env.xray}
         onClick={() => env.toggleXray()}
         title="X-Ray — or hold X"
@@ -46,7 +69,9 @@ export function SystemStrip() {
         </svg>
         <span className={styles.label}>X-Ray</span>
       </button>
+      ) : null}
 
+      {open ? (
       <button
         type="button"
         className={styles.btn}
@@ -64,7 +89,9 @@ export function SystemStrip() {
         </svg>
         <span className={styles.label}>{env.soundOn ? 'Sound on' : 'Sound off'}</span>
       </button>
+      ) : null}
 
+      {open ? (
       <button
         type="button"
         className={styles.btn}
@@ -78,7 +105,9 @@ export function SystemStrip() {
         </svg>
         <span className={styles.label}>{env.touring ? 'Stop tour' : 'Tour'}</span>
       </button>
+      ) : null}
 
+      {open ? (
       <button
         type="button"
         className={styles.btn}
@@ -93,6 +122,7 @@ export function SystemStrip() {
         </svg>
         <span className={styles.label}>Console</span>
       </button>
+      ) : null}
     </div>
   );
 }
