@@ -58,19 +58,20 @@ test.describe('Responsive device contract', () => {
     }
   });
 
-  test('operator chrome, Cloud Ops launcher and Flight compose without collisions', async ({ page }, testInfo) => {
+  test('operator chrome, incident-room entry and Flight compose without collisions', async ({ page }, testInfo) => {
     await page.goto('/');
     await settle(page);
 
     const indexButton = page.locator('button[aria-controls="key-plate"]');
     const runButton = page.locator('button[aria-controls="living-release-panel"]');
     const bar = indexButton.locator('..');
-    const portal = page.getByRole('button', { name: 'Enter BLACKOUT Cloud Ops incident room' });
 
     const chrome = await page.evaluate(() => {
       const index = document.querySelector<HTMLButtonElement>('button[aria-controls="key-plate"]');
       const barNode = index?.parentElement;
-      const portalNode = document.querySelector<HTMLButtonElement>('button[aria-label="Enter BLACKOUT Cloud Ops incident room"]');
+      /* V12.2: the incident room is reached from the index drawer and from
+         the Tidewater card. There is no floating launcher to collide with. */
+      const portalNode = document.querySelector<HTMLAnchorElement>('a[href="/cloud-ops"]');
       const capsuleNode = document.querySelector<HTMLElement>('[data-capsule-root]');
       const barRect = barNode?.getBoundingClientRect();
       const portalRect = portalNode?.getBoundingClientRect();
@@ -96,31 +97,14 @@ test.describe('Responsive device contract', () => {
     });
 
     expect(chrome.bar).not.toBeNull();
-    expect(chrome.portal).not.toBeNull();
     if (chrome.bar) {
       expect.soft(chrome.bar.left, 'operator bar left edge').toBeGreaterThanOrEqual(-1);
       expect.soft(chrome.bar.right, 'operator bar right edge').toBeLessThanOrEqual(chrome.width + 1);
       expect.soft(chrome.bar.bottom, 'operator bar bottom edge').toBeLessThanOrEqual(chrome.height + 1);
       expect.soft(chrome.bar.height, 'operator bar must stay inside the reserved rail').toBeLessThanOrEqual(chrome.rail + 2);
     }
-    if (chrome.portal) {
-      expect.soft(chrome.portal.left, 'Cloud Ops launcher left edge').toBeGreaterThanOrEqual(-1);
-      expect.soft(chrome.portal.right, 'Cloud Ops launcher right edge').toBeLessThanOrEqual(chrome.width + 1);
-      expect.soft(chrome.portal.top, 'Cloud Ops launcher top edge').toBeGreaterThanOrEqual(-1);
-      expect.soft(chrome.portal.bottom, 'Cloud Ops launcher bottom edge').toBeLessThanOrEqual(chrome.height + 1);
-      if (chrome.width <= 1179) {
-        expect.soft(chrome.portal.width, 'compact Cloud Ops launcher width').toBeLessThanOrEqual(52);
-        expect.soft(chrome.portal.height, 'compact Cloud Ops launcher height').toBeLessThanOrEqual(52);
-      }
-      if (chrome.bar) {
-        expect.soft(overlaps(chrome.portal, chrome.bar), 'Cloud Ops launcher must not overlap operator chrome').toBeFalsy();
-      }
-    }
     if (chrome.capsuleVisible && chrome.capsule && chrome.bar) {
       expect.soft(overlaps(chrome.capsule, chrome.bar), 'visible release capsule must not overlap operator chrome').toBeFalsy();
-    }
-    if (chrome.width <= 719 && chrome.capsuleVisible && chrome.portal && chrome.capsule) {
-      expect.soft(overlaps(chrome.portal, chrome.capsule), 'mobile Cloud Ops launcher must not overlap the visible release capsule').toBeFalsy();
     }
 
     const stationRects = await page.locator('#headwater ol li > span:last-child').evaluateAll((labels) => labels
@@ -202,7 +186,6 @@ test.describe('Responsive device contract', () => {
     }
 
     await capture(page, testInfo, 'flight');
-    await expect(portal).toBeVisible();
     await expect(bar).toBeVisible();
   });
 

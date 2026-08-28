@@ -151,6 +151,18 @@ export function OperatorChrome() {
                 </li>
               ))}
             </ol>
+
+            {/* The incident room is a destination, not a floating badge. The
+                badge used to sit over the Flight's top chambers and over the
+                hero's operator facts; it is reachable here, and from the
+                card at the end of Tidewater. */}
+            <a className={styles.roomLink} href="/cloud-ops" onClick={() => close(false)}>
+              <span className={styles.roomMark}>Play Cloud Ops</span>
+              <span className={styles.roomName}>Enter the incident room</span>
+              <span className={styles.roomSub}>
+                A production fault, a pager, and the platform&rsquo;s own signals.
+              </span>
+            </a>
           </nav>
 
           <div className={styles.panelFoot}>

@@ -177,3 +177,47 @@ No browser and no package registry in this environment. What was checked:
 
 What was **not** checked: the rendered result. Run `npm ci && npm run ci`
 and the Playwright suite before merging, and please send a recording.
+
+---
+
+# V12.2 — THE OVERLAP FIXES
+
+Three faults in the V12.1 preview, all with one root cause each.
+
+1. **Workload chips drawn on top of the ladder** (and the stage note drawn
+   on top of the chips). Cause: I made `.mechanism` `position: sticky` in
+   V12.1. Its grid area spanned two rows, so the drawing stayed pinned while
+   the third row — the fittings — scrolled up underneath it, and the two
+   painted over each other. **The sticky is gone.** A drawing that pins
+   itself over the rest of its own plate is worse than one that scrolls.
+
+2. **"Apply the fix" cut off below the fold.** Cause: the V12.1 grid put the
+   controls and the readout in the same left column, one under the other, so
+   the refusal card started a screen below the fault you had just armed.
+   The Flight is back to three columns — controls | drawing | readout — with
+   the drawing much the widest (2.15fr against 0.78 and 1). Arm a fault and
+   the refusal card is across from the gate that refused it, both on screen.
+
+3. **Water over the operator facts, and the Cloud Ops badge in the corner.**
+   The water is now a strip of its own at the foot of the chamber and the
+   header reserves that height in `padding-bottom`, so no line of type can
+   be inside it whatever the viewport does. The floating Cloud Ops launcher
+   is **removed on every viewport** — it has covered the Flight's top
+   chambers (top-right) and the hero's facts (bottom-left), and a badge that
+   floats over the drawings has no good corner. It is now a card in the
+   index drawer and a card at the end of Tidewater.
+   `tests/e2e/responsive-device.spec.ts` updated to match.
+
+## Checked here
+
+`tsc --strict` over the edited files (no syntax or structural errors), all 41
+stylesheets brace-balanced, every `styles.x` resolves to a real class, every
+local import resolves.
+
+**Still not rendered.** There is no browser in this environment. One thing I
+cannot place from the screenshots: the band of arcs and vertical shafts along
+the very top of the hero in the first image. Nothing in the hero markup is
+drawn there — the water strip is bottom-anchored, and the walls, gear, gauge
+and token are all accounted for elsewhere in the frame. If it survives this
+build, right-click it → Inspect → and send the element's class name; that
+will settle it in one step instead of another guess.

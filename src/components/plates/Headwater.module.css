@@ -4,7 +4,11 @@
   position: relative;
   isolation: isolate;
   padding-top: calc(var(--s-7) + env(safe-area-inset-top, 0px));
-  padding-bottom: var(--s-8);
+  /* Reserve the water strip. Everything above it — including the route and
+     the operator facts — is clear of the surface by construction, which is
+     what stops the meta row being submerged on a short viewport. */
+  --hero-water: clamp(190px, 24vh, 280px);
+  padding-bottom: calc(var(--hero-water) * 0.78 + var(--s-6));
   background: var(--void);
   overflow: hidden;
 }
@@ -16,13 +20,11 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  /* The water is a band anchored to the foot of the chamber. Its height is
-     fixed, so the surface is always the same distance above the route and
-     never rises into the masthead, whatever the viewport makes of the text
-     above it. */
-  --hero-water: clamp(250px, 30vh, 340px);
-  /* Written by the rig. --datum is the surface height within the band,
-     0…1 from the band's top. */
+  /* --hero-water is defined on .root, which reserves exactly this much
+     space for the water at the foot of the chamber, so the water and the
+     type can never share a pixel.
+     --datum is written by the rig: the surface height within the strip,
+     0…1 from the strip's top. */
   --datum: 0.2;
 }
 
@@ -44,6 +46,7 @@
   right: 0;
   bottom: 0;
   height: calc(var(--hero-water) * (1 - var(--datum)));
+  z-index: 0;
   background: linear-gradient(
     180deg,
     color-mix(in oklab, var(--void) 34%, transparent),

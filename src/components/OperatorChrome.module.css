@@ -629,3 +629,47 @@
   .railFill,
   .routeFill { transition: none; }
 }
+
+/* ---------------- the incident room, in the index ---------------- */
+
+.roomLink {
+  display: grid;
+  gap: 2px;
+  margin-top: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid color-mix(in oklab, var(--signal) 46%, var(--edge));
+  border-left: 3px solid var(--signal);
+  border-radius: 4px;
+  background: color-mix(in oklab, var(--void) 88%, var(--water-900));
+  color: var(--bone);
+  text-decoration: none;
+  transition: border-color var(--t-tap) var(--ease-gear), background var(--t-tap) var(--ease-gear);
+}
+
+.roomLink:hover,
+.roomLink:focus-visible {
+  border-color: var(--signal);
+  background: color-mix(in oklab, var(--water-900) 42%, var(--void));
+}
+
+.roomMark {
+  font-family: var(--font-data);
+  font-size: var(--step--2);
+  font-stretch: 87.5%;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--signal);
+}
+
+.roomName {
+  font-family: var(--font-display);
+  font-weight: 620;
+  font-size: var(--step-0);
+  line-height: 1.15;
+}
+
+.roomSub {
+  font-size: var(--step--1);
+  line-height: 1.4;
+  color: var(--muted);
+}

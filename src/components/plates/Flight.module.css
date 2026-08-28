@@ -11,15 +11,18 @@
 
 .root {
   display: grid;
-  /* The controls and the drawing share the screen: press Run or arm a fault
-     on the left and the chambers fill on the right. The drawing is the
-     wider column and stays pinned while the log on the left grows, so the
-     mechanism is never scrolled out of view by its own status panel. */
-  grid-template-columns: minmax(280px, 0.72fr) minmax(0, 2fr);
+  /* Controls, drawing, readout — all three on one row, so pressing Run or
+     arming a fault happens beside the chambers and the refusal card is
+     across from them rather than a screen further down. The drawing is by
+     far the widest column; it used to be the narrowest.
+
+     Nothing here is sticky. A sticky drawing spanning two grid rows stayed
+     pinned while the fittings row scrolled up underneath it, which is what
+     put the workload chips on top of the ladder. */
+  grid-template-columns: minmax(230px, 0.78fr) minmax(0, 2.15fr) minmax(250px, 1fr);
   grid-template-areas:
-    'operator  mechanism'
-    'context   mechanism'
-    'fittings  fittings';
+    'operator mechanism context'
+    'fittings fittings  fittings';
   gap: clamp(18px, 2.2vw, 34px);
   align-items: start;
 }
@@ -118,8 +121,6 @@
   display: grid;
   gap: var(--s-3);
   min-width: 0;
-  position: sticky;
-  top: var(--s-4);
 }
 
 .works {
@@ -128,9 +129,9 @@
   --rise: calc((100% - var(--h)) / 8);
   --flow: 0;
   position: relative;
-  aspect-ratio: 1.8;
-  min-height: 300px;
-  max-height: calc(100vh - var(--rail) - 120px);
+  aspect-ratio: 1.55;
+  min-height: 320px;
+  max-height: 62vh;
   background:
     linear-gradient(180deg, color-mix(in oklab, var(--void) 60%, transparent), var(--water-900));
   border: 1px solid var(--rule);
@@ -603,15 +604,14 @@
 
 @media (max-width: 1179px) {
   .root {
-    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.4fr);
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.5fr);
     grid-template-areas:
       'operator mechanism'
       'context  context'
       'fittings fittings';
   }
 
-  .mechanism { position: static; }
-  .works { max-height: 52vh; aspect-ratio: 1.5; }
+  .works { max-height: 52vh; aspect-ratio: 1.4; }
 }
 
 /* ---------------------------------------------------------------------

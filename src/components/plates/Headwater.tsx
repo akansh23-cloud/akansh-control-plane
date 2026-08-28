@@ -205,6 +205,10 @@ export function Headwater() {
       className={styles.root}
     >
       <div ref={worksRef} className={styles.works} aria-hidden="true">
+        {/* The water is the last thing in the header and it is in normal
+            flow, not an absolute overlay: it occupies its own strip at the
+            foot of the chamber, so no line of type can ever end up inside
+            it whatever the viewport does to the text above. */}
         <svg
           className={styles.svg}
           viewBox={`0 0 ${VB_W} ${VB_H}`}
